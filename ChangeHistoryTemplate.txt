@@ -1,0 +1,40 @@
+# Lines starting with '#' are comments and will be ignored.
+
+# A summary of you solutions, please be short (no more than 50 characters).
+# For example: Fix the hang issue in 0x31
+Summary: 
+
+# Tag# is the codebase version such as '5.19_CedarIslandCrb_0ACMT_013'
+Tag#: 
+
+# Label# example: Inspur-LZH20210709V001
+Label#: 
+
+# Write "None" or "N/A" if not applicable.
+Issue#: 
+
+# Scope examples: ALL, Standard, Tencent, ByteDance, NF5260M7
+Scope: 
+
+# Severity options: High, Middle, Normal, Low
+Severity: 
+
+# Category examples: Redfish, SMBIOS, PCIe
+Category: 
+
+# What you saw about the issue.
+# If the commit is not about an issue, write 'N/A'.
+Symptom: 
+
+# What caused the issue. 
+# If the commit is not about an issue, write 'N/A'.
+RootCause: 
+
+# How did you solve it.
+Solution: 
+
+# Is your solution based on other's? Write the label# or 'None'
+SolutionDependency: 
+
+# The list of related files will be created automatically.
+# After finish items above, use command 'jgcommit' in Git Bash.

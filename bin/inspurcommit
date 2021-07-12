@@ -1,0 +1,92 @@
+#!/bin/bash
+
+declare -r template_file_name=./ChangeHistoryTemplate.txt
+
+ShowUsage(){
+    echo "
+Usage:
+    inspurcommit [<option>]
+
+Options:
+    amend, export, exportall"
+}
+
+ValidateTemplate(){
+    if [ ! -e $tempFn ]
+    then
+        echo "inspurcommit: ERROR: Couldn't find template file $tempFn" >&2
+        exit 2
+    fi
+}
+
+ValidateJgn(){
+    which $jgn 1>/dev/null 2>&1
+    if [ $? -ne 0 ]
+    then
+        echo "inspurcommit: ERROR: Coundn't find $jgn." >&2
+        exit 3
+    fi
+}
+
+commit(){
+    ValidateTemplate
+    ValidateJgn
+    local summary="$(cat $tempFn | grep -P '^Summary:' | vim -es '+1s/^Summary:\s*//e' '+%print' '+q!' /dev/stdin)"
+    if [ -z "${summary// /}" ]
+    then
+        echo "inspurcommit: ERROR: Summary is empty!" >&2
+        exit 4
+    fi
+    # TODO can't just reset or it renders modifying template impossible
+    # git reset -- $tempFn 1>/dev/null 2>&1
+    $jgn > /dev/null 2>&1
+    local jgnOutFn=~/NtmOutput.txt
+    local details=$(cat $tempFn $jgnOutFn | grep -vP '^#|^Summary:|^\s*$')
+    git commit -m "$summary" -m "$details"
+}
+
+declare -r rev='0.0.1'
+declare -r lastupdt='2021-07-09'
+declare -r author='Johnny Appleseed <liuzhaohui@inspur.com>'
+declare -r jgn="jgnumberforthehistory"
+declare -r tempFn=$template_file_name
+
+case "${1,,}" in
+    "")
+        echo
+        # TODO Check if there is staged changes.
+        commit
+        ;;
+    "amend")
+        # TODO
+        echo
+        echo "amend is under development."
+        exit
+        ;;
+    "export")
+        # TODO
+        echo
+        echo "export is under development."
+        exit
+        ;;
+    "exportall")
+        # TODO
+        echo
+        echo "exportall is under development."
+        exit
+        ;;
+    "?"|"-?"|"-h"|"--help"|"--usage"|"help"|"usage")
+        echo
+        echo "    inspurcommit v$rev"
+        echo "    Last updated: $lastupdt"
+        echo "    $author"
+        ShowUsage
+        exit
+        ;;
+    *)
+        >&2 echo
+        >&2 echo "inspurcommit: ERROR: Invalid option - $1"
+        >&2 ShowUsage
+        exit 1
+        ;;
+esac
