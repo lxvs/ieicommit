@@ -28,7 +28,7 @@ ValidateJgn(){
     fi
 }
 
-commit(){
+Commit(){
     ValidateTemplate
     ValidateJgn
     local summary="$(cat $tempFn | grep -P '^Summary:' | vim -es '+1s/^Summary:\s*//e' '+%print' '+q!' /dev/stdin)"
@@ -55,7 +55,7 @@ case "${1,,}" in
     "")
         echo
         # TODO Check if there is staged changes.
-        commit
+        Commit
         ;;
     "amend")
         # TODO
