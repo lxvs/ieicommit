@@ -54,7 +54,11 @@ declare -r tempFn=$template_file_name
 case "${1,,}" in
     "")
         echo
-        # TODO Check if there is staged changes.
+        [ -z "$(git diff --cached --name-only)" ] && {
+            >&2 echo "ERROR: There is no staged changes."
+            >&2 echo "Stage changes to be committed with 'git add'."
+            exit 1
+        }
         Commit
         ;;
     "amend")
