@@ -1,9 +1,5 @@
 # Lines starting with '#' are comments and will be ignored.
 
-# A summary of you solutions, please be short (no more than 50 characters).
-# For example: Fix the hang issue in 0x31
-Summary: 
-
 # Tag# is the codebase version such as '5.19_CedarIslandCrb_0ACMT_013'
 Tag#: 
 
@@ -31,10 +27,16 @@ Symptom:
 RootCause: 
 
 # How did you solve it.
+# If your solution is longer than 70 characters, it should be splited to
+# multiple lines, in which case, the first line should be a summary.
+# Example:
+# Solution: Fix a 0x31 hang issue.
+#           Set token HANG_MODE from Enabled to Disabled.
+#           Set token HANG_POINT from 0x31 to 0.
 Solution: 
 
 # Is your solution based on other's? Write the label# or 'None'
 SolutionDependency: 
 
 # The list of related files will be created automatically.
-# After finish items above, use command 'jgcommit' in Git Bash.
+# After finish items above, use command 'inspurcommit' in Git Bash.

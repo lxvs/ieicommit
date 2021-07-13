@@ -31,17 +31,17 @@ ValidateJgn(){
 Commit(){
     ValidateTemplate
     ValidateJgn
-    local summary="$(cat $tempFn | grep -P '^Summary:' | vim -es '+1s/^Summary:\s*//e' '+%print' '+q!' /dev/stdin)"
+    local summary="$(cat $tempFn | grep -P '^Solution:' | vim -es '+1s/^Solution:\s*//e' '+%print' '+q!' /dev/stdin)"
     if [ -z "${summary// /}" ]
     then
-        echo "inspurcommit: ERROR: Summary is empty!" >&2
+        echo "inspurcommit: ERROR: Solution is empty!" >&2
         exit 4
     fi
     # TODO can't just reset or it renders modifying template impossible
     # git reset -- $tempFn 1>/dev/null 2>&1
     $jgn > /dev/null 2>&1
     local jgnOutFn=~/NtmOutput.txt
-    local details=$(cat $tempFn $jgnOutFn | grep -vP '^#|^Summary:|^\s*$')
+    local details=$(cat $tempFn $jgnOutFn | grep -vP '^#|^\s*$')
     git commit -m "$summary" -m "$details"
 }
 
