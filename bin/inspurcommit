@@ -152,6 +152,12 @@ case "${1,,}" in
         CheckStage template
         Commit "$@"
         ;;
+    "init")
+        echo
+        CheckFileAlreadyExists "$fci_file_name" || exit
+        git log --format="%H" -1 > "$fci_file_name"
+        [ $? == 0 ] && echo "Complete."
+        ;;
     *)
         >&2 echo
         >&2 echo "inspurcommit: ERROR: Invalid option - $1"
