@@ -70,7 +70,7 @@ Commit(){
 }
 
 declare -r rev='0.0.1'
-declare -r lastupdt='2021-07-09'
+declare -r lastupdt='2021-07-14'
 declare -r author='Johnny Appleseed <liuzhaohui@inspur.com>'
 declare -r jgn="jgnumberforthehistory"
 declare -r tempFn=$template_file_name
