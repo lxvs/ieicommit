@@ -1,0 +1,122 @@
+#!/bin/bash
+
+declare -r template_file_name=ChangeHistoryTemplate.txt
+declare -r independence_day="Jul 14 0:00:00 2021 +0800"
+declare -r change_history_format="%b"
+
+ShowUsage(){
+    echo "
+Usage:
+    inspurcommit [<option>]
+
+Options:
+    amend, export, exportall, template, usage"
+}
+
+ValidateTemplate(){
+    if [ ! -e $tempFn ]
+    then
+        echo "inspurcommit: ERROR: Couldn't find template file $tempFn" >&2
+        exit 2
+    fi
+}
+
+ValidateJgn(){
+    which $jgn 1>/dev/null 2>&1
+    if [ $? -ne 0 ]
+    then
+        echo "inspurcommit: ERROR: Coundn't find $jgn." >&2
+        exit 3
+    fi
+}
+
+CheckStage(){
+    local diffname="$(git diff --cached --name-only)"
+    case "$diffname" in
+        "")
+            >&2 echo "inspurcommit: ERROR: There is no staged changes."
+            >&2 echo "Stage changes to be committed with 'git add'."
+            exit 1
+            ;;
+        *"$template_file_name"*)
+            [ "$1" == "template" ] && return 0
+            >&2 echo "inspurcommit: ERROR: $template_file_name was staged."
+            >&2 echo "If you intend to modify the template, use command 'inspurcommit template'."
+            exit 1
+            ;;
+    esac
+}
+
+CheckFileExistence(){
+    local filename="$1"
+    [ -e $filename ] || return 0
+    >&2 echo "inspurcommit: ERROR: File $filename already exists."
+    return 1
+}
+
+Commit(){
+    ValidateTemplate
+    ValidateJgn
+    local summary="$(cat $tempFn | grep -P '^Solution:' | vim -es '+1s/^Solution:\s*//e' '+%print' '+q!' /dev/stdin)"
+    if [ -z "${summary// /}" ]
+    then
+        echo "inspurcommit: ERROR: Solution is empty!" >&2
+        exit 4
+    fi
+    $jgn > /dev/null 2>&1
+    local jgnOutFn=~/NtmOutput.txt
+    local details=$(cat $tempFn $jgnOutFn | grep -vP '^#|^\s*$')
+    git commit "$@" -m "$summary" -m "$details"
+}
+
+declare -r rev='0.0.1'
+declare -r lastupdt='2021-07-09'
+declare -r author='Johnny Appleseed <liuzhaohui@inspur.com>'
+declare -r jgn="jgnumberforthehistory"
+declare -r tempFn=$template_file_name
+
+case "${1,,}" in
+    "?"|"-?"|"-h"|"--help"|"--usage"|"help"|"usage")
+        echo
+        echo "    inspurcommit v$rev"
+        echo "    Last updated: $lastupdt"
+        echo "    $author"
+        ShowUsage
+        exit
+        ;;
+    ""|"-"*)
+        echo
+        CheckStage
+        Commit "$@"
+        ;;
+    "amend")
+        echo
+        CheckStage
+        shift
+        Commit --amend "$@"
+        ;;
+    "export")
+        echo
+        historyFn=${2:-"./ChangeHistory.txt"}
+        CheckFileExistence "$historyFn" || exit
+        git log --since="$independence_day" --format="$change_history_format" | grep -vP '^Scope:' > $historyFn
+        ;;
+    "exportall")
+        echo
+        historyFn=${2:-"./ChangeHistory.txt"}
+        CheckFileExistence "$historyFn" || exit
+        git log --since="$independence_day" --format="$change_history_format" > $historyFn
+        ;;
+    "template")
+        echo
+        shift
+        CheckStage template
+        Commit "$@"
+        ;;
+    *)
+        >&2 echo
+        >&2 echo "inspurcommit: ERROR: Invalid option - $1"
+        >&2 ShowUsage
+        exit 1
+        ;;
+esac
