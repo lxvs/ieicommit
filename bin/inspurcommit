@@ -28,6 +28,14 @@ ValidateJgn(){
     fi
 }
 
+CheckStage(){
+    [ -z "$(git diff --cached --name-only)" ] && {
+        >&2 echo "ERROR: There is no staged changes."
+        >&2 echo "Stage changes to be committed with 'git add'."
+        exit 1
+    }
+}
+
 Commit(){
     ValidateTemplate
     ValidateJgn
@@ -42,7 +50,7 @@ Commit(){
     $jgn > /dev/null 2>&1
     local jgnOutFn=~/NtmOutput.txt
     local details=$(cat $tempFn $jgnOutFn | grep -vP '^#|^\s*$')
-    git commit -m "$summary" -m "$details"
+    git commit "$@" -m "$summary" -m "$details"
 }
 
 declare -r rev='0.0.1'
@@ -54,18 +62,13 @@ declare -r tempFn=$template_file_name
 case "${1,,}" in
     "")
         echo
-        [ -z "$(git diff --cached --name-only)" ] && {
-            >&2 echo "ERROR: There is no staged changes."
-            >&2 echo "Stage changes to be committed with 'git add'."
-            exit 1
-        }
+        CheckStage
         Commit
         ;;
     "amend")
-        # TODO
         echo
-        echo "amend is under development."
-        exit
+        CheckStage
+        Commit --amend
         ;;
     "export")
         # TODO
