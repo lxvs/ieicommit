@@ -76,6 +76,14 @@ declare -r jgn="jgnumberforthehistory"
 declare -r tempFn=$template_file_name
 
 case "${1,,}" in
+    "?"|"-?"|"-h"|"--help"|"--usage"|"help"|"usage")
+        echo
+        echo "    inspurcommit v$rev"
+        echo "    Last updated: $lastupdt"
+        echo "    $author"
+        ShowUsage
+        exit
+        ;;
     ""|"-"*)
         echo
         CheckStage
@@ -104,14 +112,6 @@ case "${1,,}" in
         shift
         CheckStage template
         Commit "$@"
-        ;;
-    "?"|"-?"|"-h"|"--help"|"--usage"|"help"|"usage")
-        echo
-        echo "    inspurcommit v$rev"
-        echo "    Last updated: $lastupdt"
-        echo "    $author"
-        ShowUsage
-        exit
         ;;
     *)
         >&2 echo
