@@ -1,6 +1,6 @@
 #!/bin/bash
 
-declare -r template_file_name=./ChangeHistoryTemplate.txt
+declare -r template_file_name=ChangeHistoryTemplate.txt
 declare -r independence_day="Jul 14 0:00:00 2021 +0800"
 declare -r change_history_format="%b"
 
@@ -10,7 +10,7 @@ Usage:
     inspurcommit [<option>]
 
 Options:
-    amend, export, exportall"
+    amend, export, exportall, template, usage"
 }
 
 ValidateTemplate(){
@@ -31,11 +31,20 @@ ValidateJgn(){
 }
 
 CheckStage(){
-    [ -z "$(git diff --cached --name-only)" ] && {
-        >&2 echo "inspurcommit: ERROR: There is no staged changes."
-        >&2 echo "Stage changes to be committed with 'git add'."
-        exit 1
-    }
+    local diffname="$(git diff --cached --name-only)"
+    case "$diffname" in
+        "")
+            >&2 echo "inspurcommit: ERROR: There is no staged changes."
+            >&2 echo "Stage changes to be committed with 'git add'."
+            exit 1
+            ;;
+        *"$template_file_name"*)
+            [ "$1" == "template" ] && return 0
+            >&2 echo "inspurcommit: ERROR: $template_file_name was staged."
+            >&2 echo "If you intend to modify the template, use command 'inspurcommit template'."
+            exit 1
+            ;;
+    esac
 }
 
 CheckFileExistence(){
@@ -54,8 +63,6 @@ Commit(){
         echo "inspurcommit: ERROR: Solution is empty!" >&2
         exit 4
     fi
-    # TODO can't just reset or it renders modifying template impossible
-    # git reset -- $tempFn 1>/dev/null 2>&1
     $jgn > /dev/null 2>&1
     local jgnOutFn=~/NtmOutput.txt
     local details=$(cat $tempFn $jgnOutFn | grep -vP '^#|^\s*$')
@@ -77,7 +84,8 @@ case "${1,,}" in
     "amend")
         echo
         CheckStage
-        Commit --amend
+        shift
+        Commit --amend "$@"
         ;;
     "export")
         echo
@@ -90,6 +98,12 @@ case "${1,,}" in
         historyFn=${2:-"./ChangeHistory.txt"}
         CheckFileExistence "$historyFn" || exit
         git log --since="$independence_day" --format="$change_history_format" > $historyFn
+        ;;
+    "template")
+        echo
+        shift
+        CheckStage template
+        Commit "$@"
         ;;
     "?"|"-?"|"-h"|"--help"|"--usage"|"help"|"usage")
         echo
