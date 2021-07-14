@@ -29,6 +29,39 @@ ValidateJgn(){
     fi
 }
 
+ValidateHistoryField(){
+    local value="$(cat $tempFn | grep -P "^$1:" | vim -es "+1s/^$1:\s*//e" '+%print' '+q!' /dev/stdin)"
+    [ -z ${value// /} ] || return 0
+    >&2 echo "inspurcommit: ERROR: Field '$1' is empty."
+    return 1
+}
+
+ValidateHistory(){
+    local errors=0
+    ValidateHistoryField 'Tag#'
+    let errors+=$?
+    ValidateHistoryField 'Label#'
+    let errors+=$?
+    ValidateHistoryField 'Issue#'
+    let errors+=$?
+    ValidateHistoryField 'Scope'
+    let errors+=$?
+    ValidateHistoryField 'Severity'
+    let errors+=$?
+    ValidateHistoryField 'Category'
+    let errors+=$?
+    ValidateHistoryField 'Symptom'
+    let errors+=$?
+    ValidateHistoryField 'RootCause'
+    let errors+=$?
+    ValidateHistoryField 'Solution'
+    let errors+=$?
+    [ $errors -gt 0 ] || return 0
+    >&2 echo
+    >&2 echo "inspurcommit: ERROR: Change history is not completed."
+    exit 1
+}
+
 CheckStage(){
     local diffname="$(git diff --cached --name-only)"
     case "$diffname" in
@@ -65,12 +98,8 @@ FindFile(){
 Commit(){
     ValidateTemplate
     ValidateJgn
+    ValidateHistory
     local summary="$(cat $tempFn | grep -P '^Solution:' | vim -es '+1s/^Solution:\s*//e' '+%print' '+q!' /dev/stdin)"
-    if [ -z "${summary// /}" ]
-    then
-        echo "inspurcommit: ERROR: Solution is empty!" >&2
-        exit 4
-    fi
     $jgn > /dev/null 2>&1
     local jgnOutFn=~/NtmOutput.txt
     local details=$(cat $tempFn $jgnOutFn | grep -vP '^#|^\s*$')
