@@ -1,6 +1,8 @@
 #!/bin/bash
 
 declare -r template_file_name=./ChangeHistoryTemplate.txt
+declare -r independence_day="Jul 14 0:00:00 2021 +0800"
+declare -r change_history_format="%b"
 
 ShowUsage(){
     echo "
@@ -30,10 +32,17 @@ ValidateJgn(){
 
 CheckStage(){
     [ -z "$(git diff --cached --name-only)" ] && {
-        >&2 echo "ERROR: There is no staged changes."
+        >&2 echo "inspurcommit: ERROR: There is no staged changes."
         >&2 echo "Stage changes to be committed with 'git add'."
         exit 1
     }
+}
+
+CheckFileExistence(){
+    local filename="$1"
+    [ -e $filename ] || return 0
+    >&2 echo "inspurcommit: ERROR: File $filename already exists."
+    return 1
 }
 
 Commit(){
@@ -60,10 +69,10 @@ declare -r jgn="jgnumberforthehistory"
 declare -r tempFn=$template_file_name
 
 case "${1,,}" in
-    "")
+    ""|"-"*)
         echo
         CheckStage
-        Commit
+        Commit "$@"
         ;;
     "amend")
         echo
@@ -71,16 +80,16 @@ case "${1,,}" in
         Commit --amend
         ;;
     "export")
-        # TODO
         echo
-        echo "export is under development."
-        exit
+        historyFn=${2:-"./ChangeHistory.txt"}
+        CheckFileExistence "$historyFn" || exit
+        git log --since="$independence_day" --format="$change_history_format" | grep -vP '^Scope:' > $historyFn
         ;;
     "exportall")
-        # TODO
         echo
-        echo "exportall is under development."
-        exit
+        historyFn=${2:-"./ChangeHistory.txt"}
+        CheckFileExistence "$historyFn" || exit
+        git log --since="$independence_day" --format="$change_history_format" > $historyFn
         ;;
     "?"|"-?"|"-h"|"--help"|"--usage"|"help"|"usage")
         echo
