@@ -2,8 +2,8 @@
 setlocal
 set rev=
 if exist VERSION for /f %%i in (VERSION) do if not defined rev set "rev=%%i"
-set "name=Johnny's Git Kit"
-set "link=https://github.com/lxvs/jg"
+set "name=Inspur Commit"
+set "link=https://github.com/islzh/jg"
 title %name% v%rev% Deployment
 pushd %~dp0
 
@@ -65,9 +65,10 @@ if not exist "bin" (
 if not exist "%USERPROFILE%\bin\" (
     md "%USERPROFILE%\bin\"
     @echo Created folder '%USERPROFILE%\bin\'
-) else call:RmDep
+)
 @echo Copying %name% to your PC...
 for /r bin\ %%f in (jg*) do copy /Y "%%f" "%USERPROFILE%\bin\"
+for /r bin\ %%f in (inspur*) do copy /Y "%%f" "%USERPROFILE%\bin\"
 if defined rev (
     echo #!/bin/bash
     echo echo "%name% v%rev%"
@@ -82,9 +83,9 @@ if not exist "%USERPROFILE%\bin\" (
     if not defined climode pause
     exit /b 1
 )
-call:RmDep
 >&2 echo Removing %name% from your PC...
 for /r bin\ %%f in (jg*) do del "%USERPROFILE%\bin\%%~nf" 2>NUL
+for /r bin\ %%f in (inspur*) do del "%USERPROFILE%\bin\%%~nf" 2>NUL
 del "%USERPROFILE%\bin\jgversion" 2>NUL
 rd "%USERPROFILE%\bin" 2>NUL
 call:Fin 0
@@ -99,14 +100,6 @@ if "%~1" == "1" (
 )
 if not defined climode pause
 exit /b 0
-
-:RmDep
-@echo;
-@echo Removing deprecated commands...
-del "%USERPROFILE%\bin\jg" 2>NUL
-del "%USERPROFILE%\bin\jgjustpullit" 2>NUL
-del "%USERPROFILE%\bin\jgstash" 2>NUL
-exit /b
 
 :Logo
 @echo;

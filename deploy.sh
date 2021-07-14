@@ -21,8 +21,8 @@ Uninstall:
     $script_name remove"
 }
 
-declare -r name="Johnny's Git Kit"
-declare -r link="https://github.com/lxvs/jg"
+declare -r name="Inspur Commit"
+declare -r link="https://github.com/islzh/jg"
 rev=$(cat VERSION 2>/dev/null)
 [ -z $rev ] && echo "Warning: failed to get version" >&2
 pushd $(dirname $0) 1>/dev/null
@@ -50,10 +50,14 @@ if [ $# -eq 1 ]; then
                 cp $jgfile $target_dir || exit 1
                 chmod +x $target_dir/$(basename $jgfile)
             done
+            for inspurfile in ./bin/inspur*
+            do
+                cp $inspurfile $target_dir || exit 1
+                chmod +x $target_dir/$(basename $inspurfile)
+            done
             if [ ! -z $rev ]
             then
-                echo "
-#!/bin/bash
+                echo "#!/bin/bash
 echo '$name $rev'
 echo '$link'" > $target_dir/jgversion
             fi
@@ -63,18 +67,19 @@ echo '$link'" > $target_dir/jgversion
             ;;
 
         "0"|"uninstall"|"remove")
-            if ! compgen -G "$target_dir/jg*" >/dev/null
+            if ! compgen -G "$target_dir/inspur*" >/dev/null
             then
                 echo "ERROR: there is no $name deployed." >&2
                 exit 1
             fi
-            echo "Removing deprecated commands..."
-            rm -f "$target_dir/jg"
-            rm -f "$target_dir/jgstash"
             echo "Removing $name..."
             for jgfile in ./bin/jg*
             do
                 rm -f $target_dir/$(basename $jgfile)
+            done
+            for inspurfile in ./bin/inspur*
+            do
+                rm -f $target_dir/$(basename $inspurfile)
             done
             rm -f $target_dir/jgversion
             [ $? == 0 ] && echo "Complete."
