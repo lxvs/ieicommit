@@ -13,6 +13,8 @@ Inspur Commit
 
     $ inspurcommit [ <选项> ]
 
+    可选的选项有：amend, export, exportall, template。详见选项章节。
+
 详细说明
 --------
 
@@ -51,3 +53,8 @@ exportall
 
     导出一份 change-history，包括 scope 字段，但不包括 commit hash,
     Author, Date, commit title。
+
+template
+
+    默认情况下提交代码时如果包含了 template，脚本会警告并中止提交。加上此
+    参数则可以提交成功。用于修改 template。
