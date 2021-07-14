@@ -39,9 +39,11 @@ CheckStage(){
             ;;
         *"$template_file_name"*)
             [ "$1" == "template" ] && return 0
-            >&2 echo "inspurcommit: ERROR: $template_file_name was staged."
+            git restore --staged "$template_file_name" > /dev/null
+            >&2 echo "inspurcommit: Warning: $template_file_name was staged. But was skipped."
             >&2 echo "If you intend to modify the template, use command 'inspurcommit template'."
-            exit 1
+            CheckStage
+            return 1
             ;;
     esac
 }
