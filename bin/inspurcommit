@@ -30,8 +30,8 @@ ValidateJgn(){
 }
 
 ValidateHistoryField(){
-    local value="$(cat $tempFn | grep -P "^$1:" | vim -es "+1s/^$1:\s*//e" '+%print' '+q!' /dev/stdin)"
-    [ -z ${value// /} ] || return 0
+    local value=$(cat $tempFn | grep -P "^$1:" | sed "s/^$1:\s*//")
+    [ -z "$value" ] || return 0
     >&2 echo "inspurcommit: ERROR: Field '$1' is empty."
     return 1
 }
@@ -63,7 +63,7 @@ ValidateHistory(){
 }
 
 CheckStage(){
-    local diffname="$(git diff --cached --name-only)"
+    local diffname=$(git diff --cached --name-only)
     case "$diffname" in
         "")
             >&2 echo "inspurcommit: ERROR: There is no staged changes."
@@ -99,7 +99,7 @@ Commit(){
     ValidateTemplate
     ValidateJgn
     ValidateHistory
-    local summary="$(cat $tempFn | grep -P '^Solution:' | vim -es '+1s/^Solution:\s*//e' '+%print' '+q!' /dev/stdin)"
+    local summary=$(cat $tempFn | grep -P '^Solution:' | sed 's/^Solution:\s*//')
     $jgn > /dev/null 2>&1
     local jgnOutFn=~/NtmOutput.txt
     local details=$(cat $tempFn $jgnOutFn | grep -vP '^#|^\s*$')
@@ -137,14 +137,14 @@ case "${1,,}" in
         FindFile "$fci_file_name" || exit
         historyFn=${2:-"./ChangeHistory.txt"}
         CheckFileAlreadyExists "$historyFn" || exit
-        git log "$(cat $fci_file_name)".. --format="%b" | grep -vP '^Scope:' | vim -es '+%s/\C\nChange-Id:\s\w\{41}\n//ge' '+%print' '+q!' /dev/stdin > $historyFn
+        git log $(cat $fci_file_name).. --format="%b" | grep -vP '^Scope:' | sed '/^Change-Id:\s\w\{41\}$/,+1d' > $historyFn
         ;;
     "exportall")
         echo
         FindFile "$fci_file_name" || exit
         historyFn=${2:-"./ChangeHistory.txt"}
         CheckFileAlreadyExists "$historyFn" || exit
-        git log "$(cat $fci_file_name)".. --format="%b" | vim -es '+%s/\C\nChange-Id:\s\w\{41}\n//ge' '+%print' '+q!' /dev/stdin > $historyFn
+        git log $(cat $fci_file_name).. --format="%b" | sed '/^Change-Id:\s\w\{41\}$/,+1d' > $historyFn
         ;;
     "template")
         echo
