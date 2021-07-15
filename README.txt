@@ -2,18 +2,14 @@
                              Johnny's Git Kit
                         https://github.com/lxvs/jg
 
-It adds several more convenient commands to Git Bash. Open Git Bash and use
-command 'jg' for more details.
+It adds several more convenient commands to Git Bash. The term Johnny's
+Git is come from 'jg', rather than the contrary. 'jg' was chosen as the
+prefix of all these commands because there is no common command that
+initials with 'jg' in BASH.
 
-The term Johnny Git is come from 'jg', rather than otherwise.
-
-'jg' was chosen as the prefix of all these commands because there is hardly
-any built-in command that initials with 'jg'.
-
-Besides, all these commands has the unique initial after 'jg'.
-
-Therefore, for example, you can simply type 'jgc' and press 'Tab' to get
-command 'jgcommitnumber'.
+Besides, all these commands has the unique initial after 'jg'. Therefore,
+for example, you can simply type 'jgc' and press 'Tab' to get command
+'jgcommitnumber'.
 
 
 Amend Last Commit
@@ -36,6 +32,12 @@ when no <message> provided, otherwise equivalent to
     $ git commit --amend -m <message>
 
 NOTE: Quote <message> when it contains white spaces.
+
+NOTE: If you did an amend unexpectedly, use command
+
+    $ git reset --soft HEAD@{1}
+
+to revert.
 
 
 Commit Number
@@ -94,20 +96,13 @@ for '[', pattern '\\[' should be used.
 Options
 -------
 
-Options are same with 'grep'.
-
-Try 'grep --help' for more information.
+Options are same with 'grep'. Here are some common ones. Try 'grep --help'
+for more information.
 
 -E, --extended-regexp   <pattern> is an extended regular expression
--F, --fixed-strings     <pattern> is a set of newline-separated strings,
-                        i.e. disable regex
+-F, --fixed-strings     <pattern> is a set of newline-separated strings
+-P, --perl-regexp       <pattern> is a Perl regular expression
 -i, --ignore-case       ignore case distinctions
-
-
-Just Pull It
-============
-
-Just pull it has been deprecated since v1.1.0
 
 
 Make Some Diff
@@ -165,11 +160,8 @@ Synopsis
 Description
 -----------
 
-Output a list of modified/added/removed files, with leading numbers before
-each line, '/' replaced by '\', to the clipboard.
-
-If there are staged changes, it will ignore the changes not staged. If there
-is no changes, it will compare with the 2nd last commit.
+Output a list of modified/added/deleted/renamed/copied files of *staged*
+changes, with leading numbers before each line.
 
 For example, you
 
@@ -179,16 +171,14 @@ For example, you
 
 After execution of this 'jgnumberforthehistory', you will get
 
-    RelatedFiles:
+    Related Files:
     Modified:
     1. some-folder\another-file
     2. some-folder\some-file
     Added:
     1. new-file
-    Removed:
+    Deleted:
     1. some-useless-file
-
-in your clipboard, and in file '~/NtmOutput.txt'.
 
 
 Push
@@ -213,12 +203,6 @@ Default Value of Parameters
 <branch>        master
 
 
-Stash
-=====
-
-Stash has been deprecated since v1.1.0
-
-
 Version
 =======
 
@@ -231,4 +215,3 @@ Description
 -----------
 
 Show current version of Johnny's Git Kit.
-

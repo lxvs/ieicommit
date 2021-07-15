@@ -1,18 +1,12 @@
-# [Johnny's Git Kit](https://github.com/lxvs/jg)
+# Johnny's Git Kit
 
-It adds several more convenient commands to Git Bash. Open Git Bash and use command `jg` for more details.
+It adds several more convenient commands to Git Bash. The term `Johnny's Git` is come from `jg`, rather than the contrary. `jg` was chosen as the prefix of all these commands because there is no common command that initials with `jg` in BASH.
 
-The term Johnny Git is come from `jg`, rather than otherwise.
+Besides, all these commands has the unique initial after `jg`. Therefore, for example, you can simply type `jgc` and press <kbd>Tab</kbd> to get command `jgcommitnumber`.
 
-`jg` was chosen as the prefix of all these commands because there is hardly any built-in command that initials with `jg`.
+<br/>
 
-Besides, all these commands has the unique initial after `jg`.
-
-Therefore, for example, you can simply type `jgc` and press <kbd>Tab</kbd> to get command `jgcommitnumber`.
-
-
-
-## :hammer: Amend Last Commit
+## Amend Last Commit
 
 #### Synopsis
 
@@ -24,11 +18,13 @@ jgamendlastcommit [<message>]
 
 Amend last commit, equivalent to `git commit --amend --no-edit` when no `<message>` provided, otherwise equivalent to `git commit --amend -m <message>`.
 
-***Note*** Quote `<message>` when it contains white spaces.
+***Note:*** Quote `<message>` when it contains white spaces.
 
+***Note:*** If you did an amend unexpectedly, use `git reset --soft HEAD@{1}` to revert.
 
+<br/>
 
-## :hash: Commit Number
+## Commit Number
 
 #### Synopsis
 
@@ -42,9 +38,9 @@ Copy the first `<length>` characters of commit number to clipboard.
 
 `<length>` ranges from `1` to `40`, default `8`.
 
+<br/>
 
-
-## :curly_loop: For Each Repo Do ...
+## For Each Repo Do ...
 
 #### Synopsis
 
@@ -61,9 +57,9 @@ Execute `<command>` for each repo in current folder. Won't execute for the repo 
 jgforeachrepodo git pull
 ````
 
+<br/>
 
-
-## :eyeglasses: Grep a Commit
+## Grep a Commit
 
 #### Synopsis
 
@@ -75,29 +71,22 @@ jggrepacommit [<option>] <pattern>
 
 Search for commits that meet the given regex pattern, and copy the first found commit number.
 
-:warning: `\` itself needs another `\` to be escaped in Bash. E.g. if searching for `[`, pattern `\\[` should be used.
+***Note:*** `\` itself needs another `\` to be escaped in Bash. E.g. if searching for `[`, pattern `\\[` should be used.
 
 #### Options
 
-Options are same with `grep`.
+Options are same with `grep`. Here are some common ones. Try `grep --help` for more information.
 
-Try `grep --help` for more information.
+| option                  | description                                       |
+| ----------------------- | ------------------------------------------------- |
+| `-E, --extended-regexp` | `<pattern>` is an extended regular expression     |
+| `-F, --fixed-strings`   | `<pattern>` is a set of newline-separated strings |
+| `-P, --perl-regexp`     | `<pattern>` is a Perl regular expression          |
+| `-i, --ignore-case`     | ignore case distinctions                          |
 
-| option                  | description                                                  |
-| ----------------------- | ------------------------------------------------------------ |
-| `-E, --extended-regexp` | `<pattern>` is an extended regular expression                |
-| `-F, --fixed-strings`   | `<pattern>` is a set of newline-separated strings, i.e. disable regex |
-| `-i, --ignore-case`     | ignore case distinctions                                     |
+<br/>
 
-
-
-## :punch: Just Pull It
-
-:door: Just pull it has been deprecated since v1.1.0
-
-
-
-## :bar_chart: Make Some Diff
+## Make Some Diff
 
 #### Synopsis
 
@@ -129,9 +118,9 @@ Export two directories to `<output-dir>` for compare. One is named `<mod-dir>`, 
 
 * Export modified/added files in last commit compared to second last commit to folder `~/Desktop/last-commit-diff/modified`, those modified files and removed files in second last commit to folder `~/Desktop/last-commit-diff/original`.
 
+<br/>
 
-
-## :musical_note: Number for the History
+## Number for the History
 
 #### Synopsis
 
@@ -141,9 +130,7 @@ jgnumberforthehistory
 
 #### Description
 
-Output a list of modified/added/removed files, with leading numbers before each line, `/` replaced by `\`, to the clipboard.
-
-If there are staged changes, it will ignore the changes not staged. If there is no changes, it will compare with the 2nd last commit.
+Output a list of modified/added/deleted/renamed/copied files of **staged** changes, with leading numbers before each line.
 
 For example, you
 
@@ -154,21 +141,19 @@ For example, you
 After execution of this `jgnumberforthehistory`, you will get
 
 ```
-RelatedFiles:
+Related Files:
 Modified:
 1. some-folder\another-file
 2. some-folder\some-file
 Added:
 1. new-file
-Removed:
+Deleted:
 1. some-useless-file
 ```
 
-in your clipboard, and in file `~/NtmOutput.txt`.
+<br/>
 
-
-
-## :e-mail: Push
+## Push
 
 #### Synopsis
 
@@ -191,15 +176,9 @@ git push <remote> HEAD:refs/for/<branch>
 | `<remote>` | origin  |
 | `<branch>` | master  |
 
+<br/>
 
-
-## :package: Stash
-
-:door: Stash has been deprecated since v1.1.0
-
-
-
-## :ear_of_rice: Version
+## Version
 
 #### Synopsis
 
@@ -211,5 +190,4 @@ jgversion
 
 Show current version of Johnny's Git Kit.
 
-
-
+<br/>
