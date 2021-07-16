@@ -57,7 +57,6 @@ ValidateHistory(){
     ValidateHistoryField 'Solution'
     let errors+=$?
     [ $errors -gt 0 ] || return 0
-    >&2 echo
     >&2 echo "inspurcommit: ERROR: Change history is not completed."
     exit 1
 }
@@ -112,7 +111,6 @@ declare -r tempFn=$template_file_name
 
 case "${1,,}" in
     "?"|"-?"|"-h"|"--help"|"--usage"|"help"|"usage")
-        echo
         echo "    inspurcommit v$rev"
         echo "    Last updated: $lastupdt"
         echo "    $author"
@@ -120,44 +118,36 @@ case "${1,,}" in
         exit
         ;;
     ""|"-"*)
-        echo
         CheckStage
         Commit "$@"
         ;;
     "amend")
-        echo
         CheckStage
         shift
         Commit --amend "$@"
         ;;
     "export")
-        echo
         FindFile "$fci_file_name" || exit
         historyFn=${2:-"./ChangeHistory.txt"}
         CheckFileAlreadyExists "$historyFn" || exit
         git log $(cat $fci_file_name).. --format="%b" | grep -v '^Scope:' | sed '/^Change-Id:\s\w\{41\}$/,+1d' > $historyFn
         ;;
     "exportall")
-        echo
         FindFile "$fci_file_name" || exit
         historyFn=${2:-"./ChangeHistory.txt"}
         CheckFileAlreadyExists "$historyFn" || exit
         git log $(cat $fci_file_name).. --format="%b" | sed '/^Change-Id:\s\w\{41\}$/,+1d' > $historyFn
         ;;
     "template")
-        echo
         shift
         CheckStage template
         Commit "$@"
         ;;
     "init")
-        echo
         CheckFileAlreadyExists "$fci_file_name" || exit
-        git log --format="%H" -1 > "$fci_file_name"
-        [ $? == 0 ] && echo "Complete."
+        git log --format="%H" -1 > "$fci_file_name" && echo "Complete."
         ;;
     *)
-        >&2 echo
         >&2 echo "inspurcommit: ERROR: Invalid option - $1"
         >&2 ShowUsage
         exit 1
