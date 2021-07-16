@@ -116,29 +116,53 @@ Commit(){
 
 # Export a Change History
 # $1: exclude-field: 'none', 'Scope'.
-# $2: [ filename ]: Use "ChangeHistory-%h" if not specified.
+# $2: [ filename ]: Use "ChangeHistory[-All]-%h" if not specified.
 Export(){
-    local chfn=${2:-"ChangeHistory-$(git log -1 --format='%h').txt"}
+    local currhash
+    local chfn
     local fci
+    local mode
+    local ch_content
     FindFile "$fci_file_name" || return
     fci=$(cat "$fci_file_name")
     if [ "$1" == "none" ] || [ ! "$1" ]; then
+        mode="all"
         ch_content=$(git log "$fci".. --format="%b" | sed '/^Change-Id:\s\w\{41\}$/,+1d')
     else
+        mode="notall"
         ch_content=$(git log $(cat "$fci_file_name").. --format="%b" | grep -v "^$1:" | sed '/^Change-Id:\s\w\{41\}$/,+1d')
     fi
     if [ ! "$ch_content" ]; then
         >&2 echo "ERROR: Nothing to export."
         return 1
     fi
+    currhash=$(git log -1 --format='%h')
+    case "$mode" in
+        "all")
+            chfn=${2:-"ChangeHistory-All-${currhash}.txt"}
+            ;;
+        "notall")
+            chfn=${2:-"ChangeHistory-${currhash}.txt"}
+            ;;
+        *)
+            DebugReport "Export mode is neither all nor notall."
+            ;;
+    esac
     CheckFileAlreadyExists "$chfn" || return
     echo "$ch_content" > "$chfn"
-    return 0
+    return
+}
+
+DebugReport(){
+    >&2 echo "Warning: $1"
+    >&2 echo "You've just met a debug warning."
+    >&2 echo "If it's not inconvenient, please contact $author on this issue, or create an issue on $issuelink. Thanks!"
 }
 
 declare -r rev='0.0.1'
 declare -r lastupdt='2021-07-14'
 declare -r author='Johnny Appleseed <liuzhaohui@inspur.com>'
+declare -r issuelink='https://github.com/islzh/jg/issues/new'
 declare -r jgn="jgnumberforthehistory"
 declare -r tempFn=$template_file_name
 
