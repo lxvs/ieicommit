@@ -22,7 +22,7 @@ Uninstall:
 }
 
 pushd $(dirname "$0") 1>/dev/null
-declare -r name="Inspur Commit"
+declare -r name="Inspur Commit Kit"
 declare -r link="https://github.com/islzh/jg"
 declare -r LF='
 '

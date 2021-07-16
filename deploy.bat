@@ -2,7 +2,7 @@
 setlocal
 set rev=
 if exist VERSION for /f %%i in (VERSION) do if not defined rev set "rev=%%i"
-set "name=Inspur Commit"
+set "name=Inspur Commit Kit"
 set "link=https://github.com/islzh/jg"
 title %name% v%rev% Deployment
 pushd %~dp0
