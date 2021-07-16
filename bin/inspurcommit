@@ -119,8 +119,9 @@ Commit(){
 # $2: [ filename ]: Use "ChangeHistory-%h" if not specified.
 Export(){
     local chfn=${2:-"ChangeHistory-$(git log -1 --format='%h').txt"}
-    local fci=$(cat "$fci_file_name")
+    local fci
     FindFile "$fci_file_name" || return
+    fci=$(cat "$fci_file_name")
     if [ "$1" == "none" ] || [ ! "$1" ]; then
         ch_content=$(git log "$fci".. --format="%b" | sed '/^Change-Id:\s\w\{41\}$/,+1d')
     else
