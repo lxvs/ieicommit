@@ -11,27 +11,29 @@ Usage(){
 Usage:
 
 Install with one of below command:
-    $script_name 1
-    $script_name install
-    $script_name deploy
+    ./$script_name 1
+    ./$script_name install
+    ./$script_name deploy
 
 Uninstall:
-    $script_name 0
-    $script_name uninstall
-    $script_name remove"
+    ./$script_name 0
+    ./$script_name uninstall
+    ./$script_name remove"
 }
 
+pushd $(dirname "$0") 1>/dev/null
 declare -r name="Inspur Commit"
 declare -r link="https://github.com/islzh/jg"
-rev=$(cat VERSION 2>/dev/null)
-[ -z $rev ] && echo "Warning: failed to get version" >&2
-pushd $(dirname $0) 1>/dev/null
-script_name="./$(basename $0)"
+declare -r LF='
+'
+declare -r rev=$(cat VERSION 2>/dev/null)
+[ "$rev" ] || echo "Warning: failed to get version." >&2
+declare -r script_name=$(basename "$0")
 if [ "${OS:0:7}" == "Windows" ]
 then
-    target_dir="/c/Users/$USERNAME/bin"
+    declare -r target_dir=~/bin
 else
-    target_dir="/usr/local/bin"
+    declare -r target_dir="/usr/local/bin"
 fi
 
 if [ $# -eq 1 ]; then
@@ -43,25 +45,20 @@ if [ $# -eq 1 ]; then
             ;;
 
         "1"|"install"|"deploy")
-            [ -d $target_dir ] || mkdir $target_dir
+            [ -d "$target_dir" ] || mkdir "$target_dir"
             echo "Copying..."
             for jgfile in ./bin/jg*
             do
-                cp $jgfile $target_dir || exit 1
-                chmod +x $target_dir/$(basename $jgfile)
+                cp "$jgfile" "$target_dir" || exit 1
+                chmod +x "$target_dir"/$(basename "$jgfile")
             done
+            [ "$rev" ] && echo "#!/bin/bash${LF}echo \"$name v$rev\"${LF}echo \"$link\"" > "$target_dir/jgversion"
+            chmod +x "$target_dir/jgversion"
             for inspurfile in ./bin/inspur*
             do
                 cp $inspurfile $target_dir || exit 1
                 chmod +x $target_dir/$(basename $inspurfile)
             done
-            if [ ! -z $rev ]
-            then
-                echo "#!/bin/bash
-echo '$name $rev'
-echo '$link'" > $target_dir/jgversion
-            fi
-            chmod +x $target_dir/jgversion
             echo "Deployment finished"
             exit 0
             ;;
@@ -75,16 +72,18 @@ echo '$link'" > $target_dir/jgversion
             echo "Removing $name..."
             for jgfile in ./bin/jg*
             do
-                rm -f $target_dir/$(basename $jgfile)
+                rm -f "$target_dir"/$(basename "$jgfile")
             done
             for inspurfile in ./bin/inspur*
             do
                 rm -f $target_dir/$(basename $inspurfile)
             done
-            rm -f $target_dir/jgversion
-            [ $? == 0 ] && echo "Complete."
+            rm -f "$target_dir/jgversion"
+            rmdir "$target_dir" 2>/dev/null
+            echo "Complete."
             exit
             ;;
+
         *)
             >&2 echo "ERROR: Invalid option: $1"
             >&2 Usage
@@ -95,7 +94,7 @@ echo '$link'" > $target_dir/jgversion
 elif [ $# == 0 ]; then
     Logo
     Usage
-    exit 0
+    exit
 else
     >&2 echo "ERROR: Too many arguments."
     >&2 Usage

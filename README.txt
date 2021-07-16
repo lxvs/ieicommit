@@ -5,24 +5,43 @@
 注意：这个脚本不可用于 Git for Windows 1.9.x 及以下版本。此脚本仅在 Git
 for Windows v2.32.0 版本经过测试。
 
+
 Inspur Commit
 =============
+
 
 用 法
 -----
 
     $ inspurcommit [ <选项> ]
 
-    可选的选项有：amend, export, exportall, template。详见选项章节。
+    可选的选项有：amend, export, exportall, template, init。详见选项章节。
+
 
 详细说明
 --------
 
-使用【模板文件的内容】作为附言，提交已添加（staged）的改动。模板文件名由脚
-本文件的第二行代码中 template_file_name 定义。
+不加选项使用时（即使用命令 inspurcommit），将以【模板文件的内容】作为附言，
+提交已添加（staged）的改动。如果模板文件也被添加，会自动排除模板文件，提交
+剩余文件。如需改动模板，使用命令 inspurcommit template。
+
+如果对于一个代码仓库来说是第一次使用，需要做以下几件事情：
+
+    1. 将 ChangeHistoryTemplate.txt 复制到仓库根目录下。
+
+    2. 用 inspurcommit init 命令来将临界 commit id 写入 farewell-commit-id
+       文件，用以标记导出提交历史的临界点。
+
+    3. 将原 ChangeHistory.txt 重命名为 OldChangeHistory.txt。
+
+    4. 将 ChangeHistory.txt 加入 gitignore。
+
+为保证能正确导出提交历史，此后所有提交动作【只】能通过此脚本进行。上述改动
+可以直接提交（需要填写模板并通过此脚本提交）或随下次代码改动提交。
 
 使用此命令前请务必用【英文】规范填写并【保存】模板文件。模板文件中的空行和
 以 # 开头的行会自动被忽略。
+
 
 选 项
 -----
@@ -46,15 +65,21 @@ amend
 
 export
 
-    导出一份 change-history，不包括 commit hash, Author, Date, commit
-    title 及 Scope 字段。
+    导出一份 change-history 到 ChangeHistory.txt，不包含 Scope 字段。如果
+    需要指定文件名，使用命令 inpsurcommit export <文件名>。
 
 exportall
 
-    导出一份 change-history，包括 scope 字段，但不包括 commit hash,
-    Author, Date, commit title。
+    导出一份 change-history 到 ChangeHistory.txt。如果需要指定文件名，使用
+    命令 inpsurcommit exportall <文件名>。
 
 template
 
-    默认情况下提交代码时如果包含了 template，脚本会警告并中止提交。加上此
-    参数则可以提交成功。用于修改 template。
+    默认情况下提交码时如果包含了模板文件，脚本会自动排除它但仍然提交其余
+    改动。如果要修改模板并提交，需要加上 template 参数。
+
+init
+
+    当一个代码仓库开始使用此脚本提交之前，需要用一次 inspurcommit init 命
+    令以标示一个临界点，未来使用 export 或 exportall 选项进行导出操作时，
+    将只会导出此临界点之后的提交历史。

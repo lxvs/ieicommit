@@ -1,57 +1,50 @@
 #!/bin/bash
-fn=~/NtmOutput.txt
-echo 'RelatedFiles:' > ${fn}
-gpro=$(git status --porcelain)
-if [ -z "${gpro}" ]; then
-    commitnumber=$(git log -1 --pretty=format:"%H")
-    if [ -n "${commitnumber}" ]; then
-        echo -e "> No local changes, trying to compare with 2nd last commit."
-        git reset head~1 > /dev/null
-        gpro=$(git status --porcelain)
-        git reset "${commitnumber}"
-    fi
+# https://github.com/lxvs/jg
+
+declare -r title='RelatedFiles:'
+declare -r mod_title='Modified:'
+declare -r add_title='Added:'
+declare -r del_title='Deleted:'
+declare -r ren_title='Renamed:'
+declare -r cpy_title='Copied:'
+
+# Insert number column before file list.
+# $1: porcelain tag
+# $2: title
+InsNum(){
+    vim - --not-a-term -es "+%s/$1//ge" \
+        "+let b:currline=search('^$2\$')" \
+        "+/^$2\$/+,\$s/^/\\=line('.')-b:currline.'. '/ge" \
+        "+%p|q!"
+}
+
+if [ -z "$(git diff --cached --name-only 2>/dev/null)" ]; then
+    >&2 echo "ERROR: No staged changes."
+    exit 1
 fi
-if [ -n "${gpro}" ]; then
-    staged=$(echo "${gpro}" | egrep '^M|^A|^R|^D')
-    if [ -n "${staged}" ]; then
-        echo -e "> We have something staged, so will ignore the unstaged changes."
-        modtag="^M. "
-        addtag="^A. "
-        addsub="^A. "
-        rentag="^R. "
-        deltag="^D. "
-    else
-        modtag="^ M "
-        addtag="^\\?\\? "
-        addsub="^?\\{2\\} "
-        deltag="^ D "
-    fi
-    gmod=$(echo "${gpro}" | egrep "${modtag}" | egrep -v 'History\.txt')
-    if [ -n "${gmod}" ]; then
-        echo 'Modified:' >> ${fn}
-        echo "${gmod}" >> ${fn}
-        vim -n --noplugin -c "%s/${modtag}//ge|let b:currline=search('^Modified:\$')|/^Modified:\$/+,\$s/^/\\=line('.')-b:currline.'. '/ge|wq" ${fn}
-    fi
-    gadd=$(echo "${gpro}" | egrep "${addtag}")
-    if [ -n "${gadd}" ]; then
-        echo 'Added:' >> ${fn}
-        echo "${gadd}" >> ${fn}
-        vim -n --noplugin -c "%s/${addsub}//ge|let b:currline=search('^Added:\$')|/^Added:\$/+,\$s/^/\\=line('.')-b:currline.'. '/ge|wq" ${fn}
-    fi
-    if [ "${rentag:-unstage}" != "unstage" ]; then
-        gren=$(echo "${gpro}" | egrep "${rentag}")
-        if [ -n "${gren}" ]; then
-            echo 'Renamed:' >> ${fn}
-            echo "${gren}" >> ${fn}
-            vim -n --noplugin -c "%s/${rentag}//ge|let b:currline=search('^Renamed:\$')|/^Renamed:\$/+,\$s/^/\\=line('.')-b:currline.'. '/ge|wq" ${fn}
-        fi
-    fi
-    gsub=$(echo "${gpro}" | egrep "${deltag}")
-    if [ -n "${gsub}" ]; then
-        echo 'Removed:' >> ${fn}
-        echo "${gsub}" >> ${fn}
-        vim -n --noplugin -c "%s/${deltag}//ge|let b:currline=search('^Removed:\$')|/^Removed:\$/+,\$s/^/\\=line('.')-b:currline.'. '/ge|wq" ${fn}
-    fi
-fi
-vim -n --noplugin -c '%s,/,\\,ge|%y+|wq' ${fn}
-echo -e "> Output has been copied to clipboard."
+
+declare -r staged=$(git status --porcelain | egrep '^[MADRC]')
+declare -r modtag='^M. '
+declare -r addtag='^A. '
+declare -r deltag='^D. '
+declare -r rentag='^R. '
+declare -r cpytag='^C. '
+LF='
+'
+
+moded=$(echo "$staged" | egrep "$modtag")
+[ -n "$moded" ] && moded=$(echo "$LF$mod_title$LF$moded" | InsNum "$modtag" "$mod_title")
+
+added=$(echo "$staged" | egrep "$addtag")
+[ -n "$added" ] && added=$(echo "$LF$add_title$LF$added" | InsNum "$addtag" "$add_title")
+
+deled=$(echo "$staged" | egrep "$deltag")
+[ -n "$deled" ] && deled=$(echo "$LF$del_title$LF$deled" | InsNum "$deltag" "$del_title")
+
+rened=$(echo "$staged" | egrep "$rentag")
+[ -n "$rened" ] && rened=$(echo "$LF$ren_title$LF$rened" | InsNum "$rentag" "$ren_title")
+
+cpyed=$(echo "$staged" | egrep "$cpytag")
+[ -n "$cpyed" ] && cpyed=$(echo "$LF$cpy_title$LF$cpyed" | InsNum "$cpytag" "$cpy_title")
+
+echo "$title$moded$added$deled$rened$cpyed" | sed '/^\s*$/d'

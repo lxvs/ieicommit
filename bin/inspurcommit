@@ -1,8 +1,7 @@
 #!/bin/bash
 
-declare -r template_file_name=ChangeHistoryTemplate.txt
-declare -r independence_day="Jul 14 0:00:00 2021 +0800"
-declare -r change_history_format="%b"
+declare -r template_file_name="ChangeHistoryTemplate.txt"
+declare -r fci_file_name="farewell-commit-id"
 
 ShowUsage(){
     echo "
@@ -14,9 +13,9 @@ Options:
 }
 
 ValidateTemplate(){
-    if [ ! -e $tempFn ]
+    if [ ! -e "$tempFn" ]
     then
-        echo "inspurcommit: ERROR: Couldn't find template file $tempFn" >&2
+        echo "ERROR: Couldn't find template file $tempFn" >&2
         exit 2
     fi
 }
@@ -25,53 +24,145 @@ ValidateJgn(){
     which $jgn 1>/dev/null 2>&1
     if [ $? -ne 0 ]
     then
-        echo "inspurcommit: ERROR: Coundn't find $jgn." >&2
+        echo "ERROR: Coundn't find $jgn." >&2
         exit 3
     fi
 }
 
+ValidateHistoryField(){
+    local value=$(cat "$tempFn" | grep "^$1:" | sed "s/^$1:\s*//")
+    [ -z "$value" ] || return 0
+    >&2 echo "ERROR: Field '$1' is empty."
+    return 1
+}
+
+ValidateHistory(){
+    local errors=0
+    ValidateHistoryField 'Tag#'
+    let errors+=$?
+    ValidateHistoryField 'Label#'
+    let errors+=$?
+    ValidateHistoryField 'Issue#'
+    let errors+=$?
+    ValidateHistoryField 'Scope'
+    let errors+=$?
+    ValidateHistoryField 'Severity'
+    let errors+=$?
+    ValidateHistoryField 'Category'
+    let errors+=$?
+    ValidateHistoryField 'Symptom'
+    let errors+=$?
+    ValidateHistoryField 'RootCause'
+    let errors+=$?
+    ValidateHistoryField 'Solution'
+    let errors+=$?
+    [ $errors -gt 0 ] || return 0
+    >&2 echo "ERROR: Change history is not completed."
+    exit 1
+}
+
 CheckStage(){
-    local diffname="$(git diff --cached --name-only)"
+    local diffname=$(git diff --cached --name-only)
     case "$diffname" in
         "")
-            >&2 echo "inspurcommit: ERROR: There is no staged changes."
+            >&2 echo "ERROR: There is no staged changes."
             >&2 echo "Stage changes to be committed with 'git add'."
             exit 1
             ;;
         *"$template_file_name"*)
             [ "$1" == "template" ] && return 0
-            >&2 echo "inspurcommit: ERROR: $template_file_name was staged."
+            if ! FindFile "$fci_file_name" 2>/dev/null
+            then
+                >&2 echo "
+ERROR: It seems that you haven't initialize this repository.
+Checkout the last commit that ARN'T commit with inspurcommit and use
+command 'inspurcommit init'."
+                exit 1
+            elif [ $(git log -1 --format="%H") == $(cat "$fci_file_name") ]
+            then
+                return 0
+            fi
+            git restore --staged "$template_file_name" > /dev/null
+            >&2 echo "Warning: $template_file_name was staged. But was skipped."
             >&2 echo "If you intend to modify the template, use command 'inspurcommit template'."
-            exit 1
+            CheckStage
+            return 1
             ;;
     esac
 }
 
-CheckFileExistence(){
+CheckFileAlreadyExists(){
     local filename="$1"
-    [ -e $filename ] || return 0
-    >&2 echo "inspurcommit: ERROR: File $filename already exists."
+    [ -e "$filename" ] || return 0
+    >&2 echo "ERROR: File $filename already exists."
+    return 1
+}
+
+FindFile(){
+    local filename="$1"
+    [ -e "$filename" ] && return 0
+    >&2 echo "ERROR: Couldn't find file $filename."
     return 1
 }
 
 Commit(){
     ValidateTemplate
     ValidateJgn
-    local summary="$(cat $tempFn | grep -P '^Solution:' | vim -es '+1s/^Solution:\s*//e' '+%print' '+q!' /dev/stdin)"
-    if [ -z "${summary// /}" ]
-    then
-        echo "inspurcommit: ERROR: Solution is empty!" >&2
-        exit 4
-    fi
-    $jgn > /dev/null 2>&1
-    local jgnOutFn=~/NtmOutput.txt
-    local details=$(cat $tempFn $jgnOutFn | grep -vP '^#|^\s*$')
+    ValidateHistory
+    local summary=$(cat "$tempFn" | grep '^Solution:' | sed 's/^Solution:\s*//')
+    local details=$(cat "$tempFn" <($jgn) | grep -v '^#\|^\s*$')
     git commit "$@" -m "$summary" -m "$details"
+}
+
+# Export a Change History
+# $1: exclude-field: 'none', 'Scope'.
+# $2: [ filename ]: Use "ChangeHistory[-All]-%h" if not specified.
+Export(){
+    local currhash
+    local chfn
+    local fci
+    local mode
+    local ch_content
+    FindFile "$fci_file_name" || return
+    fci=$(cat "$fci_file_name")
+    if [ "$1" == "none" ] || [ ! "$1" ]; then
+        mode="all"
+        ch_content=$(git log "$fci".. --format="%b" | sed '/^Change-Id:\s\w\{41\}$/,+1d')
+    else
+        mode="notall"
+        ch_content=$(git log $(cat "$fci_file_name").. --format="%b" | grep -v "^$1:" | sed '/^Change-Id:\s\w\{41\}$/,+1d')
+    fi
+    if [ ! "$ch_content" ]; then
+        >&2 echo "ERROR: Nothing to export."
+        return 1
+    fi
+    currhash=$(git log -1 --format='%h')
+    case "$mode" in
+        "all")
+            chfn=${2:-"ChangeHistory-All-${currhash}.txt"}
+            ;;
+        "notall")
+            chfn=${2:-"ChangeHistory-${currhash}.txt"}
+            ;;
+        *)
+            DebugReport "Export mode is neither all nor notall."
+            ;;
+    esac
+    CheckFileAlreadyExists "$chfn" || return
+    echo "$ch_content" > "$chfn"
+    return
+}
+
+DebugReport(){
+    >&2 echo "Warning: $1"
+    >&2 echo "You've just met a debug warning."
+    >&2 echo "If it's not inconvenient, please contact $author on this issue, or create an issue on $issuelink. Thanks!"
 }
 
 declare -r rev='0.0.1'
 declare -r lastupdt='2021-07-14'
 declare -r author='Johnny Appleseed <liuzhaohui@inspur.com>'
+declare -r issuelink='https://github.com/islzh/jg/issues/new'
 declare -r jgn="jgnumberforthehistory"
 declare -r tempFn=$template_file_name
 
@@ -85,37 +176,34 @@ case "${1,,}" in
         exit
         ;;
     ""|"-"*)
-        echo
         CheckStage
         Commit "$@"
         ;;
     "amend")
-        echo
-        CheckStage
         shift
         Commit --amend "$@"
         ;;
     "export")
-        echo
-        historyFn=${2:-"./ChangeHistory.txt"}
-        CheckFileExistence "$historyFn" || exit
-        git log --since="$independence_day" --format="$change_history_format" | grep -vP '^Scope:' > $historyFn
+        shift
+        Export "Scope" "$@"
         ;;
     "exportall")
-        echo
-        historyFn=${2:-"./ChangeHistory.txt"}
-        CheckFileExistence "$historyFn" || exit
-        git log --since="$independence_day" --format="$change_history_format" > $historyFn
+        shift
+        Export "none" "$@"
         ;;
     "template")
-        echo
         shift
         CheckStage template
         Commit "$@"
         ;;
+    "init")
+        CheckFileAlreadyExists "$fci_file_name" || exit
+        git log --format="%H" -1 > "$fci_file_name" && \
+            git add "$fci_file_name" && \
+            echo "Complete."
+        ;;
     *)
-        >&2 echo
-        >&2 echo "inspurcommit: ERROR: Invalid option - $1"
+        >&2 echo "ERROR: Invalid option - $1"
         >&2 ShowUsage
         exit 1
         ;;

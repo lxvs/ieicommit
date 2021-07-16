@@ -33,12 +33,10 @@ RootCause:
 # Solution: Fix a 0x31 hang issue.
 #           Set token HANG_MODE from Enabled to Disabled.
 #           Set token HANG_POINT from 0x31 to 0.
-Solution: Perform checking on if template is staged before commit.
-          Add 'template' operation in case template needs modifying.
-          Pass all switches to git commit.
+Solution: 
 
 # Is your solution based on other's? Write the label# or 'None'
-SolutionDependency: None
+SolutionDependency: 
 
 # The list of related files will be created automatically.
 # After finish items above, use command 'inspurcommit' in Git Bash.
