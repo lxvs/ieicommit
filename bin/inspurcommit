@@ -168,6 +168,7 @@ declare -r tempFn=$template_file_name
 
 case "${1,,}" in
     "?"|"-?"|"-h"|"--help"|"--usage"|"help"|"usage")
+        echo
         echo "    inspurcommit v$rev"
         echo "    Last updated: $lastupdt"
         echo "    $author"
