@@ -30,7 +30,7 @@ ValidateJgn(){
 }
 
 ValidateHistoryField(){
-    local value=$(cat $tempFn | grep -P "^$1:" | sed "s/^$1:\s*//")
+    local value=$(cat $tempFn | grep "^$1:" | sed "s/^$1:\s*//")
     [ -z "$value" ] || return 0
     >&2 echo "inspurcommit: ERROR: Field '$1' is empty."
     return 1
@@ -99,10 +99,10 @@ Commit(){
     ValidateTemplate
     ValidateJgn
     ValidateHistory
-    local summary=$(cat $tempFn | grep -P '^Solution:' | sed 's/^Solution:\s*//')
+    local summary=$(cat $tempFn | grep '^Solution:' | sed 's/^Solution:\s*//')
     $jgn > /dev/null 2>&1
     local jgnOutFn=~/NtmOutput.txt
-    local details=$(cat $tempFn $jgnOutFn | grep -vP '^#|^\s*$')
+    local details=$(cat $tempFn $jgnOutFn | grep -v '^#\|^\s*$')
     git commit "$@" -m "$summary" -m "$details"
 }
 
@@ -137,7 +137,7 @@ case "${1,,}" in
         FindFile "$fci_file_name" || exit
         historyFn=${2:-"./ChangeHistory.txt"}
         CheckFileAlreadyExists "$historyFn" || exit
-        git log $(cat $fci_file_name).. --format="%b" | grep -vP '^Scope:' | sed '/^Change-Id:\s\w\{41\}$/,+1d' > $historyFn
+        git log $(cat $fci_file_name).. --format="%b" | grep -v '^Scope:' | sed '/^Change-Id:\s\w\{41\}$/,+1d' > $historyFn
         ;;
     "exportall")
         echo
