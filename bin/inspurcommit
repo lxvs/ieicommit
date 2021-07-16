@@ -71,6 +71,17 @@ CheckStage(){
             ;;
         *"$template_file_name"*)
             [ "$1" == "template" ] && return 0
+            if ! FindFile "$fci_file_name" 2>/dev/null
+            then
+                >&2 echo "
+ERROR: It seems that you haven't initialize this repository.
+Checkout the last commit that ARN'T commit with inspurcommit and use
+command 'inspurcommit init'."
+                exit 1
+            elif [ $(git log -1 --format="%H") == $(cat "$fci_file_name") ]
+            then
+                return 0
+            fi
             git restore --staged "$template_file_name" > /dev/null
             >&2 echo "Warning: $template_file_name was staged. But was skipped."
             >&2 echo "If you intend to modify the template, use command 'inspurcommit template'."
@@ -162,7 +173,9 @@ case "${1,,}" in
         ;;
     "init")
         CheckFileAlreadyExists "$fci_file_name" || exit
-        git log --format="%H" -1 > "$fci_file_name" && echo "Complete."
+        git log --format="%H" -1 > "$fci_file_name" && \
+            git add "$fci_file_name" && \
+            echo "Complete."
         ;;
     *)
         >&2 echo "ERROR: Invalid option - $1"
