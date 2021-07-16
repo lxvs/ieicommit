@@ -13,7 +13,7 @@ Options:
 }
 
 ValidateTemplate(){
-    if [ ! -e $tempFn ]
+    if [ ! -e "$tempFn" ]
     then
         echo "ERROR: Couldn't find template file $tempFn" >&2
         exit 2
@@ -30,7 +30,7 @@ ValidateJgn(){
 }
 
 ValidateHistoryField(){
-    local value=$(cat $tempFn | grep "^$1:" | sed "s/^$1:\s*//")
+    local value=$(cat "$tempFn" | grep "^$1:" | sed "s/^$1:\s*//")
     [ -z "$value" ] || return 0
     >&2 echo "ERROR: Field '$1' is empty."
     return 1
@@ -93,14 +93,14 @@ command 'inspurcommit init'."
 
 CheckFileAlreadyExists(){
     local filename="$1"
-    [ -e $filename ] || return 0
+    [ -e "$filename" ] || return 0
     >&2 echo "ERROR: File $filename already exists."
     return 1
 }
 
 FindFile(){
     local filename="$1"
-    [ -e $filename ] && return 0
+    [ -e "$filename" ] && return 0
     >&2 echo "ERROR: Couldn't find file $filename."
     return 1
 }
@@ -109,8 +109,8 @@ Commit(){
     ValidateTemplate
     ValidateJgn
     ValidateHistory
-    local summary=$(cat $tempFn | grep '^Solution:' | sed 's/^Solution:\s*//')
-    local details=$(cat $tempFn <($jgn) | grep -v '^#\|^\s*$')
+    local summary=$(cat "$tempFn" | grep '^Solution:' | sed 's/^Solution:\s*//')
+    local details=$(cat "$tempFn" <($jgn) | grep -v '^#\|^\s*$')
     git commit "$@" -m "$summary" -m "$details"
 }
 
@@ -119,12 +119,12 @@ Commit(){
 # $2: [ filename ]: Use "ChangeHistory-%h" if not specified.
 Export(){
     local chfn=${2:-"ChangeHistory-$(git log -1 --format='%h').txt"}
-    local fci=$(cat $fci_file_name)
+    local fci=$(cat "$fci_file_name")
     FindFile "$fci_file_name" || return
     if [ "$1" == "none" ] || [ ! "$1" ]; then
         ch_content=$(git log "$fci".. --format="%b" | sed '/^Change-Id:\s\w\{41\}$/,+1d')
     else
-        ch_content=$(git log $(cat $fci_file_name).. --format="%b" | grep -v "^$1:" | sed '/^Change-Id:\s\w\{41\}$/,+1d')
+        ch_content=$(git log $(cat "$fci_file_name").. --format="%b" | grep -v "^$1:" | sed '/^Change-Id:\s\w\{41\}$/,+1d')
     fi
     if [ ! "$ch_content" ]; then
         >&2 echo "ERROR: Nothing to export."
