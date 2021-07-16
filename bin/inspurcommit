@@ -100,9 +100,7 @@ Commit(){
     ValidateJgn
     ValidateHistory
     local summary=$(cat $tempFn | grep '^Solution:' | sed 's/^Solution:\s*//')
-    $jgn > /dev/null 2>&1
-    local jgnOutFn=~/NtmOutput.txt
-    local details=$(cat $tempFn $jgnOutFn | grep -v '^#\|^\s*$')
+    local details=$(cat $tempFn <($jgn) | grep -v '^#\|^\s*$')
     git commit "$@" -m "$summary" -m "$details"
 }
 
