@@ -103,6 +103,27 @@ Commit(){
     git commit "$@" -m "$summary" -m "$details"
 }
 
+# Export a Change History
+# $1: exclude-field: 'none', 'Scope'.
+# $2: [ filename ]: Use "ChangeHistory-%h" if not specified.
+Export(){
+    local chfn=${2:-"ChangeHistory-$(git log -1 --format='%h').txt"}
+    local fci=$(cat $fci_file_name)
+    FindFile "$fci_file_name" || return
+    if [ "$1" == "none" ] || [ ! "$1" ]; then
+        ch_content=$(git log "$fci".. --format="%b" | sed '/^Change-Id:\s\w\{41\}$/,+1d')
+    else
+        ch_content=$(git log $(cat $fci_file_name).. --format="%b" | grep -v "^$1:" | sed '/^Change-Id:\s\w\{41\}$/,+1d')
+    fi
+    if [ ! "$ch_content" ]; then
+        >&2 echo "inspurcommit: ERROR: Nothing to export."
+        return 1
+    fi
+    CheckFileAlreadyExists "$chfn" || return
+    echo "$ch_content" > "$chfn"
+    return 0
+}
+
 declare -r rev='0.0.1'
 declare -r lastupdt='2021-07-14'
 declare -r author='Johnny Appleseed <liuzhaohui@inspur.com>'
@@ -127,16 +148,12 @@ case "${1,,}" in
         Commit --amend "$@"
         ;;
     "export")
-        FindFile "$fci_file_name" || exit
-        historyFn=${2:-"./ChangeHistory.txt"}
-        CheckFileAlreadyExists "$historyFn" || exit
-        git log $(cat $fci_file_name).. --format="%b" | grep -v '^Scope:' | sed '/^Change-Id:\s\w\{41\}$/,+1d' > $historyFn
+        shift
+        Export "Scope" "$@"
         ;;
     "exportall")
-        FindFile "$fci_file_name" || exit
-        historyFn=${2:-"./ChangeHistory.txt"}
-        CheckFileAlreadyExists "$historyFn" || exit
-        git log $(cat $fci_file_name).. --format="%b" | sed '/^Change-Id:\s\w\{41\}$/,+1d' > $historyFn
+        shift
+        Export "none" "$@"
         ;;
     "template")
         shift
