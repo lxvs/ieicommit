@@ -179,7 +179,6 @@ case "${1,,}" in
         Commit "$@"
         ;;
     "amend")
-        CheckStage
         shift
         Commit --amend "$@"
         ;;
