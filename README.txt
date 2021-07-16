@@ -5,6 +5,9 @@
 注意：这个脚本不可用于 Git for Windows 1.9.x 及以下版本。此脚本仅在 Git
 for Windows v2.32.0 版本经过测试。
 
+This set of scripts is safe and clean, but it is always a good habit to
+inspect every script before running it :)
+
 
 Inspur Commit
 =============
@@ -21,9 +24,9 @@ Inspur Commit
 详细说明
 --------
 
-不加选项使用时（即使用命令 inspurcommit），将以【模板文件的内容】作为附言，
-提交已添加（staged）的改动。如果模板文件也被添加，会自动排除模板文件，提交
-剩余文件。如需改动模板，使用命令 inspurcommit template。
+不加选项使用时（即使用命令 inspurcommit），将以【模板文件的内容】作为
+commit messeges，提交已添加（staged）的改动。如果模板文件也被添加，会自动
+排除模板文件，提交剩余文件。如需改动模板，使用命令 inspurcommit template。
 
 如果对于一个代码仓库来说是第一次使用，需要做以下几件事情：
 
@@ -32,12 +35,10 @@ Inspur Commit
     2. 用 inspurcommit init 命令来将临界 commit id 写入 farewell-commit-id
        文件，用以标记导出提交历史的临界点。
 
-    3. 将原 ChangeHistory.txt 重命名为 OldChangeHistory.txt。
-
-    4. 将 ChangeHistory.txt 加入 gitignore。
+    3. 将 /ChangeHistory-*.txt 加入 gitignore。
 
 为保证能正确导出提交历史，此后所有提交动作【只】能通过此脚本进行。上述改动
-可以直接提交（需要填写模板并通过此脚本提交）或随下次代码改动提交。
+可以直接提交（需要填写模板并通过此脚本提交），也可以随下次代码改动提交。
 
 使用此命令前请务必用【英文】规范填写并【保存】模板文件。模板文件中的空行和
 以 # 开头的行会自动被忽略。
@@ -52,26 +53,35 @@ amend
     明使用方法。
 
     (1) 模板文件填写有误
-        修正模板文件并【保存】后，使用 inspurcommit amend 命令。
+        修正模板文件并【保存】后（但是【不】要使用 git add 命令将填写完成
+        的模板文件添加到 stage），使用 inspurcommit amend 命令。
 
     (2) 提交的代码内容有误
         修正有误的代码，并保存后，使用 git add <文件路径> 命令来添加修正
-        的改动。根据需要更新模板文件并保存后，使用 inspurcommit amend 命
-        令。
+        后的改动。根据需要更新模板文件并保存后，使用 inspurcommit amend 
+        命令。
 
     (3) 错误地提交了本不应提交的文件
-        先使用 git checkout @^ <文件路径> 命令，再使用 git add <文件路径>
-        命令。根据需要更新模板文件并保存后，使用 inspurcommit amend 命令。
+        先使用 git checkout @^ <文件路径> 命令，再使用 inspurcommit amend
+        命令。
+
+    如果要撤消一次错误的 amend，使用如下命令：
+
+        git reset --soft HEAD@{1}
 
 export
 
-    导出一份 change-history 到 ChangeHistory.txt，不包含 Scope 字段。如果
-    需要指定文件名，使用命令 inpsurcommit export <文件名>。
+    导出一份 change-history 到 ChangeHistory-%h.txt，%h 表示当前 commit
+    id，不包含 Scope 字段。如果需要指定文件名，使用如下命令：
+
+        inpsurcommit export <文件名>.txt
 
 exportall
 
-    导出一份 change-history 到 ChangeHistory.txt。如果需要指定文件名，使用
-    命令 inpsurcommit exportall <文件名>。
+    导出一份 change-history 到 ChangeHistory-All-%h.txt，%h 表示当前
+    commit id。如果需要指定文件名，使用如下命令：
+
+        inpsurcommit exportall <文件名>.txt
 
 template
 
