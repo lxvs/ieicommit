@@ -109,8 +109,18 @@ Commit(){
     ValidateTemplate
     ValidateJgn
     ValidateHistory
+    local jgn_content
     local summary=$(cat "$tempFn" | grep '^Solution:' | sed 's/^Solution:\s*//')
-    local details=$(cat "$tempFn" <($jgn) | grep -v '^#\|^\s*$')
+    local details
+    if [ "$op" == "amend" ]
+    then
+        git reset --soft @^ || exit
+        jgn_content=$($jgn)
+        git reset --soft ORIG_HEAD
+    else
+        jgn_content=$($jgn)
+    fi
+    details=$(cat "$tempFn" <(echo "$jgn_content") | grep -v '^#\|^\s*$')
     git commit "$@" -m "$summary" -m "$details"
 }
 
@@ -166,7 +176,8 @@ declare -r issuelink='https://github.com/islzh/jg/issues/new'
 declare -r jgn="jgnumberforthehistory"
 declare -r tempFn=$template_file_name
 
-case "${1,,}" in
+declare -r op="${1,,}"
+case "$op" in
     "?"|"-?"|"-h"|"--help"|"--usage"|"help"|"usage")
         echo
         echo "    inspurcommit v$rev"
