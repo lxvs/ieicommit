@@ -1,27 +1,25 @@
 #!/bin/bash
-# Last updated: 2021-07-15
 # https://github.com/lxvs/jg
 
-declare -r title='Related Files:'
+declare -r title='RelatedFiles:'
 declare -r mod_title='Modified:'
 declare -r add_title='Added:'
 declare -r del_title='Deleted:'
 declare -r ren_title='Renamed:'
 declare -r cpy_title='Copied:'
 
-# Insert Number column be fore file list.
+# Insert number column before file list.
 # $1: porcelain tag
 # $2: title
 InsNum(){
-    vim -es "+%s/$1//ge" \
+    vim - --not-a-term -es "+%s/$1//ge" \
         "+let b:currline=search('^$2\$')" \
         "+/^$2\$/+,\$s/^/\\=line('.')-b:currline.'. '/ge" \
-        "+%print" \
-        "+q!" /dev/stdin
+        "+%p|q!"
 }
 
 if [ -z "$(git diff --cached --name-only 2>/dev/null)" ]; then
-    >&2 echo ERROR: No staged changes.
+    >&2 echo "ERROR: No staged changes."
     exit 1
 fi
 
