@@ -59,6 +59,7 @@ if [ $# -eq 1 ]; then
                 cp $inspurfile $target_dir || exit 1
                 chmod +x $target_dir/$(basename $inspurfile)
             done
+            cp ./ChangeHistoryTemplate.txt "$target_dir"
             echo "Deployment finished"
             exit 0
             ;;
@@ -78,6 +79,7 @@ if [ $# -eq 1 ]; then
             do
                 rm -f $target_dir/$(basename $inspurfile)
             done
+            rm -f "$target_dir/ChangeHistoryTemplate.txt"
             rm -f "$target_dir/jgversion"
             rmdir "$target_dir" 2>/dev/null
             echo "Complete."

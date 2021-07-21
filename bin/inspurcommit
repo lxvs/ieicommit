@@ -218,11 +218,7 @@ case "$op" in
     "init")
         git rev-parse || exit
         CheckFileAlreadyExists "$fci_file_name" || exit
-        if ! FindFile "$template_file_name" 2>/dev/null
-        then
-            >&2 echo "${cRed}Please copy '$template_file_name' to the root of the repository.$cSuf"
-            exit 1
-        fi
+        CheckFileAlreadyExists "$template_file_name" || exit
         case "$(git status --porcelain)" in
             *".gitignore"*)
                 >&2 echo "${cRed}Please commit or stash your local changes of file '.gitignore' before init.$cSuf"
@@ -230,8 +226,9 @@ case "$op" in
                 ;;
         esac
         git log --format="%H" -1 > "$fci_file_name" && \
+            cp $(dirname "$0")/"$template_file_name" ./ && \
             echo "/ChangeHistory-*.txt" >> .gitignore && \
-            git add "$fci_file_name" .gitignore && \
+            git add "$template_file_name" "$fci_file_name" .gitignore && \
             echo "${cGrn}Initialization completed successfully.$cSuf"
         ;;
     *)
