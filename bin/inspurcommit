@@ -205,6 +205,10 @@ case "$op" in
         ;;
     "init")
         git rev-parse || exit
+        if [ ! -e ./.git ]; then
+            >&2 echo "${cRed}ERROR: Please init in the root directory.$cSuf"
+            exit 1
+        fi
         CheckFileAlreadyExists "$fci_file_name" || exit
         CheckFileAlreadyExists "$template_file_name" || exit
         case "$(git status --porcelain)" in
@@ -217,7 +221,9 @@ case "$op" in
             cp $(dirname "$0")/"$template_file_name" ./ && \
             echo "/ChangeHistory-*.txt" >> .gitignore && \
             git add "$template_file_name" "$fci_file_name" .gitignore && \
-            echo "${cGrn}Initialization completed successfully.$cSuf"
+            echo "${cGrn}Initialization completed successfully.$cSuf
+You can fill the change history template now and commit this initialization
+using command 'inspurcommit', or commit it along with next code changes."
         ;;
     *)
         >&2 echo "${cRed}ERROR: Invalid option - $1$cSuf"
