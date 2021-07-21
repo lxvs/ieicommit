@@ -156,8 +156,8 @@ You've just met a debug warning.
 If it's not inconvenient, please contact $author on this issue, or create an issue on $issuelink. Thanks!$cSuf"
 }
 
-declare -r rev='0.1.0'
-declare -r lastupdt='2021-07-16'
+declare -r rev='0.2.0'
+declare -r lastupdt='2021-07-21'
 declare -r author='Johnny Appleseed <liuzhaohui@inspur.com>'
 declare -r issuelink='https://github.com/islzh/jg/issues/new'
 declare -r jgn="jgnumberforthehistory"
