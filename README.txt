@@ -2,11 +2,11 @@
                            Inspur Commit Script
                        https://github.com/islzh/jg
 
-注意：这个脚本不可用于 Git for Windows 1.9.x 及以下版本。此脚本仅在 Git
-for Windows v2.32.0 版本经过测试。
+注意：此脚本仅在 Git for Windows v2.32.0 版本经过测试，建议使用 v2.32.0 或
+以上版本。
 
 This set of scripts is safe and clean, but it is always a good habit to
-inspect every script before running it :)
+inspect every script before running it.
 
 
 Inspur Commit
