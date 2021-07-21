@@ -159,6 +159,7 @@ Export(){
     esac
     CheckFileAlreadyExists "$chfn" || return
     echo "$ch_content" > "$chfn"
+    echo "${cGrn}Exported file $chfn$cSuf"
     return
 }
 
