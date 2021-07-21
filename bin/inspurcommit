@@ -9,7 +9,7 @@ Usage:
     inspurcommit [<option>]
 
 Options:
-    amend, export, exportall, template, usage"
+    amend, export, exportall, init, template, usage"
 }
 
 ValidateTemplate(){
