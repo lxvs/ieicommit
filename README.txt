@@ -2,11 +2,11 @@
                            Inspur Commit Script
                        https://github.com/islzh/jg
 
-注意：这个脚本不可用于 Git for Windows 1.9.x 及以下版本。此脚本仅在 Git
-for Windows v2.32.0 版本经过测试。
+注意：此脚本仅在 Git for Windows v2.32.0 版本经过测试，建议使用 v2.32.0 或
+以上版本。
 
 This set of scripts is safe and clean, but it is always a good habit to
-inspect every script before running it :)
+inspect every script before running it.
 
 
 Inspur Commit
@@ -28,17 +28,12 @@ Inspur Commit
 commit messeges，提交已添加（staged）的改动。如果模板文件也被添加，会自动
 排除模板文件，提交剩余文件。如需改动模板，使用命令 inspurcommit template。
 
-如果对于一个代码仓库来说是第一次使用，需要做以下几件事情：
+如果对于一个代码仓库来说是初次使用，需在该仓库根目录中执行以下命令：
 
-    1. 将 ChangeHistoryTemplate.txt 复制到仓库根目录下。
+    inspurcommit init
 
-    2. 用 inspurcommit init 命令来将临界 commit id 写入 farewell-commit-id
-       文件，用以标记导出提交历史的临界点。
-
-    3. 将 /ChangeHistory-*.txt 加入 gitignore。
-
-为保证能正确导出提交历史，此后所有提交动作【只】能通过此脚本进行。上述改动
-可以直接提交（需要填写模板并通过此脚本提交），也可以随下次代码改动提交。
+为保证能正确导出提交历史，此后所有提交动作只能通过此脚本进行。上述改动可以
+直接提交（需要填写模板并通过此脚本提交），也可以随下次代码改动提交。
 
 使用此命令前请务必用【英文】规范填写并【保存】模板文件。模板文件中的空行和
 以 # 开头的行会自动被忽略。
@@ -93,3 +88,9 @@ init
     当一个代码仓库开始使用此脚本提交之前，需要用一次 inspurcommit init 命
     令以标示一个临界点，未来使用 export 或 exportall 选项进行导出操作时，
     将只会导出此临界点之后的提交历史。
+
+    此选项会做以下操作：
+
+        1. 将临界点 commit id 写入文件 farewell-commit-id。
+        2. 将 /ChangeHistory-*.txt 加入 .gitignore。
+        3. git add farewell-commit-id .gitignore

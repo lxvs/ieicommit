@@ -69,6 +69,7 @@ if not exist "%USERPROFILE%\bin\" (
 @echo Copying %name% to your PC...
 for /r bin\ %%f in (jg*) do copy /Y "%%f" "%USERPROFILE%\bin\"
 for /r bin\ %%f in (inspur*) do copy /Y "%%f" "%USERPROFILE%\bin\"
+copy /Y "ChangeHistoryTemplate.txt" "%USERPROFILE%\bin\"
 if defined rev (
     echo #!/bin/bash
     echo echo "%name% v%rev%"
@@ -86,6 +87,7 @@ if not exist "%USERPROFILE%\bin\" (
 >&2 echo Removing %name% from your PC...
 for /r bin\ %%f in (jg*) do del "%USERPROFILE%\bin\%%~nf" 2>NUL
 for /r bin\ %%f in (inspur*) do del "%USERPROFILE%\bin\%%~nf" 2>NUL
+del "%USERPROFILE%\bin\ChangeHistoryTemplate.txt" 2>nul
 del "%USERPROFILE%\bin\jgversion" 2>NUL
 rd "%USERPROFILE%\bin" 2>NUL
 call:Fin 0
