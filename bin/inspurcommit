@@ -190,27 +190,33 @@ case "$op" in
         exit
         ;;
     ""|"-"*)
+        git rev-parse || exit
         CheckStage
         Commit "$@"
         ;;
     "amend")
+        git rev-parse || exit
         shift
         Commit --amend "$@"
         ;;
     "export")
+        git rev-parse || exit
         shift
         Export "Scope" "$@"
         ;;
     "exportall")
+        git rev-parse || exit
         shift
         Export "none" "$@"
         ;;
     "template")
+        git rev-parse || exit
         shift
         CheckStage template
         Commit "$@"
         ;;
     "init")
+        git rev-parse || exit
         CheckFileAlreadyExists "$fci_file_name" || exit
         git log --format="%H" -1 > "$fci_file_name" && \
             git add "$fci_file_name" && \
