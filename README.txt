@@ -28,14 +28,11 @@ Inspur Commit
 commit messeges，提交已添加（staged）的改动。如果模板文件也被添加，会自动
 排除模板文件，提交剩余文件。如需改动模板，使用命令 inspurcommit template。
 
-如果对于一个代码仓库来说是第一次使用，需要做以下几件事情：
+如果对于一个代码仓库来说是第一次使用，需要做以下操作：
 
     1. 将 ChangeHistoryTemplate.txt 复制到仓库根目录下。
 
-    2. 用 inspurcommit init 命令来将临界 commit id 写入 farewell-commit-id
-       文件，用以标记导出提交历史的临界点。
-
-    3. 将 /ChangeHistory-*.txt 加入 gitignore。
+    2. 使用 inspurcommit init 命令。
 
 为保证能正确导出提交历史，此后所有提交动作【只】能通过此脚本进行。上述改动
 可以直接提交（需要填写模板并通过此脚本提交），也可以随下次代码改动提交。
@@ -93,3 +90,9 @@ init
     当一个代码仓库开始使用此脚本提交之前，需要用一次 inspurcommit init 命
     令以标示一个临界点，未来使用 export 或 exportall 选项进行导出操作时，
     将只会导出此临界点之后的提交历史。
+
+    此选项会做以下操作：
+
+        1. 将临界点 commit id 写入文件 farewell-commit-id。
+        2. 将 /ChangeHistory-*.txt 加入 .gitignore。
+        3. git add farewell-commit-id .gitignore
