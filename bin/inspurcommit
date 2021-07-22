@@ -49,12 +49,12 @@ ValidateHistory(){
 }
 
 CheckStage(){
-    local diffname=$(git diff --cached --name-only)
-    case "$diffname" in
+
+    case "$(git -c "core.safecrlf=false" diff --cached --name-only)" in
         "")
             >&2 echo "${cRed}ERROR: There is no staged changes.
 Stage changes to be committed with 'git add'.$cSuf"
-            exit 1
+            return 1
             ;;
         *"$template_file_name"*)
             [ "$1" == "template" ] && return 0
@@ -63,7 +63,7 @@ Stage changes to be committed with 'git add'.$cSuf"
                 >&2 echo "${cRed}ERROR: It seems that you haven't initialize this repository.
 Checkout the last commit that ARN'T commit with inspurcommit and use
 command 'inspurcommit init'.$cSuf"
-                exit 1
+                return 1
             elif [ $(git log -1 --format="%H") == $(cat "$fci_file_name") ]
             then
                 return 0
@@ -72,7 +72,7 @@ command 'inspurcommit init'.$cSuf"
             >&2 echo "${cYlw}Warning: $template_file_name was staged. But was skipped.
 If you intend to modify the template, use command 'inspurcommit template'.$cSuf"
             CheckStage
-            return 1
+            return
             ;;
     esac
 }
@@ -117,16 +117,18 @@ Export(){
     local currhash
     local chfn
     local fci
+    local fcic
     local mode
     local ch_content
     FindFile "$fci_file_name" || return
     fci=$(cat "$fci_file_name")
+    fcic=$(git rev-list --reverse "$fci"..@ | head -1)
     if [ "$1" == "none" ] || [ ! "$1" ]; then
         mode="all"
-        ch_content=$(git log "$fci".. --format="%b" | sed '/^Change-Id:\s\w\{41\}$/,+1d')
+        ch_content=$(git log "$fcic".. --format="%b" | sed '/^Change-Id:\s\w\{41\}$/,+1d')
     else
         mode="notall"
-        ch_content=$(git log $(cat "$fci_file_name").. --format="%b" | grep -v "^$1:" | sed '/^Change-Id:\s\w\{41\}$/,+1d')
+        ch_content=$(git log "$fcic".. --format="%b" | grep -v "^$1:" | sed '/^Change-Id:\s\w\{41\}$/,+1d')
     fi
     if [ ! "$ch_content" ]; then
         >&2 echo "${cRed}ERROR: Nothing to export.$cSuf"
@@ -179,11 +181,12 @@ case "$op" in
         ;;
     ""|"-"*)
         git rev-parse || exit
-        CheckStage
+        CheckStage || exit
         Commit "$@"
         ;;
     "amend")
         git rev-parse || exit
+        CheckStage || exit
         shift
         Commit --amend "$@"
         ;;
@@ -200,7 +203,7 @@ case "$op" in
     "template")
         git rev-parse || exit
         shift
-        CheckStage template
+        CheckStage template || exit
         Commit "$@"
         ;;
     "init")
@@ -217,13 +220,20 @@ case "$op" in
                 exit 1
                 ;;
         esac
+        if CheckStage 2>/dev/null
+        then
+            >&2 echo "${cRed}ERROR: Please commit or stash your staged changes before init.$cSuf"
+            >&2 git status
+            exit 1
+        fi
         git log --format="%H" -1 > "$fci_file_name" && \
             cp $(dirname "$0")/"$template_file_name" ./ && \
             echo "/ChangeHistory-*.txt" >> .gitignore && \
-            git add "$template_file_name" "$fci_file_name" .gitignore && \
-            echo "${cGrn}Initialization completed successfully.$cSuf
-You can fill the change history template now and commit this initialization
-using command 'inspurcommit', or commit it along with next code changes."
+            git -c "core.safecrlf=false" add "$template_file_name" "$fci_file_name" .gitignore && \
+            git commit -m "INSPURCOMMIT-INIT" -m "
+This commit was automatically generated to initialize this repository in
+order to use Inspur Commit Kit." 1>/dev/null && \
+            echo "${cGrn}Initialization completed successfully.$cSuf"
         ;;
     *)
         >&2 echo "${cRed}ERROR: Invalid option - $1$cSuf"
