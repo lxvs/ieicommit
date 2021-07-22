@@ -49,8 +49,8 @@ ValidateHistory(){
 }
 
 CheckStage(){
-    local diffname=$(git diff --cached --name-only)
-    case "$diffname" in
+
+    case "$(git -c "core.safecrlf=false" diff --cached --name-only)" in
         "")
             >&2 echo "${cRed}ERROR: There is no staged changes.
 Stage changes to be committed with 'git add'.$cSuf"
