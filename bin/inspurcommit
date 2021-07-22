@@ -53,6 +53,7 @@ CheckStage(){
 
     case "$(git -c "core.safecrlf=false" diff --cached --name-only)" in
         "")
+            [ "$1" == "amend" ] && return 0
             >&2 echo "${cRed}ERROR: There is no staged changes.
 Stage changes to be committed with 'git add'.$cSuf"
             return 1
@@ -187,7 +188,7 @@ case "$op" in
         ;;
     "amend")
         git rev-parse || exit
-        CheckStage || exit
+        CheckStage amend || exit
         shift
         Commit --amend "$@"
         ;;
