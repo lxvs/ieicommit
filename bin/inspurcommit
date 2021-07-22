@@ -186,6 +186,7 @@ case "$op" in
         ;;
     "amend")
         git rev-parse || exit
+        CheckStage || exit
         shift
         Commit --amend "$@"
         ;;
