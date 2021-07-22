@@ -24,19 +24,19 @@ Inspur Commit
 详细说明
 --------
 
+代码仓库初次使用该脚本时，需在该仓库根目录中执行以下命令进行初始化：
+
+    inspurcommit init
+
+初始化所做的具体操作请见选项章节。
+
 不加选项使用时（即使用命令 inspurcommit），将以【模板文件的内容】作为
 commit messeges，提交已添加（staged）的改动。如果模板文件也被添加，会自动
 排除模板文件，提交剩余文件。如需改动模板，使用命令 inspurcommit template。
 
-如果对于一个代码仓库来说是初次使用，需在该仓库根目录中执行以下命令：
-
-    inspurcommit init
-
-为保证能正确导出提交历史，此后所有提交动作只能通过此脚本进行。上述改动可以
-直接提交（需要填写模板并通过此脚本提交），也可以随下次代码改动提交。
-
-使用此命令前请务必用【英文】规范填写并【保存】模板文件。模板文件中的空行和
-以 # 开头的行会自动被忽略。
+为保证能正确导出提交历史，此后所有提交动作只能通过此脚本进行。提交前，使用
+【英文】规范填写并【保存】模板文件。模板文件中的空行和以 # 开头的行将被忽
+略。
 
 
 选 项
@@ -48,7 +48,7 @@ amend
     明使用方法。
 
     (1) 模板文件填写有误
-        修正模板文件并【保存】后（但是【不】要使用 git add 命令将填写完成
+        修正模板文件并【保存】后（但是【不要】使用 git add 命令将填写完成
         的模板文件添加到 stage），使用 inspurcommit amend 命令。
 
     (2) 提交的代码内容有误
@@ -57,8 +57,8 @@ amend
         命令。
 
     (3) 错误地提交了本不应提交的文件
-        先使用 git checkout @^ <文件路径> 命令，再使用 inspurcommit amend
-        命令。
+        先使用 git checkout @^ -- <文件路径> 命令，再使用命令 inspurcommit
+        amend。
 
     如果要撤消一次错误的 amend，使用如下命令：
 
@@ -91,6 +91,7 @@ init
 
     此选项会做以下操作：
 
-        1. 将临界点 commit id 写入文件 farewell-commit-id。
-        2. 将 /ChangeHistory-*.txt 加入 .gitignore。
-        3. git add farewell-commit-id .gitignore
+        1. 将默认的模板文件复制到代码库根目录。
+        2. 将临界点 commit id 写入文件 farewell-commit-id。
+        3. 将 /ChangeHistory-*.txt 加入 .gitignore。
+        4. 提交上述改动。
