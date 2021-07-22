@@ -228,7 +228,7 @@ case "$op" in
         git log --format="%H" -1 > "$fci_file_name" && \
             cp $(dirname "$0")/"$template_file_name" ./ && \
             echo "/ChangeHistory-*.txt" >> .gitignore && \
-            git add "$template_file_name" "$fci_file_name" .gitignore && \
+            git -c "core.safecrlf=false" add "$template_file_name" "$fci_file_name" .gitignore && \
             git commit -m "INSPURCOMMIT-INIT" -m "
 This commit was automatically generated to initialize this repository in
 order to use Inspur Commit Kit." 1>/dev/null && \
