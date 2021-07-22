@@ -46,6 +46,7 @@ ValidateHistory(){
     ValidateHistoryField 'Symptom' || exit
     ValidateHistoryField 'RootCause' || exit
     ValidateHistoryField 'Solution' || exit
+    ValidateHistoryField 'SolutionDependency' || exit
 }
 
 CheckStage(){
