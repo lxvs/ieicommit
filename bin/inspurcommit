@@ -1,6 +1,7 @@
 #!/bin/bash
 
 declare -r template_file_name="ChangeHistoryTemplate.txt"
+declare -r change_history_name="ChangeHistory.txt"
 declare -r fci_file_name="farewell-commit-id"
 
 ShowUsage(){
@@ -30,7 +31,7 @@ ValidateJgn(){
 }
 
 ValidateHistoryField(){
-    local value=$(cat "$tempf" | grep "^$1:" | sed "s/^$1:\s*//")
+    local value=$(cat "$tmpf" | grep "^$1:" | sed "s/^$1:\s*//")
     [ -z "$value" ] || return 0
     >&2 echo "${cRed}ERROR: Field '$1' of change history is empty.$cSuf"
     return 1
@@ -94,21 +95,36 @@ FindFile(){
 }
 
 Commit(){
-    ValidateTemplate
-    ValidateJgn
-    ValidateHistory
-    local jgn_content
-    local summary=$(cat "$tempf" | grep '^Solution:' | sed 's/^Solution:\s*//')
+    local tmpc
+    local jgnc
+    local summary
     local details
-    if [ "$op" == "amend" ]
+    ValidateTemplate
+    if ! FindFile "$tmpf" 2>/dev/null
     then
-        git reset --soft @^ || exit
-        jgn_content=$($jgn)
-        git reset --soft ORIG_HEAD
-    else
-        jgn_content=$($jgn)
+        cp ./"$tempf" ./"$tmpf"
+        echo "${cGrn}Generated file ${cYlw}$tmpf$cSuf"
+        echo "${cGrn}Write change history in this file and save, and commit again.$cSuf"
+        exit
     fi
-    details=$(cat "$tempf" <(echo "$jgn_content") | grep -v '^#\|^\s*$')
+    tmpc=$(cat "$tmpf" | grep -v '^#\|^\s*$')
+    ValidateHistory
+    if ValidateHistoryField "RelatedFiles" 2>/dev/null
+    then
+        tmpc=$(echo "$tmpc" | sed '/^RelatedFiles:/,$d')
+        ValidateJgn
+        if [ "$op" == "amend" ]
+        then
+            git reset --soft @^ || exit
+            jgnc=$($jgn)
+            git reset --soft ORIG_HEAD
+        else
+            jgnc=$($jgn)
+        fi
+        tmpc="$tmpc$LF$jgnc"
+    fi
+    summary=$(echo "$tmpc" | grep '^Solution:' | sed 's/^Solution:\s*//')
+    details="$tmpc"
     git commit "$@" -m "$summary" -m "$details"
 }
 
@@ -228,11 +244,14 @@ declare -r author='Johnny Appleseed <liuzhaohui@inspur.com>'
 declare -r issuelink='https://github.com/islzh/jg/issues/new'
 declare -r jgn="jgnumberforthehistory"
 declare -r tempf="$template_file_name"
+declare -r tmpf="$change_history_name"
 declare -r fcif="$fci_file_name"
 declare -r cRed="[91m"
 declare -r cGrn="[92m"
 declare -r cYlw="[93m"
 declare -r cSuf="[0m"
+declare -r LF='
+'
 
 declare -r op="${1,,}"
 case "$op" in
@@ -350,8 +369,13 @@ case "$op" in
                     ;;
             esac
         done
+        [ -e "$tmpf" ] && \
+            mv "$tmpf" "Old$tmpf" && \
+            git -c "core.safecrlf=false" add "$tmpf" "Old$tmpf"
+        [ $? -eq 0 ] || exit
         git log --format="%H" -1 > "$fcif" && \
             InitTemplate && \
+            echo "/$tmpf" >> .gitignore && \
             echo "/ChangeHistory-*.txt" >> .gitignore && \
             git -c "core.safecrlf=false" add "$tempf" "$fcif" .gitignore && \
             git commit -m "INSPURCOMMIT-INIT" -m "
