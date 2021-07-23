@@ -13,9 +13,9 @@ Options:
 }
 
 ValidateTemplate(){
-    if [ ! -e "$tempFn" ]
+    if [ ! -e "$tempf" ]
     then
-        >&2 echo "${cRed}ERROR: Couldn't find template file $tempFn.$cSuf"
+        >&2 echo "${cRed}ERROR: Couldn't find template file $tempf.$cSuf"
         exit 2
     fi
 }
@@ -30,7 +30,7 @@ ValidateJgn(){
 }
 
 ValidateHistoryField(){
-    local value=$(cat "$tempFn" | grep "^$1:" | sed "s/^$1:\s*//")
+    local value=$(cat "$tempf" | grep "^$1:" | sed "s/^$1:\s*//")
     [ -z "$value" ] || return 0
     >&2 echo "${cRed}ERROR: Field '$1' of change history is empty.$cSuf"
     return 1
@@ -58,20 +58,20 @@ CheckStage(){
 Stage changes to be committed with 'git add'.$cSuf"
             return 1
             ;;
-        *"$template_file_name"*)
+        *"$tempf"*)
             [ "$1" == "template" ] && return 0
-            if ! FindFile "$fci_file_name" 2>/dev/null
+            if ! FindFile "$fcif" 2>/dev/null
             then
                 >&2 echo "${cRed}ERROR: It seems that you haven't initialize this repository.
 Checkout the last commit that ARN'T commit with inspurcommit and use
 command 'inspurcommit init'.$cSuf"
                 return 1
-            elif [ $(git log -1 --format="%H") == $(cat "$fci_file_name") ]
+            elif [ $(git log -1 --format="%H") == $(cat "$fcif") ]
             then
                 return 0
             fi
-            git restore --staged "$template_file_name" > /dev/null
-            >&2 echo "${cYlw}Warning: $template_file_name was staged. But was skipped.
+            git restore --staged "$tempf" > /dev/null
+            >&2 echo "${cYlw}Warning: $tempf was staged. But was skipped.
 If you intend to modify the template, use command 'inspurcommit template'.$cSuf"
             CheckStage
             return
@@ -98,7 +98,7 @@ Commit(){
     ValidateJgn
     ValidateHistory
     local jgn_content
-    local summary=$(cat "$tempFn" | grep '^Solution:' | sed 's/^Solution:\s*//')
+    local summary=$(cat "$tempf" | grep '^Solution:' | sed 's/^Solution:\s*//')
     local details
     if [ "$op" == "amend" ]
     then
@@ -108,7 +108,7 @@ Commit(){
     else
         jgn_content=$($jgn)
     fi
-    details=$(cat "$tempFn" <(echo "$jgn_content") | grep -v '^#\|^\s*$')
+    details=$(cat "$tempf" <(echo "$jgn_content") | grep -v '^#\|^\s*$')
     git commit "$@" -m "$summary" -m "$details"
 }
 
@@ -122,8 +122,8 @@ Export(){
     local fcic
     local mode
     local ch_content
-    FindFile "$fci_file_name" || return
-    fci=$(cat "$fci_file_name")
+    FindFile "$fcif" || return
+    fci=$(cat "$fcif")
     fcic=$(git rev-list --reverse "$fci"..@ | head -1)
     if [ "$1" == "none" ] || [ ! "$1" ]; then
         mode="all"
@@ -165,7 +165,8 @@ declare -r lastupdt='2021-07-22'
 declare -r author='Johnny Appleseed <liuzhaohui@inspur.com>'
 declare -r issuelink='https://github.com/islzh/jg/issues/new'
 declare -r jgn="jgnumberforthehistory"
-declare -r tempFn=$template_file_name
+declare -r tempf="$template_file_name"
+declare -r fcif="$fci_file_name"
 declare -r cRed="[91m"
 declare -r cGrn="[92m"
 declare -r cYlw="[93m"
@@ -214,8 +215,8 @@ case "$op" in
             >&2 echo "${cRed}ERROR: Please init in the root directory.$cSuf"
             exit 1
         fi
-        CheckFileAlreadyExists "$fci_file_name" || exit
-        CheckFileAlreadyExists "$template_file_name" || exit
+        CheckFileAlreadyExists "$fcif" || exit
+        CheckFileAlreadyExists "$tempf" || exit
         case "$(git status --porcelain)" in
             *".gitignore"*)
                 >&2 echo "${cRed}Please commit or stash your local changes of file '.gitignore' before init.$cSuf"
@@ -228,10 +229,10 @@ case "$op" in
             >&2 git status
             exit 1
         fi
-        git log --format="%H" -1 > "$fci_file_name" && \
-            cp $(dirname "$0")/"$template_file_name" ./ && \
+        git log --format="%H" -1 > "$fcif" && \
+            cp $(dirname "$0")/"$tempf" ./ && \
             echo "/ChangeHistory-*.txt" >> .gitignore && \
-            git -c "core.safecrlf=false" add "$template_file_name" "$fci_file_name" .gitignore && \
+            git -c "core.safecrlf=false" add "$tempf" "$fcif" .gitignore && \
             git commit -m "INSPURCOMMIT-INIT" -m "
 This commit was automatically generated to initialize this repository in
 order to use Inspur Commit Kit." 1>/dev/null && \
