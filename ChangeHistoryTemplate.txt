@@ -6,31 +6,28 @@ Tag#:
 # Label# example: Inspur-LZH20210709V001
 Label#: 
 
-# Write "None" or "N/A" if not applicable.
+# Write "None" if not applicable.
 Issue#: 
 
-# Scope examples: ALL, Standard, Tencent, ByteDance, NF5260M7
+# Scope examples: ALL, Standard, Tencent, BaiDu, ByteDance, NF5260M7
 Scope: 
 
 # Severity options: High, Middle, Normal, Low
 Severity: 
 
-# Category examples: Redfish, SMBIOS, PCIe
+# Category examples: Redfish/Improvement, SMBIOS/Bugfixed, PCIe/NewFeature
 Category: 
 
-# What you saw about the issue.
-# If the commit is not about an issue, write 'N/A'.
+# If the commit is not about an issue, write 'None'.
 Symptom: 
 
-# What caused the issue. 
-# If the commit is not about an issue, write 'N/A'.
+# If the commit is not about an issue, write 'None'.
 RootCause: 
 
-# How did you solve it.
-# If your solution is longer than 70 characters, it should be splited to
-# multiple lines, in which case, the first line should be a summary.
+# If your solution is too long, better write it as multiple lines, and
+# write a summary in first line.
 # Example:
-# Solution: Fix a 0x31 hang issue.
+# Solution: Fix a 0x31 hang issue
 #           Set token HANG_MODE from Enabled to Disabled.
 #           Set token HANG_POINT from 0x31 to 0.
 Solution: 
@@ -40,10 +37,5 @@ SolutionDependency:
 
 # Related files list will be generated automatically.
 # If you want to write it manually, clear the words after 'RelatedFiles:',
-# and write the file list below.
+# and write the file list below (Use '/' as path seperator).
 RelatedFiles:(Auto Generate)
-
-# If this template needs modifying, stage the changes of this file with
-# 'git add' command before write the change history.
-# After fill in the change history, use command 'inspurcommit template' to
-# tell inspurcommit that the template is not staged by accident.
