@@ -4,3 +4,4 @@ README.md	export-ignore
 VERSION	eol=lf
 *.bat	eol=crlf
 *.txt	eol=crlf
+ChangeHistoryTemplate.txt	eol=lf

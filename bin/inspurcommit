@@ -160,6 +160,68 @@ You've just met a debug warning.
 If it's not inconvenient, please contact $author on this issue, or create an issue on $issuelink. Thanks!$cSuf"
 }
 
+InitUsage(){
+    echo "Usage:
+    inspurcommit init [<defaults>]
+Defaults:
+    -t, --tag <tag#>
+    -l, --label <label#>
+    -i, --issue <Issue#>
+    -s, --scope <Scope>
+    -v, --severity <Severity>
+    -c, --category <Category>
+    -y, --symptom <Symptom>
+    -r, --rootcause <RootCause>
+    -o, --solution <Solution>
+    -d, --dependency <SolutionDependency>
+    -f, --files <RelatedFiles>
+Example:
+    inspurcommit init -t \"5.19_CedarIslandCrb_0ACMT_013\""
+}
+
+#  $1:  switch
+#  $2:  argument
+# &$3:  variable
+InitParseArg(){
+    if [ ! "$2" ]
+    then
+        >&2 echo "${cRed}ERROR: '$1' requires a value.$cSuf"
+        exit 1
+    fi
+    local -n var=$3
+    var="$2"
+}
+
+InitTemplate(){
+    local dff=$(dirname "$0")/"$tempf"
+    local dfc
+    FindFile "$dff" || return 1
+    dfc=$(cat "$dff")
+    [ "$dfTag" ] && dfc=$(echo "$dfc" | \
+        sed "s/^Tag#:.*$/Tag#: $dfTag/")
+    [ "$dfLbl" ] && dfc=$(echo "$dfc" | \
+        sed "s/^Label#:.*$/Label#: $dfLbl/")
+    [ "$dfIss" ] && dfc=$(echo "$dfc" | \
+        sed "s/^Issue#:.*$/Issue#: $dfIss/")
+    [ "$dfScp" ] && dfc=$(echo "$dfc" | \
+        sed "s/^Scope:.*$/Scope: $dfScp/")
+    [ "$dfSvr" ] && dfc=$(echo "$dfc" | \
+        sed "s/^Severity:.*$/Severity: $dfSvr/")
+    [ "$dfCtg" ] && dfc=$(echo "$dfc" | \
+        sed "s/^Category:.*$/Category: $dfCtg/")
+    [ "$dfSpt" ] && dfc=$(echo "$dfc" | \
+        sed "s/^Symptom:.*$/Symptom: $dfSpt/")
+    [ "$dfRtc" ] && dfc=$(echo "$dfc" | \
+        sed "s/^RootCause:.*$/RootCause: $dfRtc/")
+    [ "$dfSlt" ] && dfc=$(echo "$dfc" | \
+        sed "s/^Solution:.*$/Solution: $dfSlt/")
+    [ "$dfDpd" ] && dfc=$(echo "$dfc" | \
+        sed "s/^SolutionDependency:.*$/SolutionDependency: $dfDpd/")
+    [ "$dfRlf" ] && dfc=$(echo "$dfc" | \
+        sed "s/^RelatedFiles:.*$/RelatedFiles: $dfRlf/")
+    echo "$dfc" > "$tempf"
+}
+
 declare -r rev='0.3.0'
 declare -r lastupdt='2021-07-22'
 declare -r author='Johnny Appleseed <liuzhaohui@inspur.com>'
@@ -229,8 +291,79 @@ case "$op" in
             >&2 git status
             exit 1
         fi
+        shift
+        while [ $# -gt 0 ]
+        do
+            case "${1,,}" in
+                -t|--tag)
+                    InitParseArg "$1" "$2" dfTag
+                    shift 2
+                    ;;
+                -l|--label)
+                    InitParseArg "$1" "$2" dfLbl
+                    shift 2
+                    ;;
+                -i|--issue)
+                    InitParseArg "$1" "$2" dfIss
+                    shift 2
+                    ;;
+                -s|--scope)
+                    InitParseArg "$1" "$2" dfScp
+                    shift 2
+                    ;;
+                -v|--severity)
+                    InitParseArg "$1" "$2" dfSvr
+                    shift 2
+                    ;;
+                -c|--category)
+                    InitParseArg "$1" "$2" dfCtg
+                    shift 2
+                    ;;
+                -y|--symptom)
+                    InitParseArg "$1" "$2" dfSpt
+                    shift 2
+                    ;;
+                -r|--rootcause)
+                    InitParseArg "$1" "$2" dfRtc
+                    shift 2
+                    ;;
+                -o|--solution)
+                    InitParseArg "$1" "$2" dfSlt
+                    shift 2
+                    ;;
+                -d|--dependency|--solution-dependency)
+                    InitParseArg "$1" "$2" dfDpd
+                    shift 2
+                    ;;
+                -f|--files|--related-files)
+                    InitParseArg "$1" "$2" dfRlf
+                    shift 2
+                    ;;
+                '-?'|-h|--help|--usage)
+                    InitUsage
+                    exit
+                    ;;
+                *)
+                    >&2 echo "${cRed}ERROR: invalid argument - $1$cSuf"
+                    >&2 InitUsage
+                    exit 1
+                    ;;
+            esac
+        done
+        # printf "%10s: %s\n" "Tag" "$dfTag"
+        # printf "%10s: %s\n" "Label" "$dfLbl"
+        # printf "%10s: %s\n" "Issue" "$dfIss"
+        # printf "%10s: %s\n" "Scope" "$dfScp"
+        # printf "%10s: %s\n" "Severity" "$dfSvr"
+        # printf "%10s: %s\n" "Category" "$dfCtg"
+        # printf "%10s: %s\n" "Symptom" "$dfSpt"
+        # printf "%10s: %s\n" "RootCause" "$dfRtc"
+        # printf "%10s: %s\n" "Solution" "$dfSlt"
+        # printf "%10s: %s\n" "Dependency" "$dfDpd"
+        # printf "%10s: %s\n" "RelatedFiles" "$dfRlf"
+        # exit
         git log --format="%H" -1 > "$fcif" && \
-            cp $(dirname "$0")/"$tempf" ./ && \
+            InitTemplate && \
             echo "/ChangeHistory-*.txt" >> .gitignore && \
             git -c "core.safecrlf=false" add "$tempf" "$fcif" .gitignore && \
             git commit -m "INSPURCOMMIT-INIT" -m "
