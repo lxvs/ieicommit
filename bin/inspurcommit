@@ -350,18 +350,6 @@ case "$op" in
                     ;;
             esac
         done
-        # printf "%10s: %s\n" "Tag" "$dfTag"
-        # printf "%10s: %s\n" "Label" "$dfLbl"
-        # printf "%10s: %s\n" "Issue" "$dfIss"
-        # printf "%10s: %s\n" "Scope" "$dfScp"
-        # printf "%10s: %s\n" "Severity" "$dfSvr"
-        # printf "%10s: %s\n" "Category" "$dfCtg"
-        # printf "%10s: %s\n" "Symptom" "$dfSpt"
-        # printf "%10s: %s\n" "RootCause" "$dfRtc"
-        # printf "%10s: %s\n" "Solution" "$dfSlt"
-        # printf "%10s: %s\n" "Dependency" "$dfDpd"
-        # printf "%10s: %s\n" "RelatedFiles" "$dfRlf"
-        # exit
         git log --format="%H" -1 > "$fcif" && \
             InitTemplate && \
             echo "/ChangeHistory-*.txt" >> .gitignore && \
