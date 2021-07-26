@@ -99,14 +99,6 @@ Commit(){
     local jgnc
     local summary
     local details
-    ValidateTemplate
-    if ! FindFile "$tmpf" 2>/dev/null
-    then
-        cp ./"$tempf" ./"$tmpf"
-        echo "${cGrn}Generated file ${cYlw}$tmpf$cSuf"
-        echo "${cGrn}Write change history in this file and save, and commit again.$cSuf"
-        exit
-    fi
     tmpc=$(cat "$tmpf" | grep -v '^#\|^\s*$')
     ValidateHistory
     if ValidateHistoryField "RelatedFiles" 2>/dev/null
@@ -265,6 +257,14 @@ case "$op" in
         ;;
     ""|"-"*)
         git rev-parse || exit
+        ValidateTemplate
+        if ! FindFile "$tmpf" 2>/dev/null
+        then
+            cp ./"$tempf" ./"$tmpf"
+            echo "${cGrn}Generated file ${cYlw}$tmpf$cSuf"
+            echo "${cGrn}Write change history in this file and save, and commit again.$cSuf"
+            exit 0
+        fi
         CheckStage || exit
         Commit "$@"
         ;;
