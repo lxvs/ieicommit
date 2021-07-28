@@ -291,6 +291,11 @@ case "$op" in
         Commit "$@"
         ;;
     "init")
+        if [ "$2" == "-?" ]
+        then
+            InitUsage
+            exit
+        fi
         git rev-parse || exit
         if [ ! -e ./.git ]; then
             >&2 echo "${cRed}ERROR: Please init in the root directory.$cSuf"
