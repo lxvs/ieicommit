@@ -9,7 +9,7 @@ ShowUsage(){
     inspurcommit [<operation>]
     inspurcommit [<options>]$LF
 Operations:
-    amend, export, exportall, init, template, usage$LF
+    amend, export, exportall, init, push, template, usage$LF
 For help on a specific operation:
     inspurcommit <operation> --help$LF
 If no operation is specified, it is used to perform a git commit. Here are
@@ -208,6 +208,15 @@ GenerateTmp(){
     return 1
 }
 
+pushUsage(){
+    echo "Usage:
+    inspurcommit push [ <remote> [ <branch> ] ]$LF
+Push local commits to Gerrit.
+By default, <remote> is 'origin', and <branch> is 'master'.
+This command is equivalent to:$LF
+    git push <remote> HEAD:refs/for/<branch>"
+}
+
 amendUsage(){
     echo "Usage:
     inspurcommit amend [<options>]$LF
@@ -295,6 +304,19 @@ case "$op" in
         CheckStage || exit
         Commit "$@"
         ;;
+
+    "push")
+        shift
+        LookupUsage "$op" "$@" || exit 0
+        git rev-parse || exit
+        p_rm="${1:-origin}"
+        shift
+        p_br="${1:-master}"
+        shift
+        git push "$p_rm" HEAD:refs/for/"$p_br" "$@"
+        exit
+        ;;
+
     "amend")
         shift
         LookupUsage "$op" "$@" || exit 0
