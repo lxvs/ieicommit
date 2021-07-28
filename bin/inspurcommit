@@ -5,34 +5,38 @@ declare -r change_history_name="ChangeHistory.txt"
 declare -r fci_file_name="farewell-commit-id"
 
 ShowUsage(){
-    echo "
-Usage:
-    inspurcommit [<option>]
-
-Options:
-    amend, export, exportall, init, template, usage"
+    echo "Usage:
+    inspurcommit [<operation>]
+    inspurcommit [<options>]$LF
+Operations:
+    amend, export, exportall, init, template, usage$LF
+For help on a specific operation:
+    inspurcommit <operation> --help$LF
+If no operation is specified, it is used to perform a git commit. Here are
+the steps:
+    1. Use command 'git add <file>', or 'git add .', etc. to stage changes.
+    2. Write change history in file $tmpf.
+       If this file does not exist, use command 'inspurcommit' to generate
+       one, and then write change history in it.
+    3. Use command 'inspurcommit' to commit. Arguments, if any, will be
+       passed to git commit."
 }
 
 ValidateTemplate(){
-    if [ ! -e "$tempf" ]
-    then
-        >&2 echo "${cRed}ERROR: Couldn't find template file $tempf.$cSuf"
-        exit 2
-    fi
+    [ -e "$tempf" ] && return
+    >&2 echo "${cRed}ERROR: Couldn't find template file $tempf.$cSuf"
+    return 1
 }
 
 ValidateJgn(){
-    which $jgn 1>/dev/null 2>&1
-    if [ $? -ne 0 ]
-    then
-        echo "${cRed}ERROR: Coundn't find $jgn.$cSuf" >&2
-        exit 3
-    fi
+    which $jgn 1>/dev/null 2>&1 && return
+    echo "${cRed}ERROR: Coundn't find $jgn.$cSuf" >&2
+    return 1
 }
 
 ValidateHistoryField(){
     local value=$(cat "$tmpf" | grep "^$1:" | sed "s/^$1:\s*//")
-    [ -z "$value" ] || return 0
+    [ "$value" ] && return
     >&2 echo "${cRed}ERROR: Field '$1' of change history is empty.$cSuf"
     return 1
 }
@@ -51,7 +55,6 @@ ValidateHistory(){
 }
 
 CheckStage(){
-
     case "$(git -c "core.safecrlf=false" diff --cached --name-only)" in
         "")
             [ "$1" == "amend" ] && return 0
@@ -104,7 +107,7 @@ Commit(){
     if ValidateHistoryField "RelatedFiles" 2>/dev/null
     then
         tmpc=$(echo "$tmpc" | sed '/^RelatedFiles:/,$d')
-        ValidateJgn
+        ValidateJgn || exit
         if [ "$op" == "amend" ]
         then
             git reset --soft @^ || exit
@@ -153,38 +156,14 @@ Export(){
             chfn=${2:-"ChangeHistory-${currhash}.txt"}
             ;;
         *)
-            DebugReport "Export mode is neither all nor notall."
+            >&2 echo "ERROR: Export mode is neither all nor notall."
+            exit 1
             ;;
     esac
     CheckFileAlreadyExists "$chfn" || return
     echo "$ch_content" > "$chfn"
     echo "${cGrn}Exported file $chfn$cSuf"
     return
-}
-
-DebugReport(){
-    >&2 echo "${cYlw}Warning: $1
-You've just met a debug warning.
-If it's not inconvenient, please contact $author on this issue, or create an issue on $issuelink. Thanks!$cSuf"
-}
-
-InitUsage(){
-    echo "Usage:
-    inspurcommit init [<defaults>]
-Defaults:
-    -t, --tag <tag#>
-    -l, --label <label#>
-    -i, --issue <Issue#>
-    -s, --scope <Scope>
-    -v, --severity <Severity>
-    -c, --category <Category>
-    -y, --symptom <Symptom>
-    -r, --rootcause <RootCause>
-    -o, --solution <Solution>
-    -d, --dependency <SolutionDependency>
-    -f, --files <RelatedFiles>
-Example:
-    inspurcommit init -t \"5.19_CedarIslandCrb_0ACMT_013\""
 }
 
 #  $1:  switch
@@ -230,10 +209,71 @@ InitTemplate(){
     echo "$dfc" > "$tempf"
 }
 
+GenerateTmp(){
+    FindFile "$tmpf" 2>/dev/null && return
+    cp ./"$tempf" ./"$tmpf"
+    echo "${cGrn}Generated file ${cYlw}$tmpf$cSuf"
+    echo "${cGrn}Write change history in this file and save, and commit again.$cSuf"
+    return 1
+}
+
+amendUsage(){
+    echo "Usage:
+    inspurcommit amend [<options>]$LF
+Amend last commit with current $tmpf and staged changes.
+<options> will be passed to git commit. "
+}
+
+exportUsage(){
+    echo "Usage:
+    inspurcommit export [<filename>]
+    inspurcommit exportall [<filename>]$LF
+Export a change history.
+If 'export' is used, will filter out 'scope'."
+}
+
+templateUsage(){
+    echo "Usage:
+    inspurcommit template [<options>]$LF
+Normally, changes of the template cannot be committed, in case it is
+changed by accident. When you intend to change the template, you can use
+this operation.
+<options> will be passed to git commit."
+}
+
+initUsage(){
+    echo "Usage:
+    inspurcommit init [<defaults>]$LF
+Defaults:
+    -t, --tag <tag#>
+    -l, --label <label#>
+    -i, --issue <Issue#>
+    -s, --scope <Scope>
+    -v, --severity <Severity>
+    -c, --category <Category>
+    -y, --symptom <Symptom>
+    -r, --rootcause <RootCause>
+    -o, --solution <Solution>
+    -d, --dependency <SolutionDependency>
+    -f, --files <RelatedFiles>$LF
+Example:
+    inspurcommit init -t \"5.19_CedarIslandCrb_0ACMT_013\""
+}
+
+LookupUsage(){
+    [ ! "$2" ] && return
+    case "$2" in
+        "-?"|"-h"|"--help"|"--usage")
+            ${1}Usage
+            return 1
+            ;;
+    esac
+    return 0
+}
+
 declare -r rev='0.3.0'
 declare -r lastupdt='2021-07-22'
 declare -r author='Johnny Appleseed <liuzhaohui@inspur.com>'
-declare -r issuelink='https://github.com/islzh/jg/issues/new'
 declare -r jgn="jgnumberforthehistory"
 declare -r tempf="$template_file_name"
 declare -r tmpf="$change_history_name"
@@ -252,69 +292,53 @@ case "$op" in
         echo "    inspurcommit v$rev"
         echo "    Last updated: $lastupdt"
         echo "    $author"
+        echo
         ShowUsage
         exit
         ;;
+
     ""|"-"*)
         git rev-parse || exit
-        ValidateTemplate
-        if ! FindFile "$tmpf" 2>/dev/null
-        then
-            cp ./"$tempf" ./"$tmpf"
-            echo "${cGrn}Generated file ${cYlw}$tmpf$cSuf"
-            echo "${cGrn}Write change history in this file and save, and commit again.$cSuf"
-            exit 0
-        fi
+        ValidateTemplate || exit
+        GenerateTmp || exit 0
         CheckStage || exit
         Commit "$@"
         ;;
     "amend")
-        git rev-parse || exit
-        CheckStage amend || exit
         shift
+        LookupUsage "$op" "$@" || exit 0
+        git rev-parse || exit
+        ValidateTemplate || exit
+        GenerateTmp || exit 0
+        CheckStage amend || exit
         Commit --amend "$@"
         ;;
+
     "export")
-        git rev-parse || exit
         shift
+        LookupUsage "$op" "$@" || exit 0
+        git rev-parse || exit
         Export "Scope" "$@"
         ;;
+
     "exportall")
-        git rev-parse || exit
         shift
+        LookupUsage "export" "$@" || exit 0
+        git rev-parse || exit
         Export "none" "$@"
         ;;
+
     "template")
-        git rev-parse || exit
         shift
+        LookupUsage "$op" "$@" || exit 0
+        git rev-parse || exit
+        ValidateTemplate || exit
+        GenerateTmp || exit 0
         CheckStage template || exit
         Commit "$@"
         ;;
+
     "init")
-        if [ "$2" == "-?" ]
-        then
-            InitUsage
-            exit
-        fi
-        git rev-parse || exit
-        if [ ! -e ./.git ]; then
-            >&2 echo "${cRed}ERROR: Please init in the root directory.$cSuf"
-            exit 1
-        fi
-        CheckFileAlreadyExists "$fcif" || exit
-        CheckFileAlreadyExists "$tempf" || exit
-        case "$(git status --porcelain)" in
-            *".gitignore"*)
-                >&2 echo "${cRed}Please commit or stash your local changes of file '.gitignore' before init.$cSuf"
-                exit 1
-                ;;
-        esac
-        if CheckStage 2>/dev/null
-        then
-            >&2 echo "${cRed}ERROR: Please commit or stash your staged changes before init.$cSuf"
-            >&2 git status
-            exit 1
-        fi
         shift
         while [ $# -gt 0 ]
         do
@@ -364,16 +388,35 @@ case "$op" in
                     shift 2
                     ;;
                 '-?'|-h|--help|--usage)
-                    InitUsage
+                    initUsage
                     exit
                     ;;
                 *)
                     >&2 echo "${cRed}ERROR: invalid argument - $1$cSuf"
-                    >&2 InitUsage
+                    >&2 initUsage
                     exit 1
                     ;;
             esac
         done
+        git rev-parse || exit
+        if [ ! -e ./.git ]; then
+            >&2 echo "${cRed}ERROR: Please init in the root directory.$cSuf"
+            exit 1
+        fi
+        CheckFileAlreadyExists "$fcif" || exit
+        CheckFileAlreadyExists "$tempf" || exit
+        case "$(git status --porcelain)" in
+            *".gitignore"*)
+                >&2 echo "${cRed}Please commit or stash your local changes of file '.gitignore' before init.$cSuf"
+                exit 1
+                ;;
+        esac
+        if CheckStage 2>/dev/null
+        then
+            >&2 echo "${cRed}ERROR: Please commit or stash your staged changes before init.$cSuf"
+            >&2 git status
+            exit 1
+        fi
         [ -e "$tmpf" ] && \
             mv "$tmpf" "Old$tmpf" && \
             git -c "core.safecrlf=false" add "$tmpf" "Old$tmpf"
