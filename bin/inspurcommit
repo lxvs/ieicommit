@@ -67,16 +67,9 @@ Stage changes to be committed with 'git add'.$cSuf"
             ;;
         *"$tempf"*)
             [ "$1" == "template" ] && return 0
-            CheckInit || return
-            if [ $(git log -1 --format="%H") == $(cat "$fcif") ]
-            then
-                return 0
-            fi
             git restore --staged "$tempf" > /dev/null
-            >&2 echo "${cYlw}Warning: $tempf was staged. But was skipped.
-If you intend to modify the template, use command 'inspurcommit template'.$cSuf"
+            >&2 echo "${cYlw}Warning: $tempf was staged. But was skipped.${LF}If you intend to modify the template, use command 'inspurcommit template'.$cSuf"
             CheckStage
-            return
             ;;
     esac
 }
