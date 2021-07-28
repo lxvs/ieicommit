@@ -6,8 +6,7 @@ declare -r fci_file_name="farewell-commit-id"
 
 ShowUsage(){
     echo "Usage:
-    inspurcommit [<operation>]
-    inspurcommit [<options>]$LF
+    inspurcommit [<operation>]$LF
 Operations:
     amend, export, exportall, init, push, template, usage$LF
 For help on a specific operation:
