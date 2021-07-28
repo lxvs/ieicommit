@@ -22,10 +22,13 @@ the steps:
        passed to git commit."
 }
 
-ValidateTemplate(){
-    [ -e "$tempf" ] && return
-    >&2 echo "${cRed}ERROR: Couldn't find template file $tempf.$cSuf"
-    return 1
+CheckInit() {
+    if [ ! -e "$fcif" ] || [ ! -e "$tempf" ]
+    then
+        >&2 echo "${cRed}ERROR: It seems that you haven't initialize this repository.${LF}To initialize, use command 'inspurcommit init' and then 'inspurcommit push'.$cSuf"
+        return 1
+    fi
+    return 0
 }
 
 ValidateJgn(){
@@ -64,13 +67,8 @@ Stage changes to be committed with 'git add'.$cSuf"
             ;;
         *"$tempf"*)
             [ "$1" == "template" ] && return 0
-            if ! FindFile "$fcif" 2>/dev/null
-            then
-                >&2 echo "${cRed}ERROR: It seems that you haven't initialize this repository.
-Checkout the last commit that ARN'T commit with inspurcommit and use
-command 'inspurcommit init'.$cSuf"
-                return 1
-            elif [ $(git log -1 --format="%H") == $(cat "$fcif") ]
+            CheckInit || return
+            if [ $(git log -1 --format="%H") == $(cat "$fcif") ]
             then
                 return 0
             fi
@@ -133,7 +131,7 @@ Export(){
     local fcic
     local mode
     local ch_content
-    FindFile "$fcif" || return
+    CheckInit || return
     fci=$(cat "$fcif")
     fcic=$(git rev-list --reverse "$fci"..@ | head -1)
     if [ "$1" == "none" ] || [ ! "$1" ]; then
@@ -299,7 +297,7 @@ case "$op" in
 
     ""|"-"*)
         git rev-parse || exit
-        ValidateTemplate || exit
+        CheckInit || exit
         GenerateTmp || exit 0
         CheckStage || exit
         Commit "$@"
@@ -308,7 +306,7 @@ case "$op" in
         shift
         LookupUsage "$op" "$@" || exit 0
         git rev-parse || exit
-        ValidateTemplate || exit
+        CheckInit || exit
         GenerateTmp || exit 0
         CheckStage amend || exit
         Commit --amend "$@"
@@ -332,7 +330,7 @@ case "$op" in
         shift
         LookupUsage "$op" "$@" || exit 0
         git rev-parse || exit
-        ValidateTemplate || exit
+        CheckInit || exit
         GenerateTmp || exit 0
         CheckStage template || exit
         Commit "$@"
@@ -403,8 +401,11 @@ case "$op" in
             >&2 echo "${cRed}ERROR: Please init in the root directory.$cSuf"
             exit 1
         fi
-        CheckFileAlreadyExists "$fcif" || exit
-        CheckFileAlreadyExists "$tempf" || exit
+        if CheckInit 2>/dev/null
+        then
+            >&2 echo "${cRed}ERROR: This repository has already been initialized.$cSuf"
+            exit 1
+        fi
         case "$(git status --porcelain)" in
             *".gitignore"*)
                 >&2 echo "${cRed}Please commit or stash your local changes of file '.gitignore' before init.$cSuf"
