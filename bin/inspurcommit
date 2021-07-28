@@ -210,11 +210,10 @@ GenerateTmp(){
 
 pushUsage(){
     echo "Usage:
-    inspurcommit push [ <remote> [ <branch> ] ]$LF
-Push local commits to Gerrit.
-By default, <remote> is 'origin', and <branch> is 'master'.
+    inspurcommit push [<branch>]$LF
+Push local commits to Gerrit. By default, <branch> is 'master'.
 This command is equivalent to:$LF
-    git push <remote> HEAD:refs/for/<branch>"
+    git push origin HEAD:refs/for/<branch>"
 }
 
 amendUsage(){
@@ -309,11 +308,9 @@ case "$op" in
         shift
         LookupUsage "$op" "$@" || exit 0
         git rev-parse || exit
-        p_rm="${1:-origin}"
-        shift
         p_br="${1:-master}"
         shift
-        git push "$p_rm" HEAD:refs/for/"$p_br" "$@"
+        git push origin HEAD:refs/for/"$p_br" "$@"
         exit
         ;;
 
