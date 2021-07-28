@@ -269,8 +269,8 @@ LookupUsage(){
     return 0
 }
 
-declare -r rev='0.3.0'
-declare -r lastupdt='2021-07-22'
+declare -r rev='0.4.0'
+declare -r lastupdt='2021-07-28'
 declare -r author='Johnny Appleseed <liuzhaohui@inspur.com>'
 declare -r jgn="jgnumberforthehistory"
 declare -r tempf="$template_file_name"
