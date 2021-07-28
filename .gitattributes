@@ -1,6 +1,8 @@
-.gitattributes	export-ignore
-.gitignore	export-ignore
+.gitattributes	export-ignore eol=lf
+.gitignore	export-ignore eol=lf
 README.md	export-ignore
+/bin/*	eol=lf
 VERSION	eol=lf
 *.bat	eol=crlf
 *.txt	eol=crlf
+ChangeHistoryTemplate.txt	eol=lf

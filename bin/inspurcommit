@@ -1,37 +1,44 @@
 #!/bin/bash
 
 declare -r template_file_name="ChangeHistoryTemplate.txt"
+declare -r change_history_name="ChangeHistory.txt"
 declare -r fci_file_name="farewell-commit-id"
 
 ShowUsage(){
-    echo "
-Usage:
-    inspurcommit [<option>]
-
-Options:
-    amend, export, exportall, init, template, usage"
+    echo "Usage:
+    inspurcommit [<operation>]$LF
+Operations:
+    amend, export, exportall, init, push, template, usage$LF
+For help on a specific operation:
+    inspurcommit <operation> --help$LF
+If no operation is specified, it is used to perform a git commit. Here are
+the steps:
+    1. Use command 'git add <file>', or 'git add .', etc. to stage changes.
+    2. Write change history in file $tmpf.
+       If this file does not exist, use command 'inspurcommit' to generate
+       one, and then write change history in it.
+    3. Use command 'inspurcommit' to commit. Arguments, if any, will be
+       passed to git commit."
 }
 
-ValidateTemplate(){
-    if [ ! -e "$tempFn" ]
+CheckInit() {
+    if [ ! -e "$fcif" ] || [ ! -e "$tempf" ]
     then
-        >&2 echo "${cRed}ERROR: Couldn't find template file $tempFn.$cSuf"
-        exit 2
+        >&2 echo "${cRed}ERROR: It seems that you haven't initialize this repository.${LF}To initialize, use command 'inspurcommit init' and then 'inspurcommit push'.$cSuf"
+        return 1
     fi
+    return 0
 }
 
 ValidateJgn(){
-    which $jgn 1>/dev/null 2>&1
-    if [ $? -ne 0 ]
-    then
-        echo "${cRed}ERROR: Coundn't find $jgn.$cSuf" >&2
-        exit 3
-    fi
+    which $jgn 1>/dev/null 2>&1 && return
+    echo "${cRed}ERROR: Coundn't find $jgn.$cSuf" >&2
+    return 1
 }
 
 ValidateHistoryField(){
-    local value=$(cat "$tempFn" | grep "^$1:" | sed "s/^$1:\s*//")
-    [ -z "$value" ] || return 0
+    local value=$(cat "$tmpf" | grep "^$1:" | sed "s/^$1:\s*//")
+    [ "$value" ] && return
     >&2 echo "${cRed}ERROR: Field '$1' of change history is empty.$cSuf"
     return 1
 }
@@ -46,33 +53,22 @@ ValidateHistory(){
     ValidateHistoryField 'Symptom' || exit
     ValidateHistoryField 'RootCause' || exit
     ValidateHistoryField 'Solution' || exit
+    ValidateHistoryField 'SolutionDependency' || exit
 }
 
 CheckStage(){
-
     case "$(git -c "core.safecrlf=false" diff --cached --name-only)" in
         "")
+            [ "$1" == "amend" ] && return 0
             >&2 echo "${cRed}ERROR: There is no staged changes.
 Stage changes to be committed with 'git add'.$cSuf"
             return 1
             ;;
-        *"$template_file_name"*)
+        *"$tempf"*)
             [ "$1" == "template" ] && return 0
-            if ! FindFile "$fci_file_name" 2>/dev/null
-            then
-                >&2 echo "${cRed}ERROR: It seems that you haven't initialize this repository.
-Checkout the last commit that ARN'T commit with inspurcommit and use
-command 'inspurcommit init'.$cSuf"
-                return 1
-            elif [ $(git log -1 --format="%H") == $(cat "$fci_file_name") ]
-            then
-                return 0
-            fi
-            git restore --staged "$template_file_name" > /dev/null
-            >&2 echo "${cYlw}Warning: $template_file_name was staged. But was skipped.
-If you intend to modify the template, use command 'inspurcommit template'.$cSuf"
+            git restore --staged "$tempf" > /dev/null
+            >&2 echo "${cYlw}Warning: $tempf was staged. But was skipped.${LF}If you intend to modify the template, use command 'inspurcommit template'.$cSuf"
             CheckStage
-            return
             ;;
     esac
 }
@@ -92,21 +88,28 @@ FindFile(){
 }
 
 Commit(){
-    ValidateTemplate
-    ValidateJgn
-    ValidateHistory
-    local jgn_content
-    local summary=$(cat "$tempFn" | grep '^Solution:' | sed 's/^Solution:\s*//')
+    local tmpc
+    local jgnc
+    local summary
     local details
-    if [ "$op" == "amend" ]
+    tmpc=$(cat "$tmpf" | grep -v '^#\|^\s*$')
+    ValidateHistory
+    if ValidateHistoryField "RelatedFiles" 2>/dev/null
     then
-        git reset --soft @^ || exit
-        jgn_content=$($jgn)
-        git reset --soft ORIG_HEAD
-    else
-        jgn_content=$($jgn)
+        tmpc=$(echo "$tmpc" | sed '/^RelatedFiles:/,$d')
+        ValidateJgn || exit
+        if [ "$op" == "amend" ]
+        then
+            git reset --soft @^ || exit
+            jgnc=$($jgn)
+            git reset --soft ORIG_HEAD
+        else
+            jgnc=$($jgn)
+        fi
+        tmpc="$tmpc$LF$jgnc"
     fi
-    details=$(cat "$tempFn" <(echo "$jgn_content") | grep -v '^#\|^\s*$')
+    summary=$(echo "$tmpc" | grep '^Solution:' | sed 's/^Solution:\s*//')
+    details="$tmpc"
     git commit "$@" -m "$summary" -m "$details"
 }
 
@@ -120,8 +123,8 @@ Export(){
     local fcic
     local mode
     local ch_content
-    FindFile "$fci_file_name" || return
-    fci=$(cat "$fci_file_name")
+    CheckInit || return
+    fci=$(cat "$fcif")
     fcic=$(git rev-list --reverse "$fci"..@ | head -1)
     if [ "$1" == "none" ] || [ ! "$1" ]; then
         mode="all"
@@ -143,7 +146,8 @@ Export(){
             chfn=${2:-"ChangeHistory-${currhash}.txt"}
             ;;
         *)
-            DebugReport "Export mode is neither all nor notall."
+            >&2 echo "ERROR: Export mode is neither all nor notall."
+            exit 1
             ;;
     esac
     CheckFileAlreadyExists "$chfn" || return
@@ -152,22 +156,132 @@ Export(){
     return
 }
 
-DebugReport(){
-    >&2 echo "${cYlw}Warning: $1
-You've just met a debug warning.
-If it's not inconvenient, please contact $author on this issue, or create an issue on $issuelink. Thanks!$cSuf"
+#  $1:  switch
+#  $2:  argument
+# &$3:  variable
+InitParseArg(){
+    if [ ! "$2" ]
+    then
+        >&2 echo "${cRed}ERROR: '$1' requires a value.$cSuf"
+        exit 1
+    fi
+    local -n var=$3
+    var="$2"
+}
+
+InitTemplate(){
+    local dff=$(dirname "$0")/"$tempf"
+    local dfc
+    FindFile "$dff" || return 1
+    dfc=$(cat "$dff")
+    [ "$dfTag" ] && dfc=$(echo "$dfc" | \
+        sed "s/^Tag#:.*$/Tag#: $dfTag/")
+    [ "$dfLbl" ] && dfc=$(echo "$dfc" | \
+        sed "s/^Label#:.*$/Label#: $dfLbl/")
+    [ "$dfIss" ] && dfc=$(echo "$dfc" | \
+        sed "s/^Issue#:.*$/Issue#: $dfIss/")
+    [ "$dfScp" ] && dfc=$(echo "$dfc" | \
+        sed "s/^Scope:.*$/Scope: $dfScp/")
+    [ "$dfSvr" ] && dfc=$(echo "$dfc" | \
+        sed "s/^Severity:.*$/Severity: $dfSvr/")
+    [ "$dfCtg" ] && dfc=$(echo "$dfc" | \
+        sed "s/^Category:.*$/Category: $dfCtg/")
+    [ "$dfSpt" ] && dfc=$(echo "$dfc" | \
+        sed "s/^Symptom:.*$/Symptom: $dfSpt/")
+    [ "$dfRtc" ] && dfc=$(echo "$dfc" | \
+        sed "s/^RootCause:.*$/RootCause: $dfRtc/")
+    [ "$dfSlt" ] && dfc=$(echo "$dfc" | \
+        sed "s/^Solution:.*$/Solution: $dfSlt/")
+    [ "$dfDpd" ] && dfc=$(echo "$dfc" | \
+        sed "s/^SolutionDependency:.*$/SolutionDependency: $dfDpd/")
+    [ "$dfRlf" ] && dfc=$(echo "$dfc" | \
+        sed "s/^RelatedFiles:.*$/RelatedFiles: $dfRlf/")
+    echo "$dfc" > "$tempf"
+}
+
+GenerateTmp(){
+    FindFile "$tmpf" 2>/dev/null && return
+    cp ./"$tempf" ./"$tmpf"
+    echo "${cGrn}Generated file ${cYlw}$tmpf$cSuf"
+    echo "${cGrn}Write change history in this file and save, and commit again.$cSuf"
+    return 1
+}
+
+pushUsage(){
+    echo "Usage:
+    inspurcommit push [<branch>]$LF
+Push local commits to Gerrit. By default, <branch> is 'master'.
+This command is equivalent to:$LF
+    git push origin HEAD:refs/for/<branch>"
+}
+
+amendUsage(){
+    echo "Usage:
+    inspurcommit amend [<options>]$LF
+Amend last commit with current $tmpf and staged changes.
+<options> will be passed to git commit. "
+}
+
+exportUsage(){
+    echo "Usage:
+    inspurcommit export [<filename>]
+    inspurcommit exportall [<filename>]$LF
+Export a change history.
+If 'export' is used, will filter out 'scope'."
+}
+
+templateUsage(){
+    echo "Usage:
+    inspurcommit template [<options>]$LF
+Normally, changes of the template cannot be committed, in case it is
+changed by accident. When you intend to change the template, you can use
+this operation.
+<options> will be passed to git commit."
+}
+
+initUsage(){
+    echo "Usage:
+    inspurcommit init [<defaults>]$LF
+Defaults:
+    -t, --tag <tag#>
+    -l, --label <label#>
+    -i, --issue <Issue#>
+    -s, --scope <Scope>
+    -v, --severity <Severity>
+    -c, --category <Category>
+    -y, --symptom <Symptom>
+    -r, --rootcause <RootCause>
+    -o, --solution <Solution>
+    -d, --dependency <SolutionDependency>
+    -f, --files <RelatedFiles>$LF
+Example:
+    inspurcommit init -t \"5.19_CedarIslandCrb_0ACMT_013\""
+}
+
+LookupUsage(){
+    [ ! "$2" ] && return
+    case "$2" in
+        "-?"|"-h"|"--help"|"--usage")
+            ${1}Usage
+            return 1
+            ;;
+    esac
+    return 0
 }
 
 declare -r rev='0.3.0'
 declare -r lastupdt='2021-07-22'
 declare -r author='Johnny Appleseed <liuzhaohui@inspur.com>'
-declare -r issuelink='https://github.com/islzh/jg/issues/new'
 declare -r jgn="jgnumberforthehistory"
-declare -r tempFn=$template_file_name
+declare -r tempf="$template_file_name"
+declare -r tmpf="$change_history_name"
+declare -r fcif="$fci_file_name"
 declare -r cRed="[91m"
 declare -r cGrn="[92m"
 declare -r cYlw="[93m"
 declare -r cSuf="[0m"
+declare -r LF='
+'
 
 declare -r op="${1,,}"
 case "$op" in
@@ -176,44 +290,133 @@ case "$op" in
         echo "    inspurcommit v$rev"
         echo "    Last updated: $lastupdt"
         echo "    $author"
+        echo
         ShowUsage
         exit
         ;;
+
     ""|"-"*)
         git rev-parse || exit
+        CheckInit || exit
+        GenerateTmp || exit 0
         CheckStage || exit
         Commit "$@"
         ;;
-    "amend")
-        git rev-parse || exit
-        CheckStage || exit
+
+    "push")
         shift
+        LookupUsage "$op" "$@" || exit 0
+        git rev-parse || exit
+        p_br="${1:-master}"
+        shift
+        git push origin HEAD:refs/for/"$p_br" "$@"
+        exit
+        ;;
+
+    "amend")
+        shift
+        LookupUsage "$op" "$@" || exit 0
+        git rev-parse || exit
+        CheckInit || exit
+        GenerateTmp || exit 0
+        CheckStage amend || exit
         Commit --amend "$@"
         ;;
+
     "export")
-        git rev-parse || exit
         shift
+        LookupUsage "$op" "$@" || exit 0
+        git rev-parse || exit
         Export "Scope" "$@"
         ;;
+
     "exportall")
-        git rev-parse || exit
         shift
+        LookupUsage "export" "$@" || exit 0
+        git rev-parse || exit
         Export "none" "$@"
         ;;
+
     "template")
-        git rev-parse || exit
         shift
+        LookupUsage "$op" "$@" || exit 0
+        git rev-parse || exit
+        CheckInit || exit
+        GenerateTmp || exit 0
         CheckStage template || exit
         Commit "$@"
         ;;
+
     "init")
+        shift
+        while [ $# -gt 0 ]
+        do
+            case "${1,,}" in
+                -t|--tag)
+                    InitParseArg "$1" "$2" dfTag
+                    shift 2
+                    ;;
+                -l|--label)
+                    InitParseArg "$1" "$2" dfLbl
+                    shift 2
+                    ;;
+                -i|--issue)
+                    InitParseArg "$1" "$2" dfIss
+                    shift 2
+                    ;;
+                -s|--scope)
+                    InitParseArg "$1" "$2" dfScp
+                    shift 2
+                    ;;
+                -v|--severity)
+                    InitParseArg "$1" "$2" dfSvr
+                    shift 2
+                    ;;
+                -c|--category)
+                    InitParseArg "$1" "$2" dfCtg
+                    shift 2
+                    ;;
+                -y|--symptom)
+                    InitParseArg "$1" "$2" dfSpt
+                    shift 2
+                    ;;
+                -r|--rootcause)
+                    InitParseArg "$1" "$2" dfRtc
+                    shift 2
+                    ;;
+                -o|--solution)
+                    InitParseArg "$1" "$2" dfSlt
+                    shift 2
+                    ;;
+                -d|--dependency|--solution-dependency)
+                    InitParseArg "$1" "$2" dfDpd
+                    shift 2
+                    ;;
+                -f|--files|--related-files)
+                    InitParseArg "$1" "$2" dfRlf
+                    shift 2
+                    ;;
+                '-?'|-h|--help|--usage)
+                    initUsage
+                    exit
+                    ;;
+                *)
+                    >&2 echo "${cRed}ERROR: invalid argument - $1$cSuf"
+                    >&2 initUsage
+                    exit 1
+                    ;;
+            esac
+        done
         git rev-parse || exit
         if [ ! -e ./.git ]; then
             >&2 echo "${cRed}ERROR: Please init in the root directory.$cSuf"
             exit 1
         fi
-        CheckFileAlreadyExists "$fci_file_name" || exit
-        CheckFileAlreadyExists "$template_file_name" || exit
+        if CheckInit 2>/dev/null
+        then
+            >&2 echo "${cRed}ERROR: This repository has already been initialized.$cSuf"
+            exit 1
+        fi
         case "$(git status --porcelain)" in
             *".gitignore"*)
                 >&2 echo "${cRed}Please commit or stash your local changes of file '.gitignore' before init.$cSuf"
@@ -226,10 +429,15 @@ case "$op" in
             >&2 git status
             exit 1
         fi
-        git log --format="%H" -1 > "$fci_file_name" && \
-            cp $(dirname "$0")/"$template_file_name" ./ && \
+        [ -e "$tmpf" ] && \
+            mv "$tmpf" "Old$tmpf" && \
+            git -c "core.safecrlf=false" add "$tmpf" "Old$tmpf"
+        [ $? -eq 0 ] || exit
+        git log --format="%H" -1 > "$fcif" && \
+            InitTemplate && \
+            echo "/$tmpf" >> .gitignore && \
             echo "/ChangeHistory-*.txt" >> .gitignore && \
-            git -c "core.safecrlf=false" add "$template_file_name" "$fci_file_name" .gitignore && \
+            git -c "core.safecrlf=false" add "$tempf" "$fcif" .gitignore && \
             git commit -m "INSPURCOMMIT-INIT" -m "
 This commit was automatically generated to initialize this repository in
 order to use Inspur Commit Kit." 1>/dev/null && \
