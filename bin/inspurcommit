@@ -431,8 +431,7 @@ case "$op" in
         fi
         [ -e "$tmpf" ] && \
             mv "$tmpf" "Old$tmpf" && \
-            git -c "core.safecrlf=false" add "$tmpf" "Old$tmpf"
-        [ $? -eq 0 ] || exit
+            (git -c "core.safecrlf=false" add "$tmpf" "Old$tmpf" || exit)
         git log --format="%H" -1 > "$fcif" && \
             InitTemplate && \
             echo "/$tmpf" >> .gitignore && \
