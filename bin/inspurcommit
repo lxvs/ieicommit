@@ -92,6 +92,7 @@ Commit(){
     local jgnc
     local summary
     local details
+    local chid
     tmpc=$(cat "$tmpf" | grep -v '^#\|^\s*$')
     ValidateHistory
     if ValidateHistoryField "RelatedFiles" 2>/dev/null
@@ -110,7 +111,14 @@ Commit(){
     fi
     summary=$(echo "$tmpc" | grep '^Solution:' | sed 's/^Solution:\s*//')
     details="$tmpc"
-    git commit "$@" -m "$summary" -m "$details"
+    if [ "$op" == "amend" ]; then
+        chid=$(git log -1 --format=%b | grep '^Change-Id:')
+        [ "$chid" ] || \
+            >&2 echo "${cYlw}Warning: Failed to get Change-ID.$cSuf"
+        git commit "$@" -m "$summary" -m "$details" -m "$chid"
+    else
+        git commit "$@" -m "$summary" -m "$details"
+    fi
 }
 
 # Export a Change History
