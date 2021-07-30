@@ -37,23 +37,23 @@ ValidateJgn(){
 }
 
 ValidateHistoryField(){
-    local value=$(cat "$tmpf" | grep "^$1:" | sed "s/^$1:\s*//")
+    local value=$(echo "$1" | grep "^$2:" | sed "s/^$2:\s*//")
     [ "$value" ] && return
-    >&2 echo "${cRed}ERROR: Field '$1' of change history is empty.$cSuf"
+    >&2 echo "${cRed}ERROR: Field '$2' of change history is empty.$cSuf"
     return 1
 }
 
 ValidateHistory(){
-    ValidateHistoryField 'Tag#' || exit
-    ValidateHistoryField 'Label#' || exit
-    ValidateHistoryField 'Issue#' || exit
-    ValidateHistoryField 'Scope' || exit
-    ValidateHistoryField 'Severity' || exit
-    ValidateHistoryField 'Category' || exit
-    ValidateHistoryField 'Symptom' || exit
-    ValidateHistoryField 'RootCause' || exit
-    ValidateHistoryField 'Solution' || exit
-    ValidateHistoryField 'SolutionDependency' || exit
+    ValidateHistoryField "$1" 'Tag#' || exit
+    ValidateHistoryField "$1" 'Label#' || exit
+    ValidateHistoryField "$1" 'Issue#' || exit
+    ValidateHistoryField "$1" 'Scope' || exit
+    ValidateHistoryField "$1" 'Severity' || exit
+    ValidateHistoryField "$1" 'Category' || exit
+    ValidateHistoryField "$1" 'Symptom' || exit
+    ValidateHistoryField "$1" 'RootCause' || exit
+    ValidateHistoryField "$1" 'Solution' || exit
+    ValidateHistoryField "$1" 'SolutionDependency' || exit
 }
 
 CheckStage(){
@@ -95,7 +95,7 @@ Commit(){
     local lastslt
     local chid
     tmpc=$(cat "$tmpf" | grep -v '^#\|^\s*$')
-    ValidateHistory
+    ValidateHistory "$tmpc"
     summary=$(echo "$tmpc" | grep '^Solution:' | sed 's/^Solution:\s*//')
     if [ ! "$op" == "amend" ]; then
         lastslt=$(git log -1 --format=%s)
@@ -104,7 +104,7 @@ Commit(){
             return 1
         fi
     fi
-    if ValidateHistoryField "RelatedFiles" 2>/dev/null
+    if ValidateHistoryField "$tmpc" "RelatedFiles" 2>/dev/null
     then
         tmpc=$(echo "$tmpc" | sed '/^RelatedFiles:/,$d')
         ValidateJgn || exit
