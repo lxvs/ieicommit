@@ -2,6 +2,7 @@
 
 declare -r template_file_name="ChangeHistoryTemplate.txt"
 declare -r change_history_name="ChangeHistory.txt"
+declare -r old_change_history_name="Old$change_history_name"
 declare -r fci_file_name="farewell-commit-id"
 
 ShowUsage(){
@@ -168,6 +169,9 @@ Export(){
     esac
     CheckFileAlreadyExists "$chfn" || return
     echo "$ch_content" > "$chfn"
+    FindFile "$oldf" 2>/dev/null && \
+        d2u "$oldf" 2>/dev/null && \
+        echo "$LF$(cat "$oldf")" >> "$chfn"
     echo "${cGrn}Exported file $chfn$cSuf"
     return
 }
@@ -291,6 +295,7 @@ declare -r author='Johnny Appleseed <liuzhaohui@inspur.com>'
 declare -r jgn="jgnumberforthehistory"
 declare -r tempf="$template_file_name"
 declare -r tmpf="$change_history_name"
+declare -r oldf="$old_change_history_name"
 declare -r fcif="$fci_file_name"
 declare -r cRed="[91m"
 declare -r cGrn="[92m"
@@ -446,7 +451,8 @@ case "$op" in
             exit 1
         fi
         [ -e "$tmpf" ] && \
-            mv "$tmpf" "Old$tmpf" && \
+            (d2u "$tmpf" 2>/dev/null || exit) && \
+            (mv "$tmpf" "Old$tmpf" || exit) && \
             (git -c "core.safecrlf=false" add "$tmpf" "Old$tmpf" || exit)
         git log --format="%H" -1 > "$fcif" && \
             InitTemplate && \

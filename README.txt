@@ -32,7 +32,7 @@ inspect every script before running it.
 进行了初始化动作【并上传】至 Gerrit，其他成员下载到的代码即是已初始化完成
 的，不需要再次进行初始化。
 
-init 命令可以使用参数来模板对应字段设置默认值，如 --tag EXAMPLE_TAG 参数
+init 命令可以使用参数为模板对应字段设置默认值，如 --tag EXAMPLE_TAG 参数
 可将模板中 Tag# 字段内容设置为 EXAMPLE_TAG。参数详细信息及“初始化”所做的
 操作请见“操作”章节。
 
@@ -41,6 +41,8 @@ init 命令可以使用参数来模板对应字段设置默认值，如 --tag EX
 
 代码的提交
 ----------
+
+提交代码步骤：
 
     1.  在 Git Bash 中使用 git add 命令添加将要提交的代码改动。
         - git add .
@@ -97,22 +99,22 @@ amend
 
 export
 
-    导出一份 change-history 到 ChangeHistory-%h.txt，%h 表示当前 commit
-    id，不包含 Scope 字段。如果需要指定文件名，使用如下命令：
+    导出一份 change-history 到 ChangeHistory-<hash>.txt，<hash> 表示当前
+    commit id，不包含 Scope 字段。如果需要指定文件名，使用如下命令：
 
-        inpsurcommit export <文件名>.txt
+        inpsurcommit export <文件名>
 
 exportall
 
-    导出一份 change-history 到 ChangeHistory-All-%h.txt，%h 表示当前
-    commit id。如果需要指定文件名，使用如下命令：
+    导出一份 change-history 到 ChangeHistory-All-<hash>.txt，<hash> 表示
+    当前 commit id。如果需要指定文件名，使用如下命令：
 
-        inpsurcommit exportall <文件名>.txt
+        inpsurcommit exportall <文件名>
 
 template
 
     默认情况下提交码时如果包含了模板文件，脚本会自动排除它但仍然提交其余
-    改动。如果要修改模板并提交，需要加上 template 参数。
+    改动。如果要修改模板并提交，需要使用 template 操作。
 
 init
 
