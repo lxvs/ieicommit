@@ -92,9 +92,18 @@ Commit(){
     local jgnc
     local summary
     local details
+    local lastslt
     local chid
     tmpc=$(cat "$tmpf" | grep -v '^#\|^\s*$')
     ValidateHistory
+    summary=$(echo "$tmpc" | grep '^Solution:' | sed 's/^Solution:\s*//')
+    if [ ! "$op" == "amend" ]; then
+        lastslt=$(git log -1 --format=%s)
+        if [ "$lastslt" == "$summary" ]; then
+            >&2 echo "${cRed}ERROR: Solution is same with last one.$cSuf"
+            return 1
+        fi
+    fi
     if ValidateHistoryField "RelatedFiles" 2>/dev/null
     then
         tmpc=$(echo "$tmpc" | sed '/^RelatedFiles:/,$d')
@@ -109,7 +118,6 @@ Commit(){
         fi
         tmpc="$tmpc$LF$jgnc"
     fi
-    summary=$(echo "$tmpc" | grep '^Solution:' | sed 's/^Solution:\s*//')
     details="$tmpc"
     if [ "$op" == "amend" ]; then
         chid=$(git log -1 --format=%b | grep '^Change-Id:')
