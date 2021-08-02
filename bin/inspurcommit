@@ -9,7 +9,7 @@ ShowUsage(){
     echo "Usage:
     inspurcommit [<operation>]$LF
 Operations:
-    amend, export, exportall, init, push, template, usage$LF
+    amend, diff, export, exportall, init, push, template, usage$LF
 For help on a specific operation:
     inspurcommit <operation> --help$LF
 If no operation is specified, it is used to perform a git commit. Here are
@@ -278,6 +278,14 @@ Example:
     inspurcommit init -t \"5.19_CedarIslandCrb_0ACMT_013\""
 }
 
+diffUsage(){
+    echo "Usage:
+    inspurcommit diff [<option>...]$LF
+Diff with Beyond Compare. <Option>, if any, will be passed to git difftool.
+Try 'git difftool --help' for more information.$LF
+If you want to diff the staged changes, use 'inspurcommit diff --cached'."
+}
+
 LookupUsage(){
     [ ! "$2" ] && return
     case "$2" in
@@ -332,6 +340,21 @@ case "$op" in
         shift
         git push origin HEAD:refs/for/"$p_br" "$@"
         exit
+        ;;
+
+    "diff")
+        shift
+        LookupUsage "$op" "$@" || exit 0
+        git rev-parse || exit
+        bcomp="$(reg query "HKCU\\Software\\Scooter Software\\Beyond Compare" //v "ExePath" 2>/dev/null)"
+        if ! [ "$bcomp" ]; then
+            >&2 echo "${cRed}ERROR: Couldn't find Beyond Compare.$cSuf"
+            exit 1
+        fi
+        bcomp="$(echo "$bcomp" | grep "ExePath" | sed 's/\s\{4\}.*\s\{4\}//')"
+        git -c "diff.tool=BeyondCompare" \
+            -c "difftool.BeyondCompare.cmd=\"${bcomp}\" \"\$(cygpath -w \"\$LOCAL\")\" \"\$REMOTE\"" \
+            difftool --dir-diff "$@"
         ;;
 
     "amend")

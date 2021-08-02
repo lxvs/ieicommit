@@ -97,6 +97,13 @@ amend
 
         git reset --soft HEAD@{1}
 
+diff
+
+    使用 Beyond Compare 对比当前改动。如果提供了参数，它们会被传递给 git
+    difftool。如果要对比已添加（staged）的改动，使用如下命令：
+
+        inspurcommit diff --cached
+
 export
 
     导出一份 change-history 到 ChangeHistory-<hash>.txt，<hash> 表示当前
