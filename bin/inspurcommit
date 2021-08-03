@@ -9,20 +9,23 @@ declare -r old_change_history_name="Old$change_history_name"
 declare -r fci_file_name="farewell-commit-id"
 
 ShowUsage () {
-    echo "Usage:
-    inspurcommit [<operation>]$LF
-Operations:
-    amend, diff, export, exportall, init, push, template, usage$LF
-For help on a specific operation:
-    inspurcommit <operation> --help$LF
-If no operation is specified, it is used to perform a git commit. Here are
-the steps:
-    1. Use command 'git add <file>', or 'git add .', etc. to stage changes.
-    2. Write change history in file $tmpf.
-       If this file does not exist, use command 'inspurcommit' to generate
-       one, and then write change history in it.
-    3. Use command 'inspurcommit' to commit. Arguments, if any, will be
-       passed to git commit."
+    printf "%s\n" "Usage:" \
+        "    inspurcommit [<operation>]" \
+        "" \
+        "Operations:" \
+        "    amend, diff, export, exportall, init, push, template, usage" \
+        "" \
+        "For help on a specific operation:" \
+        "    inspurcommit <operation> --help" \
+        "" \
+        "If no operation is specified, it is used to perform a git commit. Here are" \
+        "the steps:" \
+        "    1. Use command 'git add <file>', or 'git add .', etc. to stage changes." \
+        "    2. Write change history in file $tmpf." \
+        "       If this file does not exist, use command 'inspurcommit' to generate" \
+        "       one, and then write change history in it." \
+        "    3. Use command 'inspurcommit' to commit. Arguments, if any, will be" \
+        "       passed to git commit."
 }
 
 CheckInit () {
@@ -37,43 +40,56 @@ CheckInit () {
 }
 
 ValidateJgn () {
-    which $jgn 1>/dev/null 2>&1 && return
+    type "$jgn" 1>/dev/null 2>&1 && return
     >&2 Prompt red "ERROR: Coundn't find $jgn."
     return 1
 }
 
 ValidateHistoryField () {
-    local value=$(echo "$1" | grep "^$2:" | sed "s/^$2:\s*//")
+    local value
+    local content
+    local field
+    test "$#" -eq 2 || return
+    content="$1"
+    field="$2"
+    value=$(printf "%s\n" "$content" |
+        grep "^${field}:" |
+        sed "s/^${field}:\s*//")
     test "$value" && return
-    >&2 Prompt red "ERROR: Field '$2' of change history is empty."
+    >&2 Prompt red "ERROR: Field '$field' of change history is empty."
     return 1
 }
 
 ValidateHistory () {
-    ValidateHistoryField "$1" 'Tag#' || exit
-    ValidateHistoryField "$1" 'Label#' || exit
-    ValidateHistoryField "$1" 'Issue#' || exit
-    ValidateHistoryField "$1" 'Scope' || exit
-    ValidateHistoryField "$1" 'Severity' || exit
-    ValidateHistoryField "$1" 'Category' || exit
-    ValidateHistoryField "$1" 'Symptom' || exit
-    ValidateHistoryField "$1" 'RootCause' || exit
-    ValidateHistoryField "$1" 'Solution' || exit
-    ValidateHistoryField "$1" 'SolutionDependency' || exit
+    local content
+    test "$#" -eq 1 || return
+    content="$1"
+    ValidateHistoryField "$content" 'Tag#' || exit
+    ValidateHistoryField "$content" 'Label#' || exit
+    ValidateHistoryField "$content" 'Issue#' || exit
+    ValidateHistoryField "$content" 'Scope' || exit
+    ValidateHistoryField "$content" 'Severity' || exit
+    ValidateHistoryField "$content" 'Category' || exit
+    ValidateHistoryField "$content" 'Symptom' || exit
+    ValidateHistoryField "$content" 'RootCause' || exit
+    ValidateHistoryField "$content" 'Solution' || exit
+    ValidateHistoryField "$content" 'SolutionDependency' || exit
 }
 
 CheckStage () {
+    local option="normal"
+    test "$#" -ge 1 && option="$1"
     case "$(git -c "core.safecrlf=false" diff --cached --name-only)" in
         "")
-            test "$1" = "amend" && return 0
+            test "$option" = "amend" && return 0
             >&2 Prompt red \
                 "ERROR: There is no staged changes." \
                 "Stage changes to be committed with 'git add'."
             return 1
             ;;
         *"$tempf"*)
-            test "$1" = "template" && return 0
-            git restore --staged "$tempf" > /dev/null
+            test "$option" = "template" && return 0
+            git restore --staged "$tempf" >/dev/null
             >&2 Prompt yellow \
                 "Warning: $tempf was staged. But was skipped." \
                 "If you intend to modify the template, use command 'inspurcommit template'."
@@ -83,15 +99,17 @@ CheckStage () {
 }
 
 CheckFileAlreadyExists () {
-    local filename="$1"
-    test -e "$filename" || return 0
+    local filename
+    test "$#" -eq 1 && filename="$1" || return
+    test ! -e "$filename" && return
     >&2 Prompt red "ERROR: File $filename already exists."
     return 1
 }
 
 FindFile () {
-    local filename="$1"
-    test -e "$filename" && return 0
+    local filename
+    test "$#" -eq 1 && filename="$1" || return
+    test -e "$filename" && return
     >&2 Prompt red "ERROR: Couldn't find file $filename."
     return 1
 }
@@ -103,9 +121,11 @@ Commit () {
     local details
     local lastslt
     local chid
-    tmpc=$(cat "$tmpf" | grep -v '^#\|^\s*$')
+    tmpc=$(grep -v '^#\|^\s*$' <"$tmpf")
     ValidateHistory "$tmpc"
-    summary=$(echo "$tmpc" | grep '^Solution:' | sed 's/^Solution:\s*//')
+    summary=$(printf "%s\n" "$tmpc" |
+        grep '^Solution:' |
+        sed 's/^Solution:\s*//')
     if test ! "$op" = "amend"
     then
         lastslt=$(git log -1 --format=%s)
@@ -117,17 +137,17 @@ Commit () {
     fi
     if ValidateHistoryField "$tmpc" "RelatedFiles" 2>/dev/null
     then
-        tmpc=$(echo "$tmpc" | sed '/^RelatedFiles:/,$d')
+        tmpc=$(printf "%s\n" "$tmpc" | sed '/^RelatedFiles:/,$d')
         ValidateJgn || exit
         if test "$op" = "amend"
         then
             git reset --soft @^ || exit
-            jgnc=$($jgn)
+            jgnc=$("$jgn")
             git reset --soft ORIG_HEAD
         else
-            jgnc=$($jgn)
+            jgnc=$("$jgn")
         fi
-        tmpc="$tmpc$LF$jgnc"
+        printf -v tmpc "%s\n%s" "$tmpc" "$jgnc"
     fi
     details="$tmpc"
     if test "$op" = "amend"
@@ -145,96 +165,92 @@ Commit () {
 # $1: exclude-field: 'none', 'Scope'.
 # $2: [ filename ]: Use "ChangeHistory[-All]-%h" if not specified.
 Export () {
-    local currhash
+    local -r filter="$1"
     local chfn
+    local currhash
     local fci
     local fcic
-    local mode
     local ch_content
     CheckInit || return
-    fci=$(cat "$fcif")
-    fcic=$(git rev-list --reverse "$fci"..@ | head -1)
-    if test "$1" = "none" || test ! "$1"
+    test "$#" -ge 2 && chfn="$2"
+    fci=$(<"$fcif")
+    fcic=$(git rev-list --reverse "$fci".. | head -1)
+    if test ! "$fcic"
     then
-        mode="all"
-        ch_content=$(git log "$fcic".. --format="%b" | sed '/^Change-Id:\s\w\{41\}$/,+1d')
+        >&2 Prompt red "ERROR: Nothing to export."
+        return 1
+    fi
+    if test "$filter" = "none"
+    then
+        ch_content=$(git log --format=%b "$fcic".. |
+            sed '/^Change-Id:\s\w\{41\}$/,+1d')
     else
-        mode="notall"
-        ch_content=$(git log "$fcic".. --format="%b" | grep -v "^$1:" | sed '/^Change-Id:\s\w\{41\}$/,+1d')
+        ch_content=$(git log --format=%b "$fcic".. |
+            grep -v "^${filter}:" |
+            sed '/^Change-Id:\s\w\{41\}$/,+1d')
     fi
     if test ! "$ch_content"
     then
         >&2 Prompt red "ERROR: Nothing to export."
         return 1
     fi
-    currhash=$(git log -1 --format='%h')
-    case "$mode" in
-        "all")
-            chfn=${2:-"ChangeHistory-All-${currhash}.txt"}
-            ;;
-        "notall")
-            chfn=${2:-"ChangeHistory-${currhash}.txt"}
-            ;;
-        *)
-            >&2 echo "ERROR: Export mode is neither all nor notall."
-            exit 1
-            ;;
-    esac
+    currhash=$(git log -1 --format=%h)
+    if test "$filter" = "none"
+    then
+        chfn=${chfn:-"ChangeHistory-All-${currhash}.txt"}
+    else
+        chfn=${chfn:-"ChangeHistory-${currhash}.txt"}
+    fi
     CheckFileAlreadyExists "$chfn" || return
-    echo "$ch_content" > "$chfn"
+    printf "%s\n" "$ch_content" >"$chfn"
     FindFile "$oldf" 2>/dev/null &&
         d2u "$oldf" 2>/dev/null &&
-        echo "$LF$(cat "$oldf")" >> "$chfn"
+        printf "\n%s" "$(<"$oldf")" >>"$chfn"
     Prompt green "Exported file $chfn"
-    return
 }
 
 #  $1:  switch
 #  $2:  argument
 # &$3:  variable
 InitParseArg () {
-    if test ! "$2"
-    then
-        >&2 Prompt red "ERROR: '$1' requires a value."
-        exit 1
-    fi
     local -n var=$3
     var="$2"
 }
 
 InitTemplate () {
-    local dff=$(dirname "$0")/"$tempf"
+    local dff
     local dfc
+    dff="$(dirname "$0")/$tempf"
     FindFile "$dff" || return 1
-    dfc=$(cat "$dff")
-    test "$dfTag" && dfc=$(echo "$dfc" |
+    dfc=$(<"$dff")
+    test "${dfTag:-}" && dfc=$(printf "%s\n" "$dfc" |
         sed "s/^Tag#:.*$/Tag#: $dfTag/")
-    test "$dfLbl" && dfc=$(echo "$dfc" |
+    test "${dfLbl:-}" && dfc=$(printf "%s\n" "$dfc" |
         sed "s/^Label#:.*$/Label#: $dfLbl/")
-    test "$dfIss" && dfc=$(echo "$dfc" |
+    test "${dfIss:-}" && dfc=$(printf "%s\n" "$dfc" |
         sed "s/^Issue#:.*$/Issue#: $dfIss/")
-    test "$dfScp" && dfc=$(echo "$dfc" |
+    test "${dfScp:-}" && dfc=$(printf "%s\n" "$dfc" |
         sed "s/^Scope:.*$/Scope: $dfScp/")
-    test "$dfSvr" && dfc=$(echo "$dfc" |
+    test "${dfSvr:-}" && dfc=$(printf "%s\n" "$dfc" |
         sed "s/^Severity:.*$/Severity: $dfSvr/")
-    test "$dfCtg" && dfc=$(echo "$dfc" |
+    test "${dfCtg:-}" && dfc=$(printf "%s\n" "$dfc" |
         sed "s/^Category:.*$/Category: $dfCtg/")
-    test "$dfSpt" && dfc=$(echo "$dfc" |
+    test "${dfSpt:-}" && dfc=$(printf "%s\n" "$dfc" |
         sed "s/^Symptom:.*$/Symptom: $dfSpt/")
-    test "$dfRtc" && dfc=$(echo "$dfc" |
+    test "${dfRtc:-}" && dfc=$(printf "%s\n" "$dfc" |
         sed "s/^RootCause:.*$/RootCause: $dfRtc/")
-    test "$dfSlt" && dfc=$(echo "$dfc" |
+    test "${dfSlt:-}" && dfc=$(printf "%s\n" "$dfc" |
         sed "s/^Solution:.*$/Solution: $dfSlt/")
-    test "$dfDpd" && dfc=$(echo "$dfc" |
+    test "${dfDpd:-}" && dfc=$(printf "%s\n" "$dfc" |
         sed "s/^SolutionDependency:.*$/SolutionDependency: $dfDpd/")
-    test "$dfRlf" && dfc=$(echo "$dfc" |
+    test "${dfRlf:-}" && dfc=$(printf "%s\n" "$dfc" |
         sed "s/^RelatedFiles:.*$/RelatedFiles: $dfRlf/")
-    echo "$dfc" > "$tempf"
+    printf "%s\n" "$dfc" >"$tempf"
 }
 
 GenerateTmp () {
     FindFile "$tmpf" 2>/dev/null && return
-    cp ./"$tempf" ./"$tmpf"
+    cp "./$tempf" "./$tmpf"
     Prompt green "Generated file $tmpf"
     Prompt yellow \
         "Write change history in this file and save, and commit again."
@@ -242,72 +258,77 @@ GenerateTmp () {
 }
 
 pushUsage () {
-    echo "Usage:
-    inspurcommit push [<branch>]$LF
-Push local commits to Gerrit. By default, <branch> is 'master'.
-This command is equivalent to:$LF
-    git push origin HEAD:refs/for/<branch>"
+    printf "%s\n" "Usage:" \
+        "    inspurcommit push [<branch>]" "" \
+        "Push local commits to Gerrit. By default, <branch> is 'master'." \
+        "This command is equivalent to:" "" \
+        "    git push origin HEAD:refs/for/<branch>"
 }
 
 amendUsage () {
-    echo "Usage:
-    inspurcommit amend [<options>]$LF
-Amend last commit with current $tmpf and staged changes.
-<options> will be passed to git commit. "
+    printf "%s\n" "Usage:" \
+        "    inspurcommit amend [<options>]" "" \
+        "Amend last commit with current $tmpf and staged changes." \
+        "<options> will be passed to git commit."
 }
 
 exportUsage () {
-    echo "Usage:
-    inspurcommit export [<filename>]
-    inspurcommit exportall [<filename>]$LF
-Export a change history.
-If 'export' is used, will filter out 'scope'."
+    printf "%s\n" "Usage:" \
+        "    inspurcommit export [<filename>]" \
+        "    inspurcommit exportall [<filename>]" "" \
+        "Export a change history." \
+        "If 'export' is used, will filter out 'scope'."
 }
 
 templateUsage () {
-    echo "Usage:
-    inspurcommit template [<options>]$LF
-Normally, changes of the template cannot be committed, in case it is
-changed by accident. When you intend to change the template, you can use
-this operation.
-<options> will be passed to git commit."
+    printf "%s\n" "Usage:" \
+        "    inspurcommit template [<options>]" "" \
+        "Normally, changes of the template cannot be committed, in case it is" \
+        "changed by accident. When you intend to change the template, you can use" \
+        "this operation." \
+        "<options> will be passed to git commit."
 }
 
 initUsage () {
-    echo "Usage:
-    inspurcommit init [<defaults>]$LF
-Defaults:
-    -t, --tag <tag#>
-    -l, --label <label#>
-    -i, --issue <Issue#>
-    -s, --scope <Scope>
-    -v, --severity <Severity>
-    -c, --category <Category>
-    -y, --symptom <Symptom>
-    -r, --rootcause <RootCause>
-    -o, --solution <Solution>
-    -d, --dependency <SolutionDependency>
-    -f, --files <RelatedFiles>$LF
-Example:
-    inspurcommit init -t \"5.19_CedarIslandCrb_0ACMT_013\""
+    printf "%s\n" "Usage:" \
+        "    inspurcommit init [<defaults>]" "" \
+        "Defaults:" \
+        "    -t, --tag <tag#>" \
+        "    -l, --label <label#>" \
+        "    -i, --issue <Issue#>" \
+        "    -s, --scope <Scope>" \
+        "    -v, --severity <Severity>" \
+        "    -c, --category <Category>" \
+        "    -y, --symptom <Symptom>" \
+        "    -r, --rootcause <RootCause>" \
+        "    -o, --solution <Solution>" \
+        "    -d, --dependency <SolutionDependency>" \
+        "    -f, --files <RelatedFiles>" "" \
+        "Example:" \
+        "    inspurcommit init -t \"5.19_CedarIslandCrb_0ACMT_013\""
 }
 
 diffUsage () {
-    echo "Usage:
-    inspurcommit diff [<option>...]$LF
-Diff with Beyond Compare. <Option>, if any, will be passed to git difftool.
-Try 'git difftool --help' for more information.$LF
-If you want to diff the staged changes, use 'inspurcommit diff --cached'."
+    printf "%s\n" "Usage:" \
+        "    inspurcommit diff [<option>...]" "" \
+        "Diff with Beyond Compare. <Option>, if any, will be passed to git difftool." \
+        "Try 'git difftool --help' for more information." "" \
+        "If you want to diff the staged changes, use 'inspurcommit diff --cached'."
 }
 
 LookupUsage () {
-    test "$2" || return 0
-    case "$2" in
-        "-?"|"-h"|"--help"|"--usage")
-            ${1}Usage
+    local -r operation="$1"
+    local argument
+    test "$#" -le 1 && return
+    argument="$2"
+    if test "$argument" = "-?" ||
+        test "$argument" = "-h" ||
+        test "$argument" = "--help" ||
+        test "$argument" = "--usage"
+    then
+            ${operation}Usage
             return 1
-            ;;
-    esac
+    fi
     return 0
 }
 
@@ -348,57 +369,69 @@ declare -r tempf="$template_file_name"
 declare -r tmpf="$change_history_name"
 declare -r oldf="$old_change_history_name"
 declare -r fcif="$fci_file_name"
-declare -r LF='
-'
 
-declare -r op="${1,,}"
+test "$#" -ge 1 && op="${1,,}" || op=""
+if test "$op" && {
+    test "$op" = "-?" ||
+    test "$op" = "-h" ||
+    test "$op" = "--help" ||
+    test "$op" = "--usage" ||
+    test "$op" = "help" ||
+    test "$op" = "usage"; }
+then
+    printf "%s\n" "" \
+        "    inspurcommit v$rev" \
+        "    Last updated: $lastupdt" \
+        "    $author"
+    ShowUsage
+    exit
+fi
+if test ! "$op" || { printf "%s" "$op" | grep -q "^-"; }
+then
+    git rev-parse || exit
+    CheckInit || exit
+    GenerateTmp || exit 0
+    CheckStage || exit
+    Commit "$@"
+    exit
+fi
+shift
 case "$op" in
-    "?"|"-?"|"-h"|"--help"|"--usage"|"help"|"usage")
-        echo
-        echo "    inspurcommit v$rev"
-        echo "    Last updated: $lastupdt"
-        echo "    $author"
-        echo
-        ShowUsage
-        exit
-        ;;
-
-    ""|"-"*)
-        git rev-parse || exit
-        CheckInit || exit
-        GenerateTmp || exit 0
-        CheckStage || exit
-        Commit "$@"
-        ;;
-
-    "push")
-        shift
+    push)
         LookupUsage "$op" "$@" || exit 0
         git rev-parse || exit
-        p_br="${1:-master}"
-        shift
+        if test "$#" -lt 1
+        then
+            p_br="master"
+        elif test "$#" -eq 1
+        then
+            p_br="$1"
+        else
+            >&2 Prompt red "ERROR: Too many arguments."
+            exit 1
+        fi
         git push origin HEAD:refs/for/"$p_br" "$@"
         exit
         ;;
 
-    "diff")
-        shift
+    diff)
         LookupUsage "$op" "$@" || exit 0
         git rev-parse || exit
-        bcomp="$(reg query "HKCU\\Software\\Scooter Software\\Beyond Compare" //v "ExePath" 2>/dev/null)"
+        bcomp=$(reg query "HKCU\\Software\\Scooter Software\\Beyond Compare" //v "ExePath" 2>/dev/null)
         if test ! "$bcomp"
         then
             >&2 Prompt red "ERROR: Couldn't find Beyond Compare."
             exit 1
         fi
-        bcomp="$(echo "$bcomp" | grep "ExePath" | sed 's/\s\{4\}.*\s\{4\}//')"
+        bcomp=$(printf "%s\n" "$bcomp" |
+            grep "ExePath" |
+            sed 's/\s\{4\}.*\s\{4\}//')
         git -c "diff.tool=BeyondCompare" \
             -c "difftool.BeyondCompare.cmd=\"${bcomp}\" \"\$(cygpath -w \"\$LOCAL\")\" \"\$REMOTE\"" \
             difftool --dir-diff "$@"
         ;;
 
-    "amend")
-        shift
+    amend)
         LookupUsage "$op" "$@" || exit 0
         git rev-parse || exit
         CheckInit || exit
@@ -407,22 +440,19 @@ case "$op" in
         Commit --amend "$@"
         ;;
 
-    "export")
-        shift
+    export)
         LookupUsage "$op" "$@" || exit 0
         git rev-parse || exit
         Export "Scope" "$@"
         ;;
 
-    "exportall")
-        shift
+    exportall)
         LookupUsage "export" "$@" || exit 0
         git rev-parse || exit
         Export "none" "$@"
         ;;
 
-    "template")
-        shift
+    template)
         LookupUsage "$op" "$@" || exit 0
         git rev-parse || exit
         CheckInit || exit
@@ -431,61 +461,65 @@ case "$op" in
         Commit "$@"
         ;;
 
-    "init")
-        shift
-        while test $# -gt 0
+    init)
+        LookupUsage "$op" "$@" || exit 0
+        while test "$#" -gt 0
         do
-            case "${1,,}" in
+            init_sw="${1,,}"
+            if test "$#" -ge 2
+            then
+                init_val="$2"
+            else
+                Prompt red "ERROR: $init_sw requires a value."
+                exit 1
+            fi
+            case "$init_sw" in
                 -t|--tag)
-                    InitParseArg "$1" "$2" dfTag
+                    InitParseArg "$init_sw" "$init_val" dfTag
                     shift 2
                     ;;
                 -l|--label)
-                    InitParseArg "$1" "$2" dfLbl
+                    InitParseArg "$init_sw" "$init_val" dfLbl
                     shift 2
                     ;;
                 -i|--issue)
-                    InitParseArg "$1" "$2" dfIss
+                    InitParseArg "$init_sw" "$init_val" dfIss
                     shift 2
                     ;;
                 -s|--scope)
-                    InitParseArg "$1" "$2" dfScp
+                    InitParseArg "$init_sw" "$init_val" dfScp
                     shift 2
                     ;;
                 -v|--severity)
-                    InitParseArg "$1" "$2" dfSvr
+                    InitParseArg "$init_sw" "$init_val" dfSvr
                     shift 2
                     ;;
                 -c|--category)
-                    InitParseArg "$1" "$2" dfCtg
+                    InitParseArg "$init_sw" "$init_val" dfCtg
                     shift 2
                     ;;
                 -y|--symptom)
-                    InitParseArg "$1" "$2" dfSpt
+                    InitParseArg "$init_sw" "$init_val" dfSpt
                     shift 2
                     ;;
                 -r|--rootcause)
-                    InitParseArg "$1" "$2" dfRtc
+                    InitParseArg "$init_sw" "$init_val" dfRtc
                     shift 2
                     ;;
                 -o|--solution)
-                    InitParseArg "$1" "$2" dfSlt
+                    InitParseArg "$init_sw" "$init_val" dfSlt
                     shift 2
                     ;;
                 -d|--dependency|--solution-dependency)
-                    InitParseArg "$1" "$2" dfDpd
+                    InitParseArg "$init_sw" "$init_val" dfDpd
                     shift 2
                     ;;
                 -f|--files|--related-files)
-                    InitParseArg "$1" "$2" dfRlf
+                    InitParseArg "$init_sw" "$init_val" dfRlf
                     shift 2
                     ;;
-                '-?'|-h|--help|--usage)
-                    initUsage
-                    exit
-                    ;;
                 *)
-                    >&2 Prompt red "ERROR: invalid argument - $1"
+                    >&2 Prompt red "ERROR: invalid argument - $init_sw"
                     >&2 initUsage
                     exit 1
                     ;;
@@ -516,21 +550,23 @@ case "$op" in
             exit 1
         fi
         test -e "$tmpf" &&
-            (d2u "$tmpf" 2>/dev/null || exit) &&
-            (mv "$tmpf" "Old$tmpf" || exit) &&
-            (git -c "core.safecrlf=false" add "$tmpf" "Old$tmpf" || exit)
-        git log --format="%H" -1 > "$fcif" &&
+            { d2u "$tmpf" 2>/dev/null || exit; } &&
+            { mv "$tmpf" "Old$tmpf" || exit; } &&
+            { git -c "core.safecrlf=false" \
+                add "$tmpf" "Old$tmpf" || exit; }
+        git log --format="%H" -1 >"$fcif" &&
             InitTemplate &&
-            echo "/$tmpf" >> .gitignore &&
-            echo "/ChangeHistory-*.txt" >> .gitignore &&
+            printf "%s\n" "/$tmpf" >>.gitignore &&
+            printf "%s\n" "/ChangeHistory-*.txt" >>.gitignore &&
             git -c "core.safecrlf=false" add "$tempf" "$fcif" .gitignore &&
-            git commit -m "INSPURCOMMIT-INIT" -m "
-This commit was automatically generated to initialize this repository in
-order to use Inspur Commit Kit." 1>/dev/null &&
+            printf -v init_msg "%s\n" \
+            "This commit was automatically generated to initialize this repository in" \
+            "order to use Inspur Commit Kit." &&
+            git commit -m "INSPURCOMMIT-INIT" -m "$init_msg" 1>/dev/null &&
             Prompt green "Initialization completed successfully."
         ;;
     *)
-        >&2 Prompt red "ERROR: Invalid option - $1"
+        >&2 Prompt red "ERROR: Invalid option - $op"
         >&2 ShowUsage
         exit 1
         ;;
