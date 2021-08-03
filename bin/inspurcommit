@@ -5,7 +5,7 @@ declare -r change_history_name="ChangeHistory.txt"
 declare -r old_change_history_name="Old$change_history_name"
 declare -r fci_file_name="farewell-commit-id"
 
-ShowUsage(){
+ShowUsage () {
     echo "Usage:
     inspurcommit [<operation>]$LF
 Operations:
@@ -22,7 +22,7 @@ the steps:
        passed to git commit."
 }
 
-CheckInit() {
+CheckInit () {
     if test ! -e "$fcif" || test ! -e "$tempf"
     then
         >&2 echo "${cRed}ERROR: It seems that you haven't initialize this repository.${LF}To initialize, use command 'inspurcommit init' and then 'inspurcommit push'.$cSuf"
@@ -31,20 +31,20 @@ CheckInit() {
     return 0
 }
 
-ValidateJgn(){
+ValidateJgn () {
     which $jgn 1>/dev/null 2>&1 && return
     echo "${cRed}ERROR: Coundn't find $jgn.$cSuf" >&2
     return 1
 }
 
-ValidateHistoryField(){
+ValidateHistoryField () {
     local value=$(echo "$1" | grep "^$2:" | sed "s/^$2:\s*//")
     test "$value" && return
     >&2 echo "${cRed}ERROR: Field '$2' of change history is empty.$cSuf"
     return 1
 }
 
-ValidateHistory(){
+ValidateHistory () {
     ValidateHistoryField "$1" 'Tag#' || exit
     ValidateHistoryField "$1" 'Label#' || exit
     ValidateHistoryField "$1" 'Issue#' || exit
@@ -57,7 +57,7 @@ ValidateHistory(){
     ValidateHistoryField "$1" 'SolutionDependency' || exit
 }
 
-CheckStage(){
+CheckStage () {
     case "$(git -c "core.safecrlf=false" diff --cached --name-only)" in
         "")
             test "$1" = "amend" && return 0
@@ -74,21 +74,21 @@ Stage changes to be committed with 'git add'.$cSuf"
     esac
 }
 
-CheckFileAlreadyExists(){
+CheckFileAlreadyExists () {
     local filename="$1"
     test -e "$filename" || return 0
     >&2 echo "${cRed}ERROR: File $filename already exists.$cSuf"
     return 1
 }
 
-FindFile(){
+FindFile () {
     local filename="$1"
     test -e "$filename" && return 0
     >&2 echo "${cRed}ERROR: Couldn't find file $filename.$cSuf"
     return 1
 }
 
-Commit(){
+Commit () {
     local tmpc
     local jgnc
     local summary
@@ -136,7 +136,7 @@ Commit(){
 # Export a Change History
 # $1: exclude-field: 'none', 'Scope'.
 # $2: [ filename ]: Use "ChangeHistory[-All]-%h" if not specified.
-Export(){
+Export () {
     local currhash
     local chfn
     local fci
@@ -184,7 +184,7 @@ Export(){
 #  $1:  switch
 #  $2:  argument
 # &$3:  variable
-InitParseArg(){
+InitParseArg () {
     if test ! "$2"
     then
         >&2 echo "${cRed}ERROR: '$1' requires a value.$cSuf"
@@ -194,7 +194,7 @@ InitParseArg(){
     var="$2"
 }
 
-InitTemplate(){
+InitTemplate () {
     local dff=$(dirname "$0")/"$tempf"
     local dfc
     FindFile "$dff" || return 1
@@ -224,7 +224,7 @@ InitTemplate(){
     echo "$dfc" > "$tempf"
 }
 
-GenerateTmp(){
+GenerateTmp () {
     FindFile "$tmpf" 2>/dev/null && return
     cp ./"$tempf" ./"$tmpf"
     echo "${cGrn}Generated file ${cYlw}$tmpf$cSuf"
@@ -232,7 +232,7 @@ GenerateTmp(){
     return 1
 }
 
-pushUsage(){
+pushUsage () {
     echo "Usage:
     inspurcommit push [<branch>]$LF
 Push local commits to Gerrit. By default, <branch> is 'master'.
@@ -240,14 +240,14 @@ This command is equivalent to:$LF
     git push origin HEAD:refs/for/<branch>"
 }
 
-amendUsage(){
+amendUsage () {
     echo "Usage:
     inspurcommit amend [<options>]$LF
 Amend last commit with current $tmpf and staged changes.
 <options> will be passed to git commit. "
 }
 
-exportUsage(){
+exportUsage () {
     echo "Usage:
     inspurcommit export [<filename>]
     inspurcommit exportall [<filename>]$LF
@@ -255,7 +255,7 @@ Export a change history.
 If 'export' is used, will filter out 'scope'."
 }
 
-templateUsage(){
+templateUsage () {
     echo "Usage:
     inspurcommit template [<options>]$LF
 Normally, changes of the template cannot be committed, in case it is
@@ -264,7 +264,7 @@ this operation.
 <options> will be passed to git commit."
 }
 
-initUsage(){
+initUsage () {
     echo "Usage:
     inspurcommit init [<defaults>]$LF
 Defaults:
@@ -283,7 +283,7 @@ Example:
     inspurcommit init -t \"5.19_CedarIslandCrb_0ACMT_013\""
 }
 
-diffUsage(){
+diffUsage () {
     echo "Usage:
     inspurcommit diff [<option>...]$LF
 Diff with Beyond Compare. <Option>, if any, will be passed to git difftool.
@@ -291,7 +291,7 @@ Try 'git difftool --help' for more information.$LF
 If you want to diff the staged changes, use 'inspurcommit diff --cached'."
 }
 
-LookupUsage(){
+LookupUsage () {
     test "$2" || return 0
     case "$2" in
         "-?"|"-h"|"--help"|"--usage")
