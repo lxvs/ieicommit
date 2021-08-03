@@ -8,26 +8,6 @@ declare -r change_history_name="ChangeHistory.txt"
 declare -r old_change_history_name="Old$change_history_name"
 declare -r fci_file_name="farewell-commit-id"
 
-ShowUsage () {
-    printf "%s\n" "Usage:" \
-        "    inspurcommit [<operation>]" \
-        "" \
-        "Operations:" \
-        "    amend, diff, export, exportall, init, push, template, usage" \
-        "" \
-        "For help on a specific operation:" \
-        "    inspurcommit <operation> --help" \
-        "" \
-        "If no operation is specified, it is used to perform a git commit. Here are" \
-        "the steps:" \
-        "    1. Use command 'git add <file>', or 'git add .', etc. to stage changes." \
-        "    2. Write change history in file $tmpf." \
-        "       If this file does not exist, use command 'inspurcommit' to generate" \
-        "       one, and then write change history in it." \
-        "    3. Use command 'inspurcommit' to commit. Arguments, if any, will be" \
-        "       passed to git commit."
-}
-
 CheckInit () {
     if test ! -e "$fcif" || test ! -e "$tempf"
     then
@@ -257,63 +237,105 @@ GenerateTmp () {
     return 1
 }
 
+ShowUsage () {
+cat <<\SHOWUSG
+Usage:
+    inspurcommit [<operation>]
+
+Operations:
+    amend, diff, export, exportall, init, push, template, usage
+
+For help on a specific operation:
+    inspurcommit <operation> --help
+
+If no operation is specified, it is used to perform a git commit. Here are
+the steps:
+    1. Use command 'git add <file>', or 'git add .', etc. to stage changes.
+    2. Write change history in file $tmpf.
+       If this file does not exist, use command 'inspurcommit' to generate
+       one, and then write change history in it.
+    3. Use command 'inspurcommit' to commit. Arguments, if any, will be
+       passed to git commit.
+SHOWUSG
+}
+
 pushUsage () {
-    printf "%s\n" "Usage:" \
-        "    inspurcommit push [<branch>]" "" \
-        "Push local commits to Gerrit. By default, <branch> is 'master'." \
-        "This command is equivalent to:" "" \
-        "    git push origin HEAD:refs/for/<branch>"
+cat <<\PUSHUSG
+Usage:
+    inspurcommit push [<branch>]
+
+Push local commits to Gerrit. Default <branch> is 'master'. This command
+is equivalent to:
+
+    git push origin HEAD:refs/for/<branch>
+PUSHUSG
 }
 
 amendUsage () {
-    printf "%s\n" "Usage:" \
-        "    inspurcommit amend [<options>]" "" \
-        "Amend last commit with current $tmpf and staged changes." \
-        "<options> will be passed to git commit."
+cat <<\AMENDUSG
+Usage:
+    inspurcommit amend [<options>]
+
+Amend last commit with current $tmpf and staged changes. <Options> will be
+passed to git commit.
+AMENDUSG
 }
 
 exportUsage () {
-    printf "%s\n" "Usage:" \
-        "    inspurcommit export [<filename>]" \
-        "    inspurcommit exportall [<filename>]" "" \
-        "Export a change history." \
-        "If 'export' is used, will filter out 'scope'."
+cat <<\EXPORTUSG
+Usage:
+    inspurcommit export [<filename>]
+    inspurcommit exportall [<filename>]
+
+Export a change history. If 'export', instead of 'exportall', is used, will
+filter out 'scope'.
+EXPORTUSG
 }
 
 templateUsage () {
-    printf "%s\n" "Usage:" \
-        "    inspurcommit template [<options>]" "" \
-        "Normally, changes of the template cannot be committed, in case it is" \
-        "changed by accident. When you intend to change the template, you can use" \
-        "this operation." \
-        "<options> will be passed to git commit."
+cat <<\TEMPLATEUSG
+Usage:
+    inspurcommit template [<options>]
+
+Normally, changes of the template cannot be committed, in case it is
+changed by accident. When you intend to change the template, you can use
+this operation. <Options> will be passed to git commit.
+TEMPLATEUSG
 }
 
 initUsage () {
-    printf "%s\n" "Usage:" \
-        "    inspurcommit init [<defaults>]" "" \
-        "Defaults:" \
-        "    -t, --tag <tag#>" \
-        "    -l, --label <label#>" \
-        "    -i, --issue <Issue#>" \
-        "    -s, --scope <Scope>" \
-        "    -v, --severity <Severity>" \
-        "    -c, --category <Category>" \
-        "    -y, --symptom <Symptom>" \
-        "    -r, --rootcause <RootCause>" \
-        "    -o, --solution <Solution>" \
-        "    -d, --dependency <SolutionDependency>" \
-        "    -f, --files <RelatedFiles>" "" \
-        "Example:" \
-        "    inspurcommit init -t \"5.19_CedarIslandCrb_0ACMT_013\""
+cat <<\INITUSG
+Usage:
+    inspurcommit init [<defaults>]
+
+Defaults:
+    -t, --tag <tag#>
+    -l, --label <label#>
+    -i, --issue <Issue#>
+    -s, --scope <Scope>
+    -v, --severity <Severity>
+    -c, --category <Category>
+    -y, --symptom <Symptom>
+    -r, --rootcause <RootCause>
+    -o, --solution <Solution>
+    -d, --dependency <SolutionDependency>
+    -f, --files <RelatedFiles>
+
+Example:
+    inspurcommit init -t "5.19_CedarIslandCrb_0ACMT_013"
+INITUSG
 }
 
 diffUsage () {
-    printf "%s\n" "Usage:" \
-        "    inspurcommit diff [<option>...]" "" \
-        "Diff with Beyond Compare. <Option>, if any, will be passed to git difftool." \
-        "Try 'git difftool --help' for more information." "" \
-        "If you want to diff the staged changes, use 'inspurcommit diff --cached'."
+cat <<\DIFFUSG
+Usage:
+    inspurcommit diff [<option>...]
+
+Diff with Beyond Compare. <Option>, if any, will be passed to git difftool.
+Try 'git difftool --help' for more information.
+
+If you want to diff the staged changes, use 'inspurcommit diff --cached'.
+DIFFUSG
 }
 
 LookupUsage () {
@@ -379,10 +401,12 @@ if test "$op" && {
     test "$op" = "help" ||
     test "$op" = "usage"; }
 then
-    printf "%s\n" "" \
+    printf "%s\n" \
+        "" \
         "    inspurcommit v$rev" \
         "    Last updated: $lastupdt" \
-        "    $author"
+        "    $author" \
+        ""
     ShowUsage
     exit
 fi
