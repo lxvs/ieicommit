@@ -122,7 +122,7 @@ Commit(){
     details="$tmpc"
     if [ "$op" == "amend" ]; then
         chid=$(git log -1 --format=%b | grep '^Change-Id:')
-        [ "$chid" ] || \
+        [ "$chid" ] ||
             >&2 echo "${cYlw}Warning: Failed to get Change-ID.$cSuf"
         git commit "$@" -m "$summary" -m "$details" -m "$chid"
     else
@@ -169,8 +169,8 @@ Export(){
     esac
     CheckFileAlreadyExists "$chfn" || return
     echo "$ch_content" > "$chfn"
-    FindFile "$oldf" 2>/dev/null && \
-        d2u "$oldf" 2>/dev/null && \
+    FindFile "$oldf" 2>/dev/null &&
+        d2u "$oldf" 2>/dev/null &&
         echo "$LF$(cat "$oldf")" >> "$chfn"
     echo "${cGrn}Exported file $chfn$cSuf"
     return
@@ -194,27 +194,27 @@ InitTemplate(){
     local dfc
     FindFile "$dff" || return 1
     dfc=$(cat "$dff")
-    [ "$dfTag" ] && dfc=$(echo "$dfc" | \
+    [ "$dfTag" ] && dfc=$(echo "$dfc" |
         sed "s/^Tag#:.*$/Tag#: $dfTag/")
-    [ "$dfLbl" ] && dfc=$(echo "$dfc" | \
+    [ "$dfLbl" ] && dfc=$(echo "$dfc" |
         sed "s/^Label#:.*$/Label#: $dfLbl/")
-    [ "$dfIss" ] && dfc=$(echo "$dfc" | \
+    [ "$dfIss" ] && dfc=$(echo "$dfc" |
         sed "s/^Issue#:.*$/Issue#: $dfIss/")
-    [ "$dfScp" ] && dfc=$(echo "$dfc" | \
+    [ "$dfScp" ] && dfc=$(echo "$dfc" |
         sed "s/^Scope:.*$/Scope: $dfScp/")
-    [ "$dfSvr" ] && dfc=$(echo "$dfc" | \
+    [ "$dfSvr" ] && dfc=$(echo "$dfc" |
         sed "s/^Severity:.*$/Severity: $dfSvr/")
-    [ "$dfCtg" ] && dfc=$(echo "$dfc" | \
+    [ "$dfCtg" ] && dfc=$(echo "$dfc" |
         sed "s/^Category:.*$/Category: $dfCtg/")
-    [ "$dfSpt" ] && dfc=$(echo "$dfc" | \
+    [ "$dfSpt" ] && dfc=$(echo "$dfc" |
         sed "s/^Symptom:.*$/Symptom: $dfSpt/")
-    [ "$dfRtc" ] && dfc=$(echo "$dfc" | \
+    [ "$dfRtc" ] && dfc=$(echo "$dfc" |
         sed "s/^RootCause:.*$/RootCause: $dfRtc/")
-    [ "$dfSlt" ] && dfc=$(echo "$dfc" | \
+    [ "$dfSlt" ] && dfc=$(echo "$dfc" |
         sed "s/^Solution:.*$/Solution: $dfSlt/")
-    [ "$dfDpd" ] && dfc=$(echo "$dfc" | \
+    [ "$dfDpd" ] && dfc=$(echo "$dfc" |
         sed "s/^SolutionDependency:.*$/SolutionDependency: $dfDpd/")
-    [ "$dfRlf" ] && dfc=$(echo "$dfc" | \
+    [ "$dfRlf" ] && dfc=$(echo "$dfc" |
         sed "s/^RelatedFiles:.*$/RelatedFiles: $dfRlf/")
     echo "$dfc" > "$tempf"
 }
@@ -473,18 +473,18 @@ case "$op" in
             >&2 git status
             exit 1
         fi
-        [ -e "$tmpf" ] && \
-            (d2u "$tmpf" 2>/dev/null || exit) && \
-            (mv "$tmpf" "Old$tmpf" || exit) && \
+        [ -e "$tmpf" ] &&
+            (d2u "$tmpf" 2>/dev/null || exit) &&
+            (mv "$tmpf" "Old$tmpf" || exit) &&
             (git -c "core.safecrlf=false" add "$tmpf" "Old$tmpf" || exit)
-        git log --format="%H" -1 > "$fcif" && \
-            InitTemplate && \
-            echo "/$tmpf" >> .gitignore && \
-            echo "/ChangeHistory-*.txt" >> .gitignore && \
-            git -c "core.safecrlf=false" add "$tempf" "$fcif" .gitignore && \
+        git log --format="%H" -1 > "$fcif" &&
+            InitTemplate &&
+            echo "/$tmpf" >> .gitignore &&
+            echo "/ChangeHistory-*.txt" >> .gitignore &&
+            git -c "core.safecrlf=false" add "$tempf" "$fcif" .gitignore &&
             git commit -m "INSPURCOMMIT-INIT" -m "
 This commit was automatically generated to initialize this repository in
-order to use Inspur Commit Kit." 1>/dev/null && \
+order to use Inspur Commit Kit." 1>/dev/null &&
             echo "${cGrn}Initialization completed successfully.$cSuf"
         ;;
     *)
