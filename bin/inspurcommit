@@ -1,4 +1,7 @@
 #!/bin/bash
+set -o errexit   # abort on nonzero exitstatus
+set -o nounset   # abort on unbound variable
+set -o pipefail  # don't hide errors within pipes
 
 declare -r template_file_name="ChangeHistoryTemplate.txt"
 declare -r change_history_name="ChangeHistory.txt"
