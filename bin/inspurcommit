@@ -49,12 +49,12 @@ CheckStage () {
     local option="${1-normal}"
     local -r DIFF=$(git -c "core.safecrlf=false" diff --cached --name-only)
     test "$DIFF" || CheckStage_NoStage || return
-    printf "%s\n" "$DIFF" | grep "\<$TEMPF\>" || return 0
+    printf "%s\n" "$DIFF" | grep -q "\<$TEMPF\>" || return 0
     CheckStage_HasTemp
 }
 
 CheckStage_NoStage () {
-    test "$option" = "amend" && return 0
+    test "$option" = "amend" && return
     >&2 Prompt red \
         "ERROR: There is no staged changes." \
         "Stage changes to be committed with 'git add'."
@@ -62,7 +62,7 @@ CheckStage_NoStage () {
 }
 
 CheckStage_HasTemp () {
-    test "$option" = "template" && return 0
+    test "$option" = "template" && return
     git restore --staged "$TEMPF" >/dev/null
     >&2 Prompt yellow \
 "Warning: $TEMPF was staged. But was skipped." \
@@ -142,7 +142,7 @@ Commit () {
     GetField summary "$details" "Solution"
     Commit_CheckLastSummary || return
     Commit_CreateRelatedFiles || return
-    Commit_IsNotAmend || return 0
+    Commit_IsNotAmend "$@" || return 0
     git commit "$@" -m "$summary" -m "$details"
 }
 
@@ -193,7 +193,7 @@ InitTemplate () {
     local dff
     local dfc
     dff="$(dirname "$0")/$TEMPF"
-    FindFile "$dff" || return 1
+    FindFile "$dff" || return
     dfc=$(<"$dff")
     test "${df_tag-}" && SetField dfc "Tag#" "$df_tag"
     test "${df_lbl-}" && SetField dfc "Label#" "$df_lbl"
@@ -573,7 +573,7 @@ initOp_CheckInit () {
 }
 
 initOp_CheckGitIgnore () {
-    git status --porcelain | grep '\<.gitignore\>' || return 0
+    git status --porcelain | grep -q '\<.gitignore\>' || return 0
     >&2 Prompt red \
 "ERROR: Please commit or stash your local changes of file '.gitignore'" \
 "before init."
