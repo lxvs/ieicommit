@@ -109,6 +109,16 @@ SetField () {
         sed "s/^${SF_FLD}:.*$/${SF_FLD}: ${SF_FLDC}/")
 }
 
+# Parse Switch Value
+# ParseSwitchValue "$@" || return
+# caller function must declare variable sw and val
+ParseSwitchValue () {
+    sw="$1"
+    test "$#" -ge 2 && val="$2" && return
+    >&2 Prompt red "ERROR: $sw requires a value."
+    return 1
+}
+
 Commit () {
     local summary
     local details
@@ -210,7 +220,7 @@ Usage:
     inspurcommit [<operation>]
 
 Operations:
-    amend, diff, export, exportall, init, push, template
+    amend, diff, export, init, push, template
 
 For help on a specific operation:
     inspurcommit <operation> --help
@@ -251,12 +261,17 @@ AMENDUSG
 exportUsage () {
 cat <<\EXPORTUSG
 Usage:
-    inspurcommit export [<filename>]
-    inspurcommit exportall [<filename>]
+    inspurcommit export [-a|--all] [{-x|--exclude} <field>] [<filename>]
 
-Export a change history. If 'export', instead of 'exportall', is used, will
-filter out 'scope'.
+Export a change history without the 'scope' field.
+If --exclude is specified, export a change history with all fields except
+excluded <field>. '--exclude' implies '--all'.
 EXPORTUSG
+}
+
+#TODO deprecated
+exportallUsage () {
+    exportUsage
 }
 
 templateUsage () {
@@ -342,14 +357,14 @@ Prompt () {
     g|grn|green) color="$GRN" ;;
     y|ylw|yellow) color="$YLW" ;;
     *)
-        Prompt red "ERROR: Unknown color argument - $COLOR_ARG"
+        >&2 Prompt red "ERROR: Unknown color argument - $COLOR_ARG"
         return 1
         ;;
     esac
     printf "${color}%s${RST}\n" "$@"
 }
 
-OpCommit () {
+commitOp () {
     git rev-parse || return
     CheckInit || return
     GenerateTmp || return 0
@@ -357,25 +372,23 @@ OpCommit () {
     Commit "$@"
 }
 
-OpPush () {
+pushOp () {
     local p_br="${1-master}"
     shift
-    LookupUsage "push" "$p_br" || return 0
     git rev-parse || return
     git push "$@" origin HEAD:refs/for/"$p_br"
 }
 
-OpDiff () {
+diffOp () {
     local bcomp
-    LookupUsage "diff" "$@" || return 0
     git rev-parse || return
-    OpDiff_GetBeyondCompare || return
+    diffOp_GetBeyondCompare || return
     git -c "diff.tool=BeyondCompare" \
         -c "difftool.BeyondCompare.cmd=\"${bcomp}\" \"\$(cygpath -w \"\$LOCAL\")\" \"\$REMOTE\"" \
         difftool --dir-diff "$@"
 }
 
-OpDiff_GetBeyondCompare () {
+diffOp_GetBeyondCompare () {
     local -r bc_reg_p='HKCU\Software\Scooter Software\Beyond Compare'
     local -r bc_reg_k="ExePath"
     bcomp=$(reg query "$bc_reg_p" //v "$bc_reg_k" 2>/dev/null)
@@ -389,8 +402,7 @@ OpDiff_GetBeyondCompare () {
         sed 's/\s\{4\}.*\s\{4\}//')
 }
 
-OpAmend () {
-    LookupUsage "amend" "$@" || return 0
+amendOp () {
     git rev-parse || return
     CheckInit || return
     GenerateTmp || return 0
@@ -399,71 +411,108 @@ OpAmend () {
 }
 
 # Operation: Export a Change History
-# $1: exclude-field: 'none', 'Scope'.
-# $2: [ filename ]: Use "ChangeHistory[-All]-%h" if not specified.
-OpExport () {
-    local -r fltr="${1-}"
-    local chfn="${2-}"
+# $0 export [-a|--all] [{-x|--exclude} <field>] [<filename>]
+# <filename>: Use "ChangeHistory[-All]-%h" if not specified.
+# $fci: hash of the parent of INSPURCOMMIT-INIT
+# $fcic: hash of INSPURCOMMIT-INIT
+exportOp () {
+    local fltr="Scope"
+    local chfn
     local fcic
     local ch_c
-    LookupUsage "export" "$@" || return 0
+    local empty
     git rev-parse || return
     CheckInit || return
-    OpExport_ReadFci || return
-    OpExport_GetContent || return
-    OpExport_SetFileName
-    OpExport_Write
+    exportOp_Parse "$@" || return
+    exportOp_GetFcic || return
+    exportOp_GetContent || return
+    exportOp_SetFileName
+    exportOp_Write
 }
 
-OpExport_ReadFci () {
+exportOp_Parse () {
+    local sw
+    local val
+    while test "$#" -gt 0
+    do
+        sw="$1"
+        case "$sw" in
+        -a|--all) test "$fltr" = "Scope" && fltr="" ; shift ;;
+        -x|--exclude)
+            ParseSwitchValue "$@" || return
+            fltr="$val"
+            shift 2
+            ;;
+        *) chfn="$sw"; shift ;;
+        esac
+    done
+}
+
+exportOp_GetFcic () {
     local fci
     FindFile "$FCIF" || return
     fci=$(<"$FCIF")
     fcic=$(git rev-list --reverse "$fci".. | head -1)
-    OpExport_CheckContentEmpty
 }
 
-OpExport_GetContent () {
+# b_wo_chid: commit body without change-ID
+exportOp_GetContent () {
     local b_wo_chid
     b_wo_chid=$(git log --format=%b "$fcic".. |
         sed '/^Change-Id:\s\w\{41\}$/,+1d')
-    test "$fltr" != "none" &&
-        b_wo_chid=$(printf "%s\n" "$b_wo_chid" | grep -v "^${fltr}:")
-    OpExport_CheckContentEmpty
-}
-
-OpExport_CheckContentEmpty () {
-    test "${ch_c-}" && return
-    >&2 Prompt red "ERROR: Nothing to export!"
-    return 1
-}
-
-OpExport_SetFileName () {
-    local curr_h
-    test "${chfn-}" && return
-    curr_h=$(git log -1 --format=%h)
-    if test "$fltr" = "none"
+    test "${fltr-}" &&
+        b_wo_chid=$(printf "%s\n" "$b_wo_chid" | grep -iv "^${fltr}:")
+    ch_c="$b_wo_chid"
+    if test "${ch_c-}"
     then
-        chfn="ChangeHistory-All-${curr_h}.txt"
+        empty=no
     else
-        chfn="ChangeHistory-${curr_h}.txt"
+        empty=empty
     fi
 }
 
-OpExport_Write () {
+exportOp_SetFileName () {
+    local curr_h
+    test "${chfn-}" && return
+    curr_h=$(git log -1 --format=%h)
+    chfn="ChangeHistory-${curr_h}.txt"
+}
+
+exportOp_Write () {
     CheckFileAlreadyExists "$chfn" || return
-    printf "%s\n" "$ch_c" >"$chfn"
-    if FindFile "$OLDF" 2>/dev/null
+    test "$empty" != "empty" && printf "%s\n" "$ch_c" >"$chfn"
+    if ! exportOp_Write_Cat && test "$empty" = "empty"
     then
-        d2u "$OLDF" 2>/dev/null ||
-            >&2 Prompt yellow "Warning: D2U failed."
-        printf "\n%s\n" "$(<"$OLDF")" >>"$chfn"
+        >&2 Prompt red "ERROR: Nothing to export."
+        return 1
     fi
     Prompt green "Exported file $chfn"
 }
 
-OpTemplate () {
-    LookupUsage "template" "$@" || return 0
+exportOp_Write_Cat () {
+    local oldc
+    FindFile "$OLDF" 2>/dev/null || return
+    d2u "$OLDF" 2>/dev/null || >&2 Prompt yellow "Warning: D2U failed."
+    if test "${fltr-}"
+    then
+        oldc=$(grep -iv "^${fltr}:" <"$OLDF")
+    else
+        oldc=$(<"$OLDF")
+    fi
+    if test "$empty" = "empty"
+    then
+        printf "%s\n" "$oldc" >"$chfn"
+    else
+        printf "\n%s\n" "$oldc" >>"$chfn"
+    fi
+}
+
+exportallOp () {
+    #TODO deprecate
+    exportOp --all "$@"
+}
+
+templateOp () {
     git rev-parse || return
     CheckInit || return
     GenerateTmp || return 0
@@ -471,7 +520,7 @@ OpTemplate () {
     Commit "$@"
 }
 
-OpInit () {
+initOp () {
     local df_tag
     local df_lbl
     local df_iss
@@ -483,61 +532,57 @@ OpInit () {
     local df_slt
     local df_dpd
     local df_rlf
-    LookupUsage "init" "$@" || return 0
     git rev-parse || return
-    OpInit_CheckRoot || return
-    OpInit_CheckInit || return
-    OpInit_CheckGitIgnore || return
-    OpInit_CheckStage || return
-    OpInit_Parse "$@" || return
-    OpInit_RenameTmp || return
-    OpInit_Start || return
+    initOp_CheckRoot || return
+    initOp_CheckInit || return
+    initOp_CheckGitIgnore || return
+    initOp_CheckStage || return
+    initOp_Parse "$@" || return
+    initOp_RenameTmp && initOp_Start && return
+    initOp_CleanUp
+    return 1
 }
 
-OpInit_CheckRoot () {
+initOp_CheckRoot () {
     test -e ./.git && return
     >&2 Prompt red "ERROR: Please init in the root directory."
     return 1
 }
 
-OpInit_CheckInit () {
+initOp_CheckInit () {
     CheckInit 2>/dev/null || return 0
     >&2 Prompt red "ERROR: This repository has already been initialized."
     return 1
 }
 
-OpInit_CheckGitIgnore () {
+initOp_CheckGitIgnore () {
     git status --porcelain | grep '\<.gitignore\>' || return 0
-    >&2 Prompt red "ERROR: Please commit or stash your local changes of file '.gitignore'" "before init."
+    >&2 Prompt red \
+"ERROR: Please commit or stash your local changes of file '.gitignore'" \
+"before init."
     return 1
 }
 
-OpInit_CheckStage () {
+initOp_CheckStage () {
     CheckStage 2>/dev/null || return 0
-    >&2 Prompt red "ERROR: Please commit or stash your staged changes before init."
+    >&2 Prompt red \
+        "ERROR: Please commit or stash your staged changes before init."
     >&2 git status
     return 1
 }
 
-OpInit_Parse () {
+initOp_Parse () {
     local sw
     local val
     while test "$#" -gt 0
     do
-        OpInit_Parse_CheckOrphan "$@" || return
-        OpInit_Parse_Start || return
+        ParseSwitchValue "$@" || return
+        initOp_Parse_Start || return
         shift 2
     done
 }
 
-OpInit_Parse_CheckOrphan () {
-    sw="$1"
-    test "$#" -ge 2 && val="$2" && return
-    Prompt red "ERROR: $sw requires a value."
-    return 1
-}
-
-OpInit_Parse_Start () {
+initOp_Parse_Start () {
     case "$sw" in
     -t|--tag)
         InitParseArg "$val" df_tag ;;
@@ -569,14 +614,45 @@ OpInit_Parse_Start () {
     esac
 }
 
-OpInit_RenameTmp () {
-    test ! -e "$TMPF" && return
-    d2u "$TMPF" 2>/dev/null || return
-    mv "$TMPF" "Old$TMPF" || return
-    git -c "core.safecrlf=false" add "$TMPF" "Old$TMPF" || return
+initOp_CleanUp () {
+    initOp_CleanUp_IsCommited && git reset @^ 1>/dev/null
+    test -e "$OLDF" &&
+        git clean -qfX -- "$TMPF" 1>/dev/null &&
+        test ! -e "$TMPF" &&
+        mv "$OLDF" "$TMPF"
+    git restore --staged .
+    test -e "$TEMPF" && rm "$TEMPF"
+    test -e "$FCIF" && rm "$FCIF"
+    git clean -qf -- .gitignore
+    test -e .gitignore && git checkout -- .gitignore
 }
 
-OpInit_Start () {
+initOp_CleanUp_IsCommited () {
+    local fci
+    local revlist
+    local cid
+    local pre_cid
+    test -e "$FCIF" || return
+    fci=$(<"$FCIF")
+    revlist=$(git rev-list @)
+    cid=$(printf "%s\n" "$revlist" | head -1)
+    test "$fci" != "$cid" || return
+    pre_cid=$(printf "%s\n" "$revlist" | head -2 | tail -1)
+    test "$fci" = "$pre_cid" && return
+    >&2 Prompt yellow \
+        "Warning: Failed to get current state when cleaning up."
+    return 1
+}
+
+initOp_RenameTmp () {
+    test ! -e "$TMPF" && return
+    CheckFileAlreadyExists "$OLDF" || return
+    d2u "$TMPF" 2>/dev/null || return
+    mv "$TMPF" "$OLDF" || return
+    git -c "core.safecrlf=false" add "$TMPF" "$OLDF" || return
+}
+
+initOp_Start () {
     local init_title="INSPURCOMMIT-INIT"
     local init_msg
     git log --format="%H" -1 1>"$FCIF" || return
@@ -601,25 +677,26 @@ main () {
     local -r FCIF="$fci_file_name"
     local -r OP="${1-}"
     LookupUsage "main" "$@" || return 0
-    if test ! "$OP" || { printf "%s" "$OP" | grep -q "^-"; }
+    if test ! "$OP" || printf "%s" "$OP" | grep -q "^-"
     then
-        OpCommit "$@"
+        commitOp "$@"
         return
     fi
     shift
     case "$OP" in
-        push) OpPush "$@" ;;
-        diff) OpDiff "$@" ;;
-        amend) OpAmend "$@" ;;
-        export) OpExport "Scope" "$@" ;;
-        exportall) OpExport "none" "$@" ;;
-        template) OpTemplate "$@" ;;
-        init) OpInit "$@" ;;
-        *)
-            >&2 Prompt red "ERROR: Invalid option - $OP"
-            >&2 ShowUsage
-            return 1
+    push|diff|amend|export|template|init) ;;
+    exportall)
+        #TODO deprecate
+        Prompt yellow \
+            "Warning: exportall is deprecated. Use 'export --all'."
+        ;;
+    *)
+        >&2 Prompt red "ERROR: Invalid option - $OP"
+        >&2 ShowUsage
+        return 1
     esac
+    LookupUsage "$OP" "$@" || return 0
+    ${OP}Op "$@"
 }
 
 main "$@"
