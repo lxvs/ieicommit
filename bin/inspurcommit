@@ -196,7 +196,7 @@ InitTemplate () {
 }
 
 GenerateTmp () {
-    FindFile "$TMPF" 2>/dev/null && return
+    test -e "$TMPF" && return
     cp "./$TEMPF" "./$TMPF"
     Prompt green "Generated file $TMPF"
     Prompt yellow \
@@ -491,7 +491,7 @@ exportOp_Write () {
 
 exportOp_Write_Cat () {
     local oldc
-    FindFile "$OLDF" 2>/dev/null || return
+    test -e "$OLDF" || return
     d2u "$OLDF" 2>/dev/null || >&2 Prompt yellow "Warning: D2U failed."
     if test "${fltr-}"
     then
