@@ -13,10 +13,10 @@ inspect every script before running it.
 
     $ inspurcommit [ <操作> ]
 
-可选的操作有：amend, export, exportall, init, push, template。
+可选的操作有：amend, diff, export, init, push, template。
 详见“操作”章节。
 
-如果没有提供“操作”，则此命令为用来提交代码，详见“代码的提交”章节。
+如果没有提供<操作>，则此命令为用来提交代码，详见“代码的提交”章节。
 
 
 初始化
@@ -26,7 +26,7 @@ inspect every script before running it.
 
 代码仓库初次使用该脚本时，需在该仓库根目录中执行以下命令进行初始化：
 
-    inspurcommit init [<defaults>]
+    inspurcommit init [<options>]
 
 此动作是针对代码库进行的，每个代码库只需要初始化使用一次。只要有一位成员
 进行了初始化动作【并上传】至 Gerrit，其他成员下载到的代码即是已初始化完成
@@ -47,7 +47,7 @@ init 命令可以使用参数为模板对应字段设置默认值，如 --tag EX
     1.  在 Git Bash 中使用 git add 命令添加将要提交的代码改动。
         - git add .
           添加当前目录下所有改动（注意后面有个'.'）。
-        - git add <filename>
+        - git add <path>
           按文件名添加改动，可以使用通配符。
         - git add -u
           添加当前目录下的“修改”和“删除”改动，不添加新增的文件。
@@ -106,17 +106,16 @@ diff
 
 export
 
+    inspurcommit export [-a|--all] [{-x|--exclude} <filter>,...]
+                        [<filename>]
+
     导出一份 change-history 到 ChangeHistory-<hash>.txt，<hash> 表示当前
-    commit id，不包含 Scope 字段。如果需要指定文件名，使用如下命令：
+    commit ID，不包含 scope 字段（除非使用了 --all 参数）。
 
-        inpsurcommit export <文件名>
+    如果指定了 --exclude <filter> 参数，则包含 scope 字段，但会排除所有
+    指定的 <filter>。多个 <filter> 用英文逗号 (,) 分隔。如 -x tag#,scope。
 
-exportall
-
-    导出一份 change-history 到 ChangeHistory-All-<hash>.txt，<hash> 表示
-    当前 commit id。如果需要指定文件名，使用如下命令：
-
-        inpsurcommit exportall <文件名>
+    --exclude 隐含 --all。
 
 template
 
@@ -154,6 +153,6 @@ init
 
         1. 将 ChangeHistory.txt 重命名为 OldChangeHistory.txt
         2. 将默认模板放入代码库根目录，如果提供了参数，则根据参数修改模板
-        3. 将临界点 commit id 写入文件 farewell-commit-id
+        3. 将临界点 commit ID 写入文件 farewell-commit-id
         4. 将 /ChangeHistory.txt 和 /ChangeHistory-*.txt 加入 .gitignore
         5. 提交上述改动，生成一条标题为 INSPURCOMMIT-INIT 的 commit
