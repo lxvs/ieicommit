@@ -119,6 +119,20 @@ ParseSwitchValue () {
     return 1
 }
 
+# Filter Out, case insensitive
+# & $1: string variable byref
+#   $2: filters
+FilterOut () {
+    local -n str=$1
+    local fo_fs="$2"
+    local IFS=','
+    for fo_f in $fo_fs
+    do
+        test "${fo_f-}" &&
+            str=$(printf "%s\n" "$str" | grep -iv "^${fo_f}:")
+    done
+}
+
 Commit () {
     local summary
     local details
@@ -261,11 +275,15 @@ AMENDUSG
 exportUsage () {
 cat <<\EXPORTUSG
 Usage:
-    inspurcommit export [-a|--all] [{-x|--exclude} <field>] [<filename>]
+    inspurcommit export [-a|--all] [{-x|--exclude} <filter>,...]
+                        [<filename>]
 
-Export a change history without the 'scope' field.
-If --exclude is specified, export a change history with all fields except
-excluded <field>. '--exclude' implies '--all'.
+Export a change history without 'scope' filed, unless '--all' is specified.
+
+If '--exclude' is specified, export a change history with all fields except
+<filter>s. Multiple filters can be splitted by ',' as in '-x tag#,scope'.
+
+'--exclude' implies '--all'.
 EXPORTUSG
 }
 
@@ -416,7 +434,7 @@ amendOp () {
 # $fci: hash of the parent of INSPURCOMMIT-INIT
 # $fcic: hash of INSPURCOMMIT-INIT
 exportOp () {
-    local fltr="Scope"
+    local fltrs
     local chfn
     local fcic
     local ch_c
@@ -437,15 +455,19 @@ exportOp_Parse () {
     do
         sw="$1"
         case "$sw" in
-        -a|--all) test "$fltr" = "Scope" && fltr="" ; shift ;;
+        -a|--all) test "${fltrs+set}" || fltrs="" ; shift ;;
         -x|--exclude)
             ParseSwitchValue "$@" || return
-            fltr="$val"
+            test "${fltrs+set}" || fltrs=""
+            test "$fltrs" && fltrs="$fltrs,"
+            fltrs="$fltrs$val"
+            set +x
             shift 2
             ;;
         *) chfn="$sw"; shift ;;
         esac
     done
+    test "${fltrs+set}" || fltrs="Scope"
 }
 
 exportOp_GetFcic () {
@@ -460,8 +482,7 @@ exportOp_GetContent () {
     local b_wo_chid
     b_wo_chid=$(git log --format=%b "$fcic".. |
         sed '/^Change-Id:\s\w\{41\}$/,+1d')
-    test "${fltr-}" &&
-        b_wo_chid=$(printf "%s\n" "$b_wo_chid" | grep -iv "^${fltr}:")
+    FilterOut b_wo_chid "$fltrs"
     ch_c="$b_wo_chid"
     if test "${ch_c-}"
     then
@@ -493,12 +514,8 @@ exportOp_Write_Cat () {
     local oldc
     test -e "$OLDF" || return
     d2u "$OLDF" 2>/dev/null || >&2 Prompt yellow "Warning: D2U failed."
-    if test "${fltr-}"
-    then
-        oldc=$(grep -iv "^${fltr}:" <"$OLDF")
-    else
-        oldc=$(<"$OLDF")
-    fi
+    oldc=$(<"$OLDF")
+    FilterOut oldc "$fltrs"
     if test "$empty" = "empty"
     then
         printf "%s\n" "$oldc" >"$chfn"
