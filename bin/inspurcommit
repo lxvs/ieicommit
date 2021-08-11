@@ -59,7 +59,7 @@ CheckStage () {
     local option="${1-normal}"
     local -r DIFF=$(git -c "core.safecrlf=false" diff --cached --name-only)
     test "$DIFF" || CheckStage_NoStage || return
-    printf "%s\n" "$DIFF" | grep -q "\<$TEMPF\>" || return 0
+    grep -q "\<$TEMPF\>" <<<"$DIFF" || return 0
     CheckStage_HasTemp
 }
 
@@ -102,9 +102,7 @@ GetField () {
     local -n gf_var=$1
     local -r CHC="$2"
     local -r FIELD="$3"
-    gf_var=$(printf "%s\n" "$CHC" |
-        grep "^${FIELD}:" |
-        sed "s/^${FIELD}:\s*//")
+    gf_var=$(grep "^${FIELD}:" <<<"$CHC" | sed "s/^${FIELD}:\s*//")
 }
 
 # Set Field Content
@@ -115,8 +113,7 @@ SetField () {
     local -n chc=$1
     local -r SF_FLD="$2"
     local -r SF_FLDC="$3"
-    chc=$(printf "%s\n" "$chc" |
-        sed "s/^${SF_FLD}:.*$/${SF_FLD}: ${SF_FLDC}/")
+    chc=$(sed "s/^${SF_FLD}:.*$/${SF_FLD}: ${SF_FLDC}/" <<<"$chc")
 }
 
 # Parse Switch Value
@@ -139,7 +136,7 @@ FilterOut () {
     for fo_f in $fo_fs
     do
         test "${fo_f-}" &&
-            str=$(printf "%s\n" "$str" | grep -iv "^${fo_f}:")
+            str=$(grep -iv "^${fo_f}:" <<<"$str")
     done
 }
 
@@ -152,7 +149,7 @@ Commit () {
     local summary
     local details
     local filelist
-    details=$(grep -v '^#\|^\s*$' <"$TMPF")
+    details=$(grep -v '^#\|^\s*$' "$TMPF")
     ValidateHistory "$details" || return
     GetField summary "$details" "Solution"
     Commit_CheckLastSummary || return
@@ -172,7 +169,7 @@ Commit_CheckLastSummary () {
 
 Commit_CreateRelatedFiles () {
     ValidateHistoryField "$details" "RelatedFiles" 2>/dev/null || return 0
-    details=$(printf "%s\n" "$details" | sed '/^RelatedFiles:/,$d')
+    details=$(sed '/^RelatedFiles:/,$d' <<<"$details")
     ValidateJgn || return
     if test "$OP" = "amend"
     then
@@ -440,9 +437,7 @@ diffOp_GetBeyondCompare () {
         >&2 Prompt red "ERROR: Couldn't find Beyond Compare."
         return 1
     fi
-    bcomp=$(printf "%s\n" "$bcomp" |
-        grep "ExePath" |
-        sed 's/\s\{4\}.*\s\{4\}//')
+    bcomp=$(grep "ExePath" <<<"$bcomp" | sed 's/\s\{4\}.*\s\{4\}//')
 }
 
 amendOp () {
@@ -467,15 +462,15 @@ cleanOp () {
             -e 's/\\/\//g' |
         sort -u)
     st=$(git status --porcelain)
-    md=$(printf "%s\n" "$st" | grep '^ M ' | sed 's/^ M //')
-    nw=$(printf "%s\n" "$st" | grep '^?? ' | sed 's/^?? //')
+    md=$(grep '^ M ' <<<"$st" | sed 's/^ M //')
+    nw=$(grep '^?? ' <<<"$st" | sed 's/^?? //')
     for file in $fl
     do
-        if printf "%s\n" "$md" | grep -qi "$file"
+        if grep -qi "$file" <<<"$md"
         then
             printf "%s\n" "Checking out file $file"
             git checkout -- "$file"
-        elif printf "%s\n" "$nw" | grep -qi "$file"
+        elif grep -qi "$file" <<<"$nw"
         then
             printf "%s\n" "Removing file $file"
             git clean -qf -- "$file"
@@ -703,9 +698,9 @@ initOp_CleanUp_IsCommited () {
     test -e "$FCIF" || return
     fci=$(<"$FCIF")
     revlist=$(git rev-list @)
-    cid=$(printf "%s\n" "$revlist" | head -1)
+    cid=$(head -1 <<<"$revlist")
     test "$fci" != "$cid" || return
-    pre_cid=$(printf "%s\n" "$revlist" | head -2 | tail -1)
+    pre_cid=$(head -2 <<<"$revlist" | tail -1)
     test "$fci" = "$pre_cid" && return
     >&2 Prompt yellow \
         "Warning: Failed to get current state when cleaning up."
@@ -745,7 +740,7 @@ main () {
     local -r FCIF="$fci_file_name"
     local -r OP="${1-}"
     LookupUsage "main" "$@" || return 0
-    if test ! "$OP" || printf "%s" "$OP" | grep -q "^-"
+    if test ! "$OP" || grep -q "^-" <<<"$OP"
     then
         commitOp "$@"
         return
