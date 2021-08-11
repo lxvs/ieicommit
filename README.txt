@@ -13,7 +13,7 @@ inspect every script before running it.
 
     $ inspurcommit [ <操作> ]
 
-可选的操作有：amend, diff, export, init, push, template。
+可选的操作有：amend, clean, diff, export, init, push, template。
 详见“操作”章节。
 
 如果没有提供<操作>，则此命令为用来提交代码，详见“代码的提交”章节。
@@ -24,7 +24,7 @@ inspect every script before running it.
 
 【初始化】
 
-代码仓库初次使用该脚本时，需在该仓库根目录中执行以下命令进行初始化：
+代码仓库初次使用该脚本时，需在 Git Bash 中执行以下命令进行初始化：
 
     inspurcommit init [<options>]
 
@@ -96,6 +96,10 @@ amend
     如果要撤消一次错误的 amend，使用如下命令：
 
         git reset --soft HEAD@{1}
+
+clean
+
+    清理代码中被 override 的文件。
 
 diff
 
