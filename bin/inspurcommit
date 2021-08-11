@@ -7,11 +7,21 @@ declare -r change_history_name="ChangeHistory.txt"
 declare -r old_change_history_name="Old$change_history_name"
 declare -r fci_file_name="farewell-commit-id"
 
+pushd () {
+    command pushd "$@" 1>/dev/null
+}
+
+popd () {
+    command popd "$@" 1>/dev/null
+}
+
 CheckInit () {
-    test -e "$FCIF" && test -e "$TEMPF" && return
+    PushdRoot
+    test -e "$FCIF" && test -e "$TEMPF" && popd && return
     >&2 Prompt red \
         "ERROR: This repository haven't been initialized." \
         "Use command 'inspurcommit init --help' for help."
+    popd
     return 1
 }
 
@@ -133,6 +143,11 @@ FilterOut () {
     done
 }
 
+PushdRoot () {
+    git rev-parse || return
+    pushd $(git rev-parse --show-toplevel)
+}
+
 Commit () {
     local summary
     local details
@@ -234,7 +249,7 @@ Usage:
     inspurcommit [<operation>]
 
 Operations:
-    amend, diff, export, init, push, template
+    amend, clean, diff, export, init, push, template
 
 For help on a specific operation:
     inspurcommit <operation> --help
@@ -270,6 +285,15 @@ Usage:
 Amend last commit with current $TMPF and staged changes. <Options> will be
 passed to git commit.
 AMENDUSG
+}
+
+cleanUsage () {
+cat <<CLEANUSG
+Usage:
+    inspurcommit clean
+
+Clean changes of overridden files.
+CLEANUSG
 }
 
 exportUsage () {
@@ -385,6 +409,7 @@ Prompt () {
 commitOp () {
     git rev-parse || return
     CheckInit || return
+    PushdRoot || return
     GenerateTmp || return 0
     CheckStage || return
     Commit "$@"
@@ -423,9 +448,39 @@ diffOp_GetBeyondCompare () {
 amendOp () {
     git rev-parse || return
     CheckInit || return
+    PushdRoot || return
     GenerateTmp || return 0
     CheckStage amend || return
     Commit --amend "$@"
+}
+
+cleanOp () {
+    local st
+    local fl
+    local md
+    local nw
+    PushdRoot || return
+    fl=$(grep -rni --include=*.cif '"\s*;\s*"' ./ |
+        sed -e 's/^.*\s*;\s*"//' \
+            -e 's/#.*$//' \
+            -e 's/\s*"\s*$//' \
+            -e 's/\\/\//g' |
+        sort -u)
+    st=$(git status --porcelain)
+    md=$(printf "%s\n" "$st" | grep '^ M ' | sed 's/^ M //')
+    nw=$(printf "%s\n" "$st" | grep '^?? ' | sed 's/^?? //')
+    for file in $fl
+    do
+        if printf "%s\n" "$md" | grep -qi "$file"
+        then
+            printf "%s\n" "Checking out file $file"
+            git checkout -- "$file"
+        elif printf "%s\n" "$nw" | grep -qi "$file"
+        then
+            printf "%s\n" "Removing file $file"
+            git clean -qf -- "$file"
+        fi
+    done
 }
 
 # Operation: Export a Change History
@@ -441,6 +496,7 @@ exportOp () {
     local empty
     git rev-parse || return
     CheckInit || return
+    PushdRoot || return
     exportOp_Parse "$@" || return
     exportOp_GetFcic || return
     exportOp_GetContent || return
@@ -532,6 +588,7 @@ exportallOp () {
 templateOp () {
     git rev-parse || return
     CheckInit || return
+    PushdRoot || return
     GenerateTmp || return 0
     CheckStage template || return
     Commit "$@"
@@ -550,19 +607,13 @@ initOp () {
     local df_dpd
     local df_rlf
     git rev-parse || return
-    initOp_CheckRoot || return
+    PushdRoot || return
     initOp_CheckInit || return
     initOp_CheckGitIgnore || return
     initOp_CheckStage || return
     initOp_Parse "$@" || return
     initOp_RenameTmp && initOp_Start && return
     initOp_CleanUp
-    return 1
-}
-
-initOp_CheckRoot () {
-    test -e ./.git && return
-    >&2 Prompt red "ERROR: Please init in the root directory."
     return 1
 }
 
@@ -701,7 +752,7 @@ main () {
     fi
     shift
     case "$OP" in
-    push|diff|amend|export|template|init) ;;
+    amend|clean|diff|export|init|push|template) ;;
     exportall)
         #TODO deprecate
         Prompt yellow \
