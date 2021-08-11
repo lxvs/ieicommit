@@ -7,11 +7,21 @@ declare -r change_history_name="ChangeHistory.txt"
 declare -r old_change_history_name="Old$change_history_name"
 declare -r fci_file_name="farewell-commit-id"
 
+pushd () {
+    command pushd "$@" 1>/dev/null
+}
+
+popd () {
+    command popd "$@" 1>/dev/null
+}
+
 CheckInit () {
-    test -e "$FCIF" && test -e "$TEMPF" && return
+    PushdRoot
+    test -e "$FCIF" && test -e "$TEMPF" && popd && return
     >&2 Prompt red \
         "ERROR: This repository haven't been initialized." \
         "Use command 'inspurcommit init --help' for help."
+    popd
     return 1
 }
 
@@ -131,6 +141,11 @@ FilterOut () {
         test "${fo_f-}" &&
             str=$(printf "%s\n" "$str" | grep -iv "^${fo_f}:")
     done
+}
+
+PushdRoot () {
+    git rev-parse || return
+    pushd $(git rev-parse --show-toplevel)
 }
 
 Commit () {
@@ -394,6 +409,7 @@ Prompt () {
 commitOp () {
     git rev-parse || return
     CheckInit || return
+    PushdRoot || return
     GenerateTmp || return 0
     CheckStage || return
     Commit "$@"
@@ -432,6 +448,7 @@ diffOp_GetBeyondCompare () {
 amendOp () {
     git rev-parse || return
     CheckInit || return
+    PushdRoot || return
     GenerateTmp || return 0
     CheckStage amend || return
     Commit --amend "$@"
@@ -442,6 +459,7 @@ cleanOp () {
     local fl
     local md
     local nw
+    PushdRoot || return
     fl=$(grep -rni --include=*.cif '"\s*;\s*"' ./ |
         sed -e 's/^.*\s*;\s*"//' \
             -e 's/#.*$//' \
@@ -478,6 +496,7 @@ exportOp () {
     local empty
     git rev-parse || return
     CheckInit || return
+    PushdRoot || return
     exportOp_Parse "$@" || return
     exportOp_GetFcic || return
     exportOp_GetContent || return
@@ -569,6 +588,7 @@ exportallOp () {
 templateOp () {
     git rev-parse || return
     CheckInit || return
+    PushdRoot || return
     GenerateTmp || return 0
     CheckStage template || return
     Commit "$@"
@@ -587,19 +607,13 @@ initOp () {
     local df_dpd
     local df_rlf
     git rev-parse || return
-    initOp_CheckRoot || return
+    PushdRoot || return
     initOp_CheckInit || return
     initOp_CheckGitIgnore || return
     initOp_CheckStage || return
     initOp_Parse "$@" || return
     initOp_RenameTmp && initOp_Start && return
     initOp_CleanUp
-    return 1
-}
-
-initOp_CheckRoot () {
-    test -e ./.git && return
-    >&2 Prompt red "ERROR: Please init in the root directory."
     return 1
 }
 
