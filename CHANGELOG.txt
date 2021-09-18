@@ -1,0 +1,10 @@
+0.8.1 - 2021-09-18
+
+	* In push operation, get current branch instead of using master
+	* Add option -v, --ver and --version to get current version
+	* Improvements on code
+
+0.8.0 - 2021-08-11
+
+	* Introduce operation - clean
+	* Pushd to root when do most of operations
