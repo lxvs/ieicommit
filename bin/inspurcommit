@@ -267,7 +267,7 @@ cat <<\PUSHUSG
 Usage:
     inspurcommit push [<branch>]
 
-Push local commits to Gerrit. Default <branch> is 'master'. This command
+Push local commits to Gerrit. Default <branch> is the current. This command
 is equivalent to:
 
     git push origin HEAD:refs/for/<branch>
@@ -413,9 +413,10 @@ commitOp () {
 }
 
 pushOp () {
-    local p_br="${1-master}"
+    local p_br="${1-HEAD}"
     shift
     git rev-parse || return
+    p_br=$(git rev-parse --abbrev-ref "$p_br") || return
     git push "$@" origin HEAD:refs/for/"$p_br"
 }
 
