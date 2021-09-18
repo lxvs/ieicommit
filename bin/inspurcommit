@@ -246,7 +246,7 @@ Usage:
     inspurcommit [<operation>]
 
 Operations:
-    amend, clean, diff, export, init, push, template
+    amend, clean, diff, export, init, merge, push, template
 
 For help on a specific operation:
     inspurcommit <operation> --help
@@ -359,6 +359,16 @@ If you want to diff the staged changes, use 'inspurcommit diff --cached'.
 DIFFUSG
 }
 
+mergeUsage () {
+cat <<\MERGEUSG
+Usage:
+    inspurcommit merge [<file to merge> ...]
+
+Resolve merge conflicts with Beyond Compare. If <file to merge> is not
+specified, resolve all conflicted files one by one.
+MERGEUSG
+}
+
 LookupUsage () {
     local -r OPERATION="$1"
     local argument
@@ -427,6 +437,16 @@ diffOp () {
     git -c "diff.tool=BeyondCompare" \
         -c "difftool.BeyondCompare.cmd=\"${bcomp}\" \"\$(cygpath -w \"\$LOCAL\")\" \"\$REMOTE\"" \
         difftool --dir-diff "$@"
+}
+
+mergeOp () {
+    local bcomp
+    git rev-parse || return
+    diffOp_GetBeyondCompare || return
+    git -c "merge.tool=BeyondCompare" \
+        -c "mergetool.BeyondCompare.cmd=\"${bcomp}\" \"\$(cygpath -w \"\$LOCAL\")\" \"\$REMOTE\" \"\$BASE\" \"\$MERGED\"" \
+        -c "mergetool.BeyondCompare.trustExitCode=true" \
+        mergetool "$@"
 }
 
 diffOp_GetBeyondCompare () {
@@ -753,7 +773,7 @@ main () {
     fi
     shift
     case "$OP" in
-    amend|clean|diff|export|init|push|template) ;;
+    amend|clean|diff|export|init|merge|push|template) ;;
     exportall)
         #TODO deprecate
         Prompt yellow \

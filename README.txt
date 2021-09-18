@@ -13,7 +13,7 @@ inspect every script before running it.
 
     $ inspurcommit [ <操作> ]
 
-可选的操作有：amend, clean, diff, export, init, push, template。
+可选的操作有：amend, clean, diff, export, init, merge, push, template。
 详见“操作”章节。
 
 如果没有提供<操作>，则此命令为用来提交代码，详见“代码的提交”章节。
@@ -121,11 +121,6 @@ export
 
     --exclude 隐含 --all。
 
-template
-
-    默认情况下提交码时如果包含了模板文件，脚本会自动排除它但仍然提交其余
-    改动。如果要修改模板并提交，需要使用 template 操作。
-
 init
 
     当一个代码仓库开始使用此脚本提交之前，需要用一次 inspurcommit init 命
@@ -160,3 +155,13 @@ init
         3. 将临界点 commit ID 写入文件 farewell-commit-id
         4. 将 /ChangeHistory.txt 和 /ChangeHistory-*.txt 加入 .gitignore
         5. 提交上述改动，生成一条标题为 INSPURCOMMIT-INIT 的 commit
+
+merge
+
+    使用 Beyond Compare 解决合并时的冲突。如果要解决指定文件的冲突，在后面
+    加上文件名。
+
+template
+
+    默认情况下提交码时如果包含了模板文件，脚本会自动排除它但仍然提交其余
+    改动。如果要修改模板并提交，需要使用 template 操作。
