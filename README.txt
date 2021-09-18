@@ -59,8 +59,8 @@ init 命令可以使用参数为模板对应字段设置默认值，如 --tag EX
     3.  使用命令 inspurcommit。如果给此命令提供了参数，它们将会被传递给
         git commit。
 
-    4.  若要把提交的改动上传至 Gerrit，使用 inspurcommit push 命令。
-        如果当前分支不为 master，使用命令 inspurcommit push <branch>。
+    4.  若要把当前分支提交的改动上传至 Gerrit 对应分支，使用命令
+        inspurcommit push 。
 
 ChangeHistoryTemplate.txt 文件的改动是无法被提交的，如需修改模板，使用命令
 inspurcommit template。
