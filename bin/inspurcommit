@@ -741,6 +741,11 @@ main () {
     local -r FCIF="$fci_file_name"
     local -r OP="${1-}"
     LookupUsage "main" "$@" || return 0
+    if test "$OP" = "-v" || test "$OP" = "--ver" || test "$OP" = "--version"
+    then
+        ShowLogo
+        return
+    fi
     if test ! "$OP" || grep -q "^-" <<<"$OP"
     then
         commitOp "$@"
