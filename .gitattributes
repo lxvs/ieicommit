@@ -1,4 +1,3 @@
-*	text eol=lf
 *.bat	eol=crlf
 .gitattributes	export-ignore
 .gitignore	export-ignore
