@@ -551,7 +551,7 @@ exportOp_GetFcic () {
 # b_wo_chid: commit body without change-ID
 exportOp_GetContent () {
     local b_wo_chid
-    b_wo_chid=$(git log --format=%b "$fcic".. |
+    b_wo_chid=$(git log --format=%b --no-merges "$fcic".. |
         sed '/^Change-Id:\s\w\{41\}$/,+1d')
     FilterOut b_wo_chid "$fltrs"
     ch_c="$b_wo_chid"
@@ -750,7 +750,7 @@ initOp_Start () {
 }
 
 main () {
-    local -r REVISION="0.9.1"
+    local -r REVISION="0.9.2"
     local -r LAST_UPDATE="2021-09-24"
     local -r AUTHOR="Johnny Appleseed <liuzhaohui@inspur.com>"
     local -r JGN="jgnumberforthehistory"
