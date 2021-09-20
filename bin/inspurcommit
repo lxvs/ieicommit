@@ -1,6 +1,5 @@
 #!/bin/bash
 set -o nounset   # abort on unbound variable
-set -o pipefail  # don't hide errors within pipes
 
 declare -r template_file_name="ChangeHistoryTemplate.txt"
 declare -r change_history_name="ChangeHistory.txt"
@@ -751,8 +750,8 @@ initOp_Start () {
 }
 
 main () {
-    local -r REVISION="0.9.0"
-    local -r LAST_UPDATE="2021-09-20"
+    local -r REVISION="0.9.1"
+    local -r LAST_UPDATE="2021-09-24"
     local -r AUTHOR="Johnny Appleseed <liuzhaohui@inspur.com>"
     local -r JGN="jgnumberforthehistory"
     local -r TEMPF="$template_file_name"
