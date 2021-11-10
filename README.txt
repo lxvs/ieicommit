@@ -1,6 +1,6 @@
 
-                           Inspur Commit Script
-                       https://github.com/islzh/jg
+                            Inspur Commit Kit
+                  https://github.com/islzh/inspurcommit
 
 注意：此脚本需要 Git for Windows v2.32.0 及以上版本。
 
