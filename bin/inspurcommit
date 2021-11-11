@@ -422,11 +422,30 @@ commitOp () {
 }
 
 pushOp () {
-    local p_br="${1-HEAD}"
-    shift
+    local p_br
+    local sws
+    while test $# -ge 1
+    do
+        case "$1" in
+        -*)
+            sws="${sws-} $1"
+            shift
+            ;;
+        *)
+            if test ! "${p_br-}"
+            then
+                p_br=$1
+                shift
+            else
+                >&2 Prompt red "ERROR: Invalid argument: $1"
+                return 1
+            fi
+        esac
+    done
     git rev-parse || return
+    p_br="${p_br-HEAD}"
     p_br=$(git rev-parse --abbrev-ref "$p_br") || return
-    git push "$@" origin HEAD:refs/for/"$p_br"
+    git push ${sws-} origin HEAD:refs/for/"$p_br"
 }
 
 diffOp () {
