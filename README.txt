@@ -161,6 +161,13 @@ merge
     使用 Beyond Compare 解决合并时的冲突。如果要解决指定文件的冲突，在后面
     加上文件名。
 
+push
+
+    inspurcommit push [<branch>] [<option> ...]
+
+    将本地提交推送至 Gerrit 的 <branch> 分支，如果未指定，则为同名分支。
+    <option> 将会被传递给 git push。
+
 template
 
     默认情况下提交码时如果包含了模板文件，脚本会自动排除它但仍然提交其余
