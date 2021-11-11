@@ -1,3 +1,13 @@
+0.9.3 - 2021-11-11
+
+	* Add switch support to push operation.
+	* Improve installation scripts and remove VERSION.
+	* Update name and link in readme.
+
+0.9.2 - 2021-9.24
+
+	* Skip merges when exporting.
+
 0.9.1 - 2021-09-24
 
 	* Remove pipefail, which can cause a pipe returning 141 when head

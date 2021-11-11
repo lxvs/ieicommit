@@ -769,8 +769,8 @@ initOp_Start () {
 }
 
 main () {
-    local -r REVISION="0.9.2"
-    local -r LAST_UPDATE="2021-09-24"
+    local -r REVISION="0.9.3"
+    local -r LAST_UPDATE="2021-11-11"
     local -r AUTHOR="Johnny Appleseed <liuzhaohui@inspur.com>"
     local -r JGN="jgnumberforthehistory"
     local -r TEMPF="$template_file_name"
