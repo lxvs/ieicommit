@@ -4,7 +4,7 @@
 	* Improve installation scripts and remove VERSION.
 	* Update name and link in readme.
 
-0.9.2 - 2021-9.24
+0.9.2 - 2021-09-24
 
 	* Skip merges when exporting.
 
