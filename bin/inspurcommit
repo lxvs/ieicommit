@@ -307,11 +307,6 @@ If '--exclude' is specified, export a change history with all fields except
 EXPORTUSG
 }
 
-#TODO deprecated
-exportallUsage () {
-    exportUsage
-}
-
 templateUsage () {
 cat <<\TEMPLATEUSG
 Usage:
@@ -614,11 +609,6 @@ exportOp_Write_Cat () {
     fi
 }
 
-exportallOp () {
-    #TODO deprecate
-    exportOp --all "$@"
-}
-
 templateOp () {
     git rev-parse || return
     CheckInit || return
@@ -792,11 +782,6 @@ main () {
     shift
     case "$OP" in
     amend|clean|diff|export|init|merge|push|template) ;;
-    exportall)
-        #TODO deprecate
-        Prompt yellow \
-            "Warning: exportall is deprecated. Use 'export --all'."
-        ;;
     *)
         >&2 Prompt red "ERROR: Invalid option - $OP"
         >&2 ShowUsage
