@@ -538,29 +538,15 @@ amendOp () {
 cleanOp () {
     local st fl md nw tor toc
     PushdRoot || return
-    fl=$(grep -rni --include=*.cif '"\s*;\s*"' ./ |
-        sed -e 's/^.*\s*;\s*"//' \
-            -e 's/#.*$//' \
-            -e 's/\s*"\s*$//' \
+    fl=$(grep -rho --include=*.cif ';\s*"[^"]\+' . |
+        sed -e 's/^;\s*"//' \
             -e 's/\\/\//g' |
         sort -u)
     st=$(git status --porcelain)
-    md=$(grep '^ M ' <<<"$st" | sed 's/^ M //')
-    nw=$(grep '^?? ' <<<"$st" | sed 's/^?? //')
-    for file in $fl
-    do
-        if grep -qi "$file" <<<"$md"
-        then
-            printf -- "Restore file: %s\n" "$file"
-            printf -v tor -- "%s%s\n" "${tor-}" "$file"
-        elif grep -qi "$file" <<<"$nw"
-        then
-            printf -- "Delete file: %s\n" "$file"
-            printf -v toc -- "%s%s\n" "${toc-}" "$file"
-        fi
-    done
-    test "${tor-}" && printf -- "%s" "$tor" | xargs -d '\n' git restore --
-    test "${toc-}" && printf -- "%s" "$toc" | xargs -d '\n' git clean -qf --
+    tor=$(comm -12 - <<<"$fl" <(sed -n '/^ M /{s/^ M //p}' <<<"$st" | sort))
+    toc=$(comm -12 - <<<"$fl" <(sed -n '/^?? /{s/^?? //p}' <<<"$st" | sort))
+    test "${tor-}" && xargs <<<"$tor" -d '\n' git restore --
+    test "${toc-}" && xargs <<<"$toc" -d '\n' git clean -qf --
     return 0
 }
 
