@@ -1,3 +1,9 @@
+0.9.4 - 2021-12-09
+
+	* Boost performance of operation 'clean' greatly
+	* Remove obsolete operation 'exportall'
+	* Chmod INSTALL.sh to 755
+
 0.9.3 - 2021-11-11
 
 	* Add switch support to push operation.
