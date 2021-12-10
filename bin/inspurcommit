@@ -549,7 +549,6 @@ exportOp_Parse () {
             test "${fltrs+set}" || fltrs=""
             test "$fltrs" && fltrs="$fltrs,"
             fltrs="$fltrs$val"
-            set +x
             shift 2
             ;;
         *) chfn="$sw"; shift ;;
