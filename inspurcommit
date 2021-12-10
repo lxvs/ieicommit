@@ -337,7 +337,7 @@ exportUsage () {
 cat <<\EXPORTUSG
 Usage:
     inspurcommit export [-a|--all] [{-x|--exclude} <filter>,...]
-                        [<filename>]
+                        [--] [<filename>]
 
 Export a change history without 'scope' filed, unless '--all' is specified.
 
@@ -584,6 +584,7 @@ exportOp_Parse () {
     do
         sw="$1"
         case "$sw" in
+        --) shift; break ;;
         -a|--all) test "${fltrs+set}" || fltrs="" ; shift ;;
         -x|--exclude)
             ParseSwitchValue "$@" || return
@@ -592,9 +593,26 @@ exportOp_Parse () {
             fltrs="$fltrs$val"
             shift 2
             ;;
+        -*) >&2 Prompt red "error: invalid switch '$sw'"
+            case "${sw#-}" in
+            all) >&2 Prompt y "hint: Do you mean '--all' (with 2 dashes)?" ;;
+            exclude) >&2 Prompt y "hint: Do you mean '--exclude' (with 2 dashes)?" ;;
+            *) >&2 exportUsage ;;
+            esac
+            return 1
+            ;;
         *) chfn="$sw"; shift ;;
         esac
     done
+    case "${chfn-},$#" in
+    *,0) ;;
+    '',1) chfn="$1" ;;
+    *)
+        >&2 Prompt red "error: too many arguments"
+        >&2 exportUsage
+        return 1
+        ;;
+    esac
     test "${fltrs+set}" || fltrs="Scope"
 }
 
