@@ -77,25 +77,29 @@ amend
     1. 模板文件填写有误
        (1) 修正 ChangeHistory.txt 文件，并保存
        (2) 执行命令 inspurcommit amend
+       (3) 确认无误后执行命令 inspurcommit push
 
     2. 提交的代码内容有误
        (1) 修正有误的代码，并保存
        (2) 使用命令 git add <文件路径>
        (3) 如果需要更改 ChangeHistory.txt，更改并保存。
        (4) 使用命令 inspurcommit amend
+       (5) 确认无误后执行命令 inspurcommit push
 
     3. 错误地提交了本不应提交的文件
        (1) 使用命令 git checkout @^ <文件路径>
        (2) 使用命令 inspurcommit amend
+       (3) 确认无误后执行命令 inspurcommit push
 
     4. 错误地提交了新文件
        (1) 删除错误提交的新文件
        (2) 使用命令 git add <文件路径>
-       (2) 使用命令 inspurcommit amend。
+       (3) 使用命令 inspurcommit amend。
+       (4) 确认无误后执行命令 inspurcommit push
 
     如果要撤消一次错误的 amend，使用如下命令：
 
-        git reset --soft HEAD@{1}
+        git reset --soft @{1}
 
 clean
 
@@ -111,7 +115,7 @@ diff
 export
 
     inspurcommit export [-a|--all] [{-x|--exclude} <filter>,...]
-                        [<filename>]
+                        [--] [<filename>]
 
     导出一份 change-history 到 ChangeHistory-<hash>.txt，<hash> 表示当前
     commit ID，不包含 scope 字段（除非使用了 --all 参数）。
@@ -163,10 +167,11 @@ merge
 
 push
 
-    inspurcommit push [<branch>] [<option> ...]
+    inspurcommit push [<options> ...] [<branch>]
 
-    将本地提交推送至 Gerrit 的 <branch> 分支，如果未指定，则为同名分支。
-    <option> 将会被传递给 git push。
+    将本地提交推送至 Gerrit 的同名分支。
+    如果提供了 <options>，它们将会被传递给 git push。 如果指定了
+    <branch>，则推送到 Gerrit 的此分支。
 
 template
 
