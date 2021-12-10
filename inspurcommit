@@ -305,12 +305,12 @@ SHOWUSG
 pushUsage () {
 cat <<\PUSHUSG
 Usage:
-    inspurcommit push [<branch>]
+    inspurcommit push [<options> ...] [<branch>]
 
 Push local commits to Gerrit. Default <branch> is the current. This command
 is equivalent to:
 
-    git push origin HEAD:refs/for/<branch>
+    git push [<options> ...] origin HEAD:refs/for/<branch>
 PUSHUSG
 }
 
@@ -459,29 +459,27 @@ commitOp () {
 
 pushOp () {
     local p_br
+    local br_d
     local sws
     while test $# -ge 1
     do
-        case "$1" in
-        -*)
+        case "${p_br-},$1" in
+        *,-*)
             sws="${sws-} $1"
             shift
             ;;
+        '',*)
+            p_br="$1"
+            shift
+            ;;
         *)
-            if test ! "${p_br-}"
-            then
-                p_br=$1
-                shift
-            else
-                >&2 Prompt red "ERROR: Invalid argument: $1"
-                return 1
-            fi
+            >&2 Prompt red "ERROR: Invalid argument: $1"
+            return 1
         esac
     done
     git rev-parse || return
-    p_br="${p_br-HEAD}"
-    p_br=$(git rev-parse --abbrev-ref "$p_br") || return
-    git push ${sws-} origin HEAD:refs/for/"$p_br"
+    br_d=$(git rev-parse --abbrev-ref HEAD) || return
+    git push ${sws-} origin HEAD:refs/for/"${p_br-$br_d}"
 }
 
 diffOp () {
