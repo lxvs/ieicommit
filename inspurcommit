@@ -24,10 +24,52 @@ CheckInit () {
     return 1
 }
 
-ValidateJgn () {
-    type "$JGN" 1>/dev/null 2>&1 && return
-    >&2 Prompt red "ERROR: Coundn't find $JGN."
-    return 1
+jgnInsNum () {
+    vim - --not-a-term -es "+%s/$1//ge" \
+        "+let b:currline=search('^$2\$')" \
+        "+/^$2\$/+,\$s/^/\\=line('.')-b:currline.'. '/ge" \
+        "+%p|q!"
+}
+
+jgn () {
+    local -r title='RelatedFiles:'
+    local -r mod_title='Modified:'
+    local -r add_title='Added:'
+    local -r del_title='Deleted:'
+    local -r ren_title='Renamed:'
+    local -r cpy_title='Copied:'
+    local -r modtag='^M. '
+    local -r addtag='^A. '
+    local -r deltag='^D. '
+    local -r rentag='^R. '
+    local -r cpytag='^C. '
+    local staged=$(git status --porcelain | grep '^[MADRC]')
+    if test ! "$(git diff --cached --name-only 2>/dev/null)"
+    then
+        Prompt red "error: no staged change"
+        return 1
+    fi
+    moded=$(printf "%s" "$staged" | grep "$modtag")
+    test "${moded-}" &&
+        moded=$(printf "\n%s\n%s\n" "$mod_title" "$moded" |
+        jgnInsNum "$modtag" "$mod_title")
+    added=$(printf "%s\n" "$staged" | grep "$addtag")
+    test "${added-}" &&
+        added=$(printf "\n%s\n%s\n" "$add_title" "$added" |
+        jgnInsNum "$addtag" "$add_title")
+    deled=$(printf "%s\n" "$staged" | grep "$deltag")
+    test "${deled-}" &&
+        deled=$(printf "\n%s\n%s\n" "$del_title" "$deled" |
+        jgnInsNum "$deltag" "$del_title")
+    rened=$(printf "%s\n" "$staged" | grep "$rentag")
+    test "${rened-}" &&
+        rened=$(printf "\n%s\n%s\n" "$ren_title" "$rened" |
+        jgnInsNum "$rentag" "$ren_title")
+    cpyed=$(printf "%s\n" "$staged" | grep "$cpytag")
+    test "${cpyed-}" &&
+        cpyed=$(printf "\n%s\n%s\n" "$cpy_title" "$cpyed" |
+        jgnInsNum "$cpytag" "$cpy_title")
+    printf "%s" "$title" "$moded" "$added" "$deled" "$rened" "$cpyed"
 }
 
 ValidateHistoryField () {
@@ -169,14 +211,13 @@ Commit_CheckLastSummary () {
 Commit_CreateRelatedFiles () {
     ValidateHistoryField "$details" "RelatedFiles" 2>/dev/null || return 0
     details=$(sed '/^RelatedFiles:/,$d' <<<"$details")
-    ValidateJgn || return
     if test "$OP" = "amend"
     then
         git reset --soft @^ || return
-        filelist=$("$JGN")
+        filelist=$(jgn)
         git reset --soft ORIG_HEAD
     else
-        filelist=$("$JGN")
+        filelist=$(jgn)
     fi
     printf -v details "%s\n%s" "$details" "$filelist"
 }
@@ -764,7 +805,6 @@ main () {
     local -r REVISION="0.9.4"
     local -r LAST_UPDATE="2021-12-09"
     local -r AUTHOR="Johnny Appleseed <liuzhaohui@inspur.com>"
-    local -r JGN="jgnumberforthehistory"
     local -r TEMPF="$template_file_name"
     local -r TMPF="$change_history_name"
     local -r OLDF="$old_change_history_name"

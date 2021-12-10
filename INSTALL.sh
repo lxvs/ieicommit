@@ -28,40 +28,23 @@ USG
 
 Install () {
     test -d "$target_dir" || mkdir "$target_dir"
-    for jgfile in ./bin/jg*
-    do
-        cp "$jgfile" "$target_dir" || return 1
-        chmod +x "$target_dir"/$(basename "$jgfile")
-    done
-    for inspurfile in ./bin/inspur*
-    do
-        cp "$inspurfile" "$target_dir" || return 1
-        chmod +x "$target_dir"/$(basename "$inspurfile")
-    done
-    cp ./ChangeHistoryTemplate.txt "$target_dir"
-    printf "%s\n" "Complete."
-    return 0
+    install "inspurcommit" "$target_dir" || return
+    cp "ChangeHistoryTemplate.txt" "$target_dir"
+    printf "Complete.\n"
 }
 
 Uninstall () {
     if test ! -e "$target_dir/inspurcommit"
     then
-        >&2 echo "ERROR: Not installed."
+        >&2 printf "error: not installed\n"
         return 1
     fi
-    for jgfile in ./bin/jg*
-    do
-        rm -f "$target_dir"/$(basename "$jgfile") || return
-    done
-    for inspurfile in ./bin/inspur*
-    do
-        rm -f "$target_dir"/$(basename "$inspurfile") || return
-    done
-    rm -f "$target_dir/ChangeHistoryTemplate.txt"
-    rm -f "$target_dir/jgversion"
+    pushd "$target_dir" 1>/dev/null
+    rm -f "inspurcommit" || return
+    rm -f "ChangeHistoryTemplate.txt" "jgversion" "jgnumberforthehistory"
+    popd 1>/dev/null
     rmdir "$target_dir" 2>/dev/null
-    printf "%s\n" "Complete."
-    return 0
+    printf "Complete.\n"
 }
 
 main () {

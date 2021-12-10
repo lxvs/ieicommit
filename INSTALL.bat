@@ -54,16 +54,8 @@ if "%selection%" == "0" goto remove
 goto choose
 
 :deploy
-if not exist "bin" (
-    >&2 echo Error: Could not find the script folder.
-    goto errexit
-)
-if not exist "%USERPROFILE%\bin\" (
-    md "%USERPROFILE%\bin\"
-    @echo Created folder '%USERPROFILE%\bin\'
-)
-for /r bin\ %%f in (jg*) do (copy /Y "%%f" "%USERPROFILE%\bin\" 1>nul)
-for /r bin\ %%f in (inspur*) do (copy /Y "%%f" "%USERPROFILE%\bin\" 1>nul)
+if not exist "%USERPROFILE%\bin\" md "%USERPROFILE%\bin\"
+copy /Y "inspurcommit" "%USERPROFILE%\bin\" 1>nul
 copy /Y "ChangeHistoryTemplate.txt" "%USERPROFILE%\bin\" 1>nul
 goto okexit
 
@@ -72,11 +64,13 @@ if not exist "%USERPROFILE%\bin\" (
     >&2 echo ERROR: Not installed.
     goto errexit
 )
-for /r bin\ %%f in (jg*) do del "%USERPROFILE%\bin\%%~nf" 2>NUL
-for /r bin\ %%f in (inspur*) do del "%USERPROFILE%\bin\%%~nf" 2>NUL
-del "%USERPROFILE%\bin\ChangeHistoryTemplate.txt" 2>nul
-del "%USERPROFILE%\bin\jgversion" 2>NUL
-rd "%USERPROFILE%\bin" 2>NUL
+pushd "%USERPROFILE%\bin"
+2>nul del "inspurcommit"
+2>nul del "ChangeHistoryTemplate.txt"
+2>nul del "jgversion"
+2>nul del "jgnumberforthehistory"
+popd
+2>nul rd "%USERPROFILE%\bin"
 goto okexit
 
 :Logo
