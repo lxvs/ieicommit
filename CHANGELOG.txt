@@ -1,3 +1,8 @@
+0.9.5 - 2021-12-10
+
+	* Integrate jgnumberforthehistory
+	* Improve argument parsing of operation 'export' and 'push'
+
 0.9.4 - 2021-12-09
 
 	* Boost performance of operation 'clean' greatly
