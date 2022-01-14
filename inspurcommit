@@ -552,6 +552,7 @@ cleanOp () {
     done
     test "${tor-}" && printf "%s" "$tor" | xargs -d '\n' git restore --
     test "${toc-}" && printf "%s" "$toc" | xargs -d '\n' git clean -qf --
+    return 0
 }
 
 # Operation: Export a Change History
