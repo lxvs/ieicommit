@@ -274,7 +274,6 @@ ShowLogo () {
 cat <<LOGO
 
     inspurcommit v$REVISION
-    Last updated: $LAST_UPDATE
     $AUTHOR
 
 LOGO
@@ -820,7 +819,6 @@ initOp_Start () {
 
 main () {
     local -r REVISION="0.9.5"
-    local -r LAST_UPDATE="2021-12-10"
     local -r AUTHOR="Johnny Appleseed <liuzhaohui@inspur.com>"
     local -r TEMPF="$template_file_name"
     local -r TMPF="$change_history_name"
