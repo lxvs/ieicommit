@@ -18,7 +18,7 @@ CheckInit () {
     PushdRoot
     test -e "$FCIF" && test -e "$TEMPF" && popd && return
     >&2 Prompt red \
-        "ERROR: This repository haven't been initialized." \
+        "error: This repository haven't been initialized." \
         "Use command 'inspurcommit init --help' for help."
     popd
     return 1
@@ -49,27 +49,27 @@ jgn () {
         Prompt red "error: no staged change"
         return 1
     fi
-    moded=$(printf "%s" "$staged" | grep "$modtag")
+    moded=$(printf -- "%s" "$staged" | grep "$modtag")
     test "${moded-}" &&
-        moded=$(printf "\n%s\n%s\n" "$mod_title" "$moded" |
+        moded=$(printf -- "\n%s\n%s\n" "$mod_title" "$moded" |
         jgnInsNum "$modtag" "$mod_title")
-    added=$(printf "%s\n" "$staged" | grep "$addtag")
+    added=$(printf -- "%s\n" "$staged" | grep "$addtag")
     test "${added-}" &&
-        added=$(printf "\n%s\n%s\n" "$add_title" "$added" |
+        added=$(printf -- "\n%s\n%s\n" "$add_title" "$added" |
         jgnInsNum "$addtag" "$add_title")
-    deled=$(printf "%s\n" "$staged" | grep "$deltag")
+    deled=$(printf -- "%s\n" "$staged" | grep "$deltag")
     test "${deled-}" &&
-        deled=$(printf "\n%s\n%s\n" "$del_title" "$deled" |
+        deled=$(printf -- "\n%s\n%s\n" "$del_title" "$deled" |
         jgnInsNum "$deltag" "$del_title")
-    rened=$(printf "%s\n" "$staged" | grep "$rentag")
+    rened=$(printf -- "%s\n" "$staged" | grep "$rentag")
     test "${rened-}" &&
-        rened=$(printf "\n%s\n%s\n" "$ren_title" "$rened" |
+        rened=$(printf -- "\n%s\n%s\n" "$ren_title" "$rened" |
         jgnInsNum "$rentag" "$ren_title")
-    cpyed=$(printf "%s\n" "$staged" | grep "$cpytag")
+    cpyed=$(printf -- "%s\n" "$staged" | grep "$cpytag")
     test "${cpyed-}" &&
-        cpyed=$(printf "\n%s\n%s\n" "$cpy_title" "$cpyed" |
+        cpyed=$(printf -- "\n%s\n%s\n" "$cpy_title" "$cpyed" |
         jgnInsNum "$cpytag" "$cpy_title")
-    printf "%s" "$title" "$moded" "$added" "$deled" "$rened" "$cpyed"
+    printf -- "%s" "$title" "$moded" "$added" "$deled" "$rened" "$cpyed"
 }
 
 ValidateHistoryField () {
@@ -78,7 +78,7 @@ ValidateHistoryField () {
     local field="$2"
     GetField value "$content" "$field"
     test "${value-}" && return
-    >&2 Prompt red "ERROR: Field '$field' of change history is empty."
+    >&2 Prompt red "error: Field '$field' of change history is empty."
     return 1
 }
 
@@ -107,7 +107,7 @@ CheckStage () {
 CheckStage_NoStage () {
     test "$option" = "amend" && return
     >&2 Prompt red \
-        "ERROR: There is no staged changes." \
+        "error: There is no staged changes." \
         "Stage changes to be committed with 'git add'."
     return 1
 }
@@ -116,7 +116,7 @@ CheckStage_HasTemp () {
     test "$option" = "template" && return
     git restore --staged "$TEMPF" >/dev/null
     >&2 Prompt yellow \
-"Warning: $TEMPF was staged. But was skipped." \
+"warning: $TEMPF was staged. But was skipped." \
 "If you want to modify the template, use command 'inspurcommit template'."
     CheckStage
 }
@@ -124,14 +124,14 @@ CheckStage_HasTemp () {
 CheckFileAlreadyExists () {
     local filename="$1"
     test ! -e "$filename" && return
-    >&2 Prompt red "ERROR: File $filename already exists."
+    >&2 Prompt red "error: File $filename already exists."
     return 1
 }
 
 FindFile () {
     local filename="$1"
     test -e "$filename" && return
-    >&2 Prompt red "ERROR: Couldn't find file $filename."
+    >&2 Prompt red "error: Couldn't find file $filename."
     return 1
 }
 
@@ -163,7 +163,7 @@ SetField () {
 ParseSwitchValue () {
     sw="$1"
     test "$#" -ge 2 && val="$2" && return
-    >&2 Prompt red "ERROR: $sw requires a value."
+    >&2 Prompt red "error: $sw requires a value."
     return 1
 }
 
@@ -204,7 +204,7 @@ Commit_CheckLastSummary () {
     test "$OP" = "amend" && return
     last_summary=$(git log -1 --format=%s)
     test "$last_summary" != "$summary" && return
-    >&2 Prompt red "ERROR: Solution is same with last one."
+    >&2 Prompt red "error: Solution is same with last one."
     return 1
 }
 
@@ -219,14 +219,14 @@ Commit_CreateRelatedFiles () {
     else
         filelist=$(jgn)
     fi
-    printf -v details "%s\n%s" "$details" "$filelist"
+    printf -v details -- "%s\n%s" "$details" "$filelist"
 }
 
 Commit_IsNotAmend () {
     local chid
     test "$OP" != "amend" && return
     chid=$(git log -1 --format=%b | grep '^Change-Id:')
-    test "${chid-}" || >&2 Prompt y "Warning: Failed to get Change-ID."
+    test "${chid-}" || >&2 Prompt y "warning: Failed to get Change-ID."
     git commit "$@" -m "$summary" -m "$details" -m "$chid"
     return 1
 }
@@ -258,7 +258,7 @@ InitTemplate () {
     test "${df_slt-}" && SetField dfc "Solution" "$df_slt"
     test "${df_dpd-}" && SetField dfc "SolutionDependency" "$df_dpd"
     test "${df_rlf-}" && SetField dfc "RelatedFiles" "$df_rlf"
-    printf "%s\n" "$dfc" >"$TEMPF"
+    printf -- "%s\n" "$dfc" >"$TEMPF"
 }
 
 GenerateTmp () {
@@ -361,7 +361,7 @@ TEMPLATEUSG
 initUsage () {
 cat <<\INITUSG
 Usage:
-    inspurcommit init [<defaults>]
+    inspurcommit init [<defaults> ...]
 
 Defaults:
     -t, --tag <tag#>
@@ -424,6 +424,14 @@ mainUsage () {
     ShowUsage
 }
 
+err () {
+    local -r red="[91m"
+    local -r rst="[0m"
+    local msg="${1-unspecific error}"
+    >&2 printf -- "${red}error: %s${rst}\n" "$msg"
+    exit 1
+}
+
 # Prompt
 # $1:   color, red/yellow/green
 # ...:  content lines
@@ -436,15 +444,21 @@ Prompt () {
     local color
     shift
     case "$COLOR_ARG" in
-    r|red) color="$RED" ;;
-    g|grn|green) color="$GRN" ;;
-    y|ylw|yellow) color="$YLW" ;;
+    r|red)
+        color="$RED"
+        ;;
+    g|grn|green)
+        color="$GRN"
+        ;;
+    y|ylw|yellow)
+        color="$YLW"
+        ;;
     *)
-        >&2 Prompt red "ERROR: Unknown color argument - $COLOR_ARG"
+        >&2 Prompt red "error: unknown color argument: $COLOR_ARG"
         return 1
         ;;
     esac
-    printf "${color}%s${RST}\n" "$@"
+    printf -- "${color}%s${RST}\n" "$@"
 }
 
 commitOp () {
@@ -472,8 +486,8 @@ pushOp () {
             shift
             ;;
         *)
-            >&2 Prompt red "ERROR: Invalid argument: $1"
-            return 1
+            err "invalid argument: $1"
+            ;;
         esac
     done
     git rev-parse || return
@@ -506,7 +520,7 @@ diffOp_GetBeyondCompare () {
     bcomp=$(reg query "$bc_reg_p" //v "$bc_reg_k" 2>/dev/null)
     if test ! "${bcomp-}"
     then
-        >&2 Prompt red "ERROR: Couldn't find Beyond Compare."
+        >&2 Prompt red "error: Couldn't find Beyond Compare."
         return 1
     fi
     bcomp=$(grep "ExePath" <<<"$bcomp" | sed 's/\s\{4\}.*\s\{4\}//')
@@ -522,11 +536,7 @@ amendOp () {
 }
 
 cleanOp () {
-    local st
-    local fl
-    local md
-    local nw
-    local tor toc
+    local st fl md nw tor toc
     PushdRoot || return
     fl=$(grep -rni --include=*.cif '"\s*;\s*"' ./ |
         sed -e 's/^.*\s*;\s*"//' \
@@ -541,21 +551,21 @@ cleanOp () {
     do
         if grep -qi "$file" <<<"$md"
         then
-            printf "Restore file: %s\n" "$file"
-            printf -v tor "%s%s\n" "${tor-}" "$file"
+            printf -- "Restore file: %s\n" "$file"
+            printf -v tor -- "%s%s\n" "${tor-}" "$file"
         elif grep -qi "$file" <<<"$nw"
         then
-            printf "Delete file: %s\n" "$file"
-            printf -v toc "%s%s\n" "${toc-}" "$file"
+            printf -- "Delete file: %s\n" "$file"
+            printf -v toc -- "%s%s\n" "${toc-}" "$file"
         fi
     done
-    test "${tor-}" && printf "%s" "$tor" | xargs -d '\n' git restore --
-    test "${toc-}" && printf "%s" "$toc" | xargs -d '\n' git clean -qf --
+    test "${tor-}" && printf -- "%s" "$tor" | xargs -d '\n' git restore --
+    test "${toc-}" && printf -- "%s" "$toc" | xargs -d '\n' git clean -qf --
     return 0
 }
 
 # Operation: Export a Change History
-# $0 export [-a|--all] [{-x|--exclude} <field>] [<filename>]
+# $0 export [-a|--all] [{-x|--exclude} <field>] [[--] <filename>]
 # <filename>: Use "ChangeHistory[-All]-%h" if not specified.
 # $fci: hash of the parent of INSPURCOMMIT-INIT
 # $fcic: hash of INSPURCOMMIT-INIT
@@ -575,40 +585,116 @@ exportOp () {
     exportOp_Write
 }
 
+exportOp_Parse_Again () {
+    local mode="$1" eff eqeff eqval flag
+    shift
+    sn=1
+    case "$mode" in
+    no)
+        eff="${1#--no-}"
+        ;;
+    2)
+        eff="${1#--}"
+        ;;
+    1)
+        eff="${1#-}"
+        ;;
+    *)
+        >&2 Prompt red "error: unknown mode: $mode"
+        exit 1
+        ;;
+    esac
+    case "$eff,$mode" in
+    all,no)
+        err "invalid switch '--no-all'"
+        ;;
+    all,2)
+        test "${fltrs+set}" || fltrs=""
+        ;;
+    exclude,no)
+        fltrs=""
+        ;;
+    exclude,2)
+        test "${2-}" || err "switch '$eff' requires a value"
+        fltrs="${fltrs-},$2"
+        sn=2
+        ;;
+    exclude=*,2)
+        eqeff="${eff%%=*}"
+        eqval="${eff#$eqeff=}"
+        test "$eqval" || err "switch '$eqeff' requires a value"
+        fltrs="${fltrs-},${eqval}"
+        ;;
+    *,1)
+        while test ${#eff} -ge 1
+        do
+            flag="${eff:0:1}"
+            eff="${eff#?}"
+            case $flag in
+            a)
+                fltrs=""
+                ;;
+            x)
+                if test "$eff"
+                then
+                    fltrs="${fltrs-},$eff"
+                    eff=""
+                elif test "${2-}"
+                then
+                    fltrs="${fltrs-},$2"
+                    sn=2
+                else
+                    err "switch '$flag' requires a value"
+                fi
+                ;;
+            *)
+                err "invalid switch: $flag"
+                ;;
+            esac
+        done
+        ;;
+    *)
+        err "invalid switch '$eff'"
+        ;;
+    esac
+}
+
 exportOp_Parse () {
-    local sw
-    local val
+    local -i sn=1
     while test "$#" -gt 0
     do
-        sw="$1"
-        case "$sw" in
-        --) shift; break ;;
-        -a|--all) test "${fltrs+set}" || fltrs="" ; shift ;;
-        -x|--exclude)
-            ParseSwitchValue "$@" || return
-            test "${fltrs+set}" || fltrs=""
-            test "$fltrs" && fltrs="$fltrs,"
-            fltrs="$fltrs$val"
-            shift 2
+        case "$1" in
+        --)
+            shift
+            break
             ;;
-        -*) >&2 Prompt red "error: invalid switch '$sw'"
-            case "${sw#-}" in
-            all) >&2 Prompt y "hint: Do you mean '--all' (with 2 dashes)?" ;;
-            exclude) >&2 Prompt y "hint: Do you mean '--exclude' (with 2 dashes)?" ;;
-            *) >&2 exportUsage ;;
-            esac
-            return 1
+        --no-*)
+            exportOp_Parse_Again "no" "$@"
+            shift $sn
             ;;
-        *) chfn="$sw"; shift ;;
+        --*)
+            exportOp_Parse_Again "2" "$@"
+            shift $sn
+            ;;
+        -*)
+            exportOp_Parse_Again "1" "$@"
+            shift $sn
+            ;;
+        *)
+            test "${chfn-}" && err "invalid argument: $1"
+            chfn="$1"
+            shift
+            ;;
         esac
     done
     case "${chfn-},$#" in
-    *,0) ;;
-    '',1) chfn="$1" ;;
+    *,0)
+        ;;
+    ,1)
+        chfn="$1"
+        ;;
     *)
-        >&2 Prompt red "error: too many arguments"
-        >&2 exportUsage
-        return 1
+        err "too many arguments"
         ;;
     esac
     test "${fltrs+set}" || fltrs="Scope"
@@ -645,10 +731,10 @@ exportOp_SetFileName () {
 
 exportOp_Write () {
     CheckFileAlreadyExists "$chfn" || return
-    test "$empty" != "empty" && printf "%s\n" "$ch_c" >"$chfn"
+    test "$empty" != "empty" && printf -- "%s\n" "$ch_c" >"$chfn"
     if ! exportOp_Write_Cat && test "$empty" = "empty"
     then
-        >&2 Prompt red "ERROR: Nothing to export."
+        >&2 Prompt red "error: Nothing to export."
         return 1
     fi
     Prompt green "Exported file $chfn"
@@ -657,14 +743,14 @@ exportOp_Write () {
 exportOp_Write_Cat () {
     local oldc
     test -e "$OLDF" || return
-    d2u "$OLDF" 2>/dev/null || >&2 Prompt yellow "Warning: D2U failed."
+    d2u "$OLDF" 2>/dev/null || >&2 Prompt yellow "warning: D2U failed."
     oldc=$(<"$OLDF")
     FilterOut oldc "$fltrs"
     if test "$empty" = "empty"
     then
-        printf "%s\n" "$oldc" >"$chfn"
+        printf -- "%s\n" "$oldc" >"$chfn"
     else
-        printf "\n%s\n" "$oldc" >>"$chfn"
+        printf -- "\n%s\n" "$oldc" >>"$chfn"
     fi
 }
 
@@ -702,14 +788,14 @@ initOp () {
 
 initOp_CheckInit () {
     CheckInit 2>/dev/null || return 0
-    >&2 Prompt red "ERROR: This repository has already been initialized."
+    >&2 Prompt red "error: This repository has already been initialized."
     return 1
 }
 
 initOp_CheckGitIgnore () {
     git status --porcelain | grep -q '\<.gitignore\>' || return 0
     >&2 Prompt red \
-"ERROR: Please commit or stash your local changes of file '.gitignore'" \
+"error: Please commit or stash your local changes of file '.gitignore'" \
 "before init."
     return 1
 }
@@ -717,7 +803,7 @@ initOp_CheckGitIgnore () {
 initOp_CheckStage () {
     CheckStage 2>/dev/null || return 0
     >&2 Prompt red \
-        "ERROR: Please commit or stash your staged changes before init."
+        "error: Please commit or stash your staged changes before init."
     >&2 git status
     return 1
 }
@@ -736,29 +822,40 @@ initOp_Parse () {
 initOp_Parse_Start () {
     case "$sw" in
     -t|--tag)
-        InitParseArg "$val" df_tag ;;
+        InitParseArg "$val" df_tag
+        ;;
     -l|--label)
-        InitParseArg "$val" df_lbl ;;
+        InitParseArg "$val" df_lbl
+        ;;
     -i|--issue)
-        InitParseArg "$val" df_iss ;;
+        InitParseArg "$val" df_iss
+        ;;
     -s|--scope)
-        InitParseArg "$val" df_scp ;;
+        InitParseArg "$val" df_scp
+        ;;
     -v|--severity)
-        InitParseArg "$val" df_svr ;;
+        InitParseArg "$val" df_svr
+        ;;
     -c|--category)
-        InitParseArg "$val" df_ctg ;;
+        InitParseArg "$val" df_ctg
+        ;;
     -y|--symptom)
-        InitParseArg "$val" df_spt ;;
+        InitParseArg "$val" df_spt
+        ;;
     -r|--rootcause)
-        InitParseArg "$val" df_rtc ;;
+        InitParseArg "$val" df_rtc
+        ;;
     -o|--solution)
-        InitParseArg "$val" df_slt ;;
-    -d|--dependency|--solution-depen_dency)
-        InitParseArg "$val" df_dpd ;;
+        InitParseArg "$val" df_slt
+        ;;
+    -d|--dependency|--solution-dependency)
+        InitParseArg "$val" df_dpd
+        ;;
     -f|--files|--related-files)
-        InitParseArg "$val" df_rlf ;;
+        InitParseArg "$val" df_rlf
+        ;;
     *)
-        >&2 Prompt red "ERROR: invalid argument - $sw"
+        >&2 Prompt red "error: invalid argument: $sw"
         >&2 initUsage
         return 1
         ;;
@@ -791,7 +888,7 @@ initOp_CleanUp_IsCommited () {
     pre_cid=$(head -2 <<<"$revlist" | tail -1)
     test "$fci" = "$pre_cid" && return
     >&2 Prompt yellow \
-        "Warning: Failed to get current state when cleaning up."
+        "warning: Failed to get current state when cleaning up."
     return 1
 }
 
@@ -808,9 +905,9 @@ initOp_Start () {
     local init_msg
     git log --format="%H" -1 1>"$FCIF" || return
     InitTemplate || return
-    printf "%s\n" "/$TMPF" "/ChangeHistory-*.txt">>.gitignore || return
+    printf -- "%s\n" "/$TMPF" "/ChangeHistory-*.txt">>.gitignore || return
     git -c "core.safecrlf=false" add "$TEMPF" "$FCIF" .gitignore || return
-    printf -v init_msg "%s\n" \
+    printf -v init_msg -- "%s\n" \
 "This commit was automatically generated to initialize this repository in"\
 "order to use Inspur Commit Kit." || return
     git commit -m "$init_title" -m "$init_msg" 1>/dev/null || return
@@ -825,24 +922,24 @@ main () {
     local -r OLDF="$old_change_history_name"
     local -r FCIF="$fci_file_name"
     local -r OP="${1-}"
-    LookupUsage "main" "$@" || return 0
-    if test "$OP" = "-v" || test "$OP" = "--ver" || test "$OP" = "--version"
-    then
+    LookupUsage "main" "$@" || exit 0
+    case "$OP" in
+    amend|clean|diff|export|init|merge|push|template)
+        shift
+        ;;
+    --version)
         ShowLogo
-        return
-    fi
-    if test ! "$OP" || grep -q "^-" <<<"$OP"
-    then
+        exit
+        ;;
+    ''|-*)
         commitOp "$@"
         return
-    fi
-    shift
-    case "$OP" in
-    amend|clean|diff|export|init|merge|push|template) ;;
+        ;;
     *)
-        >&2 Prompt red "ERROR: Invalid option - $OP"
-        >&2 ShowUsage
-        return 1
+        >&2 Prompt red "error: invalid argument: $OP" \
+            "Try 'inspurcommit --help' for help."
+        exit 1
+        ;;
     esac
     LookupUsage "$OP" "$@" || return 0
     ${OP}Op "$@"
