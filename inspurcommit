@@ -538,7 +538,7 @@ amendOp () {
 cleanOp () {
     local st fl md nw tor toc
     PushdRoot || return
-    fl=$(grep -rho --include=*.cif ';\s*"[^"]\+' . |
+    fl=$(grep -rho --include=*.cif ';\s*"[^"]\+[^" ]' . |
         sed -e 's/^;\s*"//' \
             -e 's/\\/\//g' |
         sort -u)
