@@ -304,22 +304,22 @@ SHOWUSG
 pushUsage () {
 cat <<\PUSHUSG
 Usage:
-    inspurcommit push [<options> ...] [<branch>]
+    inspurcommit push [<option>...] [<branch>]
 
-Push local commits to Gerrit. Default <branch> is the current. This command
-is equivalent to:
+Push local commits to Gerrit. Default <branch> is the current one.
+<option>s will be passed to git push.  This command is equivalent to:
 
-    git push [<options> ...] origin HEAD:refs/for/<branch>
+    git push [<option>...] origin HEAD:refs/for/<branch>
 PUSHUSG
 }
 
 amendUsage () {
 cat <<AMENDUSG
 Usage:
-    inspurcommit amend [<options>]
+    inspurcommit amend [<option>...]
 
-Amend last commit with current $TMPF and staged changes. <Options> will be
-passed to git commit.
+Amend last commit with current $TMPF and staged changes.
+<option>s will be passed to git commit.
 AMENDUSG
 }
 
@@ -350,11 +350,11 @@ EXPORTUSG
 templateUsage () {
 cat <<\TEMPLATEUSG
 Usage:
-    inspurcommit template [<options>]
+    inspurcommit template [<option>...]
 
 Normally, changes of the template cannot be committed, in case it is
 changed by accident. When you intend to change the template, you can use
-this operation. <Options> will be passed to git commit.
+this operation. <option>s will be passed to git commit.
 TEMPLATEUSG
 }
 
@@ -386,7 +386,7 @@ cat <<\DIFFUSG
 Usage:
     inspurcommit diff [<option>...]
 
-Diff with Beyond Compare. <Option>, if any, will be passed to git difftool.
+Diff with Beyond Compare. <option>s will be passed to git difftool.
 Try 'git difftool --help' for more information.
 
 If you want to diff the staged changes, use 'inspurcommit diff --cached'.
