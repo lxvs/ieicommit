@@ -586,8 +586,7 @@ exportOp_Parse_Again () {
         eff="${1#-}"
         ;;
     *)
-        >&2 Prompt red "error: unknown mode: $mode"
-        exit 1
+        err "unknown mode: $mode"
         ;;
     esac
     case "$eff,$mode" in
@@ -640,7 +639,7 @@ exportOp_Parse_Again () {
         done
         ;;
     *)
-        err "invalid switch '$eff'"
+        err "invalid switch: $eff"
         ;;
     esac
 }
