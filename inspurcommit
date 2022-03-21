@@ -157,16 +157,6 @@ SetField () {
     chc=$(sed "s/^${SF_FLD}:.*$/${SF_FLD}: ${SF_FLDC}/" <<<"$chc")
 }
 
-# Parse Switch Value
-# ParseSwitchValue "$@" || return
-# caller function must declare variable sw and val
-ParseSwitchValue () {
-    sw="$1"
-    test "$#" -ge 2 && val="$2" && return
-    >&2 Prompt red "error: $sw requires a value."
-    return 1
-}
-
 # Filter Out, case insensitive
 # & $1: string variable byref
 #   $2: filters
@@ -229,13 +219,6 @@ Commit_IsNotAmend () {
     test "${chid-}" || >&2 Prompt y "warning: Failed to get Change-ID."
     git commit "$@" -m "$summary" -m "$details" -m "$chid"
     return 1
-}
-
-#  $1:  argument
-# &$2:  variable
-InitParseArg () {
-    local -n var=$2
-    var="$1"
 }
 
 # Init template with default values set
@@ -794,55 +777,287 @@ initOp_CheckStage () {
 }
 
 initOp_Parse () {
-    local sw
-    local val
+    local -i sn
     while test "$#" -gt 0
     do
-        ParseSwitchValue "$@" || return
-        initOp_Parse_Start || return
-        shift 2
+        case $1 in
+        --no-*)
+            initOp_Parse_Again no "$@"
+            shift $sn
+            ;;
+        --*)
+            initOp_Parse_Again 2 "$@"
+            shift $sn
+            ;;
+        -*)
+            initOp_Parse_Again 1 "$@"
+            shift $sn
+            ;;
+        *)
+            ;;
+        esac
     done
 }
 
-initOp_Parse_Start () {
-    case "$sw" in
-    -t|--tag)
-        InitParseArg "$val" df_tag
+initOp_Parse_Again () {
+    local mode="$1" eff
+    shift
+    sn=2
+    case $mode in
+    no)
+        sn=1
+        eff="${1#--no-}"
+        initOp_ParseNo "$@"
         ;;
-    -l|--label)
-        InitParseArg "$val" df_lbl
+    2)
+        eff="${1#--}"
+        initOp_Parse2 "$@"
         ;;
-    -i|--issue)
-        InitParseArg "$val" df_iss
-        ;;
-    -s|--scope)
-        InitParseArg "$val" df_scp
-        ;;
-    -v|--severity)
-        InitParseArg "$val" df_svr
-        ;;
-    -c|--category)
-        InitParseArg "$val" df_ctg
-        ;;
-    -y|--symptom)
-        InitParseArg "$val" df_spt
-        ;;
-    -r|--rootcause)
-        InitParseArg "$val" df_rtc
-        ;;
-    -o|--solution)
-        InitParseArg "$val" df_slt
-        ;;
-    -d|--dependency|--solution-dependency)
-        InitParseArg "$val" df_dpd
-        ;;
-    -f|--files|--related-files)
-        InitParseArg "$val" df_rlf
+    1)
+        eff="${1#-}"
+        initOp_Parse1 "$@"
         ;;
     *)
-        >&2 Prompt red "error: invalid argument: $sw"
-        >&2 initUsage
-        return 1
+        err "unknown mode: $mode"
+        ;;
+    esac
+}
+
+initOp_ParseNo () {
+    case $eff in
+    tag)
+        df_tag=''
+        ;;
+    label)
+        df_lbl=''
+        ;;
+    issue)
+        df_iss=''
+        ;;
+    scope)
+        df_scp=''
+        ;;
+    severity)
+        df_svr=''
+        ;;
+    category)
+        df_ctg=''
+        ;;
+    symptom)
+        df_spt=''
+        ;;
+    rootcause)
+        df_rtc=''
+        ;;
+    solution)
+        df_slt=''
+        ;;
+    dependency|solution-dependency)
+        df_dpd=''
+        ;;
+    files|related-files)
+        df_rlf=''
+        ;;
+    *)
+        err "invalid switch: no-$eff"
+        ;;
+    esac
+}
+
+initOp_Parse2 () {
+    val=${2-}
+    case $eff in
+    tag)
+        test "$val" || err "switch '$eff' requires a value"
+        df_tag=$val
+        ;;
+    tag=*)
+        sn=1
+        val=${eff#tag=}
+        eff=${eff%=$val}
+        test "$val" || err "switch '$eff' requires a value"
+        df_tag=$val
+        ;;
+    label)
+        test "$val" || err "switch '$eff' requires a value"
+        df_lbl=$val
+        ;;
+    label=*)
+        sn=1
+        val=${eff#label=}
+        eff=${eff%=$val}
+        test "$val" || err "switch '$eff' requires a value"
+        df_lbl=$val
+        ;;
+    issue)
+        test "$val" || err "switch '$eff' requires a value"
+        df_iss=$val
+        ;;
+    issue=*)
+        sn=1
+        val=${eff#issue=}
+        eff=${eff%=$val}
+        test "$val" || err "switch '$eff' requires a value"
+        df_iss=$val
+        ;;
+    scope)
+        test "$val" || err "switch '$eff' requires a value"
+        df_scp=$val
+        ;;
+    scope=*)
+        sn=1
+        val=${eff#scope=}
+        eff=${eff%=$val}
+        test "$val" || err "switch '$eff' requires a value"
+        df_scp=$val
+        ;;
+    severity)
+        test "$val" || err "switch '$eff' requires a value"
+        df_svr=$val
+        ;;
+    severity=*)
+        sn=1
+        val=${eff#severity=}
+        eff=${eff%=$val}
+        test "$val" || err "switch '$eff' requires a value"
+        df_svr=$val
+        ;;
+    category)
+        test "$val" || err "switch '$eff' requires a value"
+        df_ctg=$val
+        ;;
+    category=*)
+        sn=1
+        val=${eff#category=}
+        eff=${eff%=$val}
+        test "$val" || err "switch '$eff' requires a value"
+        df_ctg=$val
+        ;;
+    symptom)
+        test "$val" || err "switch '$eff' requires a value"
+        df_spt=$val
+        ;;
+    symptom=*)
+        sn=1
+        val=${eff#symptom=}
+        eff=${eff%=$val}
+        test "$val" || err "switch '$eff' requires a value"
+        df_spt=$val
+        ;;
+    rootcause)
+        test "$val" || err "switch '$eff' requires a value"
+        df_rtc=$val
+        ;;
+    rootcause=*)
+        sn=1
+        val=${eff#rootcause=}
+        eff=${eff%=$val}
+        test "$val" || err "switch '$eff' requires a value"
+        df_rtc=$val
+        ;;
+    solution)
+        test "$val" || err "switch '$eff' requires a value"
+        df_spt=$val
+        ;;
+    solution=*)
+        sn=1
+        val=${eff#solution=}
+        eff=${eff%=$val}
+        test "$val" || err "switch '$eff' requires a value"
+        df_spt=$val
+        ;;
+    dependency|solution-dependency)
+        test "$val" || err "switch '$eff' requires a value"
+        df_dpd=$val
+        ;;
+    dependency=*)
+        sn=1
+        val=${eff#dependency=}
+        eff=${eff%=$val}
+        test "$val" || err "switch '$eff' requires a value"
+        df_dpd=$val
+        ;;
+    solution-dependency=*)
+        sn=1
+        val=${eff#solution-dependency=}
+        eff=${eff%=$val}
+        test "$val" || err "switch '$eff' requires a value"
+        df_dpd=$val
+        ;;
+    files|related-files)
+        test "$val" || err "switch '$eff' requires a value"
+        df_rlf=$val
+        ;;
+    files=*)
+        sn=1
+        val=${eff#files=}
+        eff=${eff%=$val}
+        test "$val" || err "switch '$eff' requires a value"
+        df_rlf=$val
+        ;;
+    related-files=*)
+        sn=1
+        val=${eff#related-files=}
+        eff=${eff%=$val}
+        test "$val" || err "switch '$eff' requires a value"
+        df_rlf=$val
+        ;;
+    *)
+        err "invalid switch: $eff"
+        ;;
+    esac
+}
+
+initOp_Parse1 () {
+    local sw val
+    if test ${#eff} -gt 1
+    then
+        sn=1
+        sw=${eff:0:1}
+        val=${eff#?}
+    elif test ${2-}
+    then
+        sw=$eff
+        val=$2
+    else
+        err "switch '$sw' requires a value"
+    fi
+    case $sw in
+    t)
+        df_tag=$val
+        ;;
+    l)
+        df_lbl=$val
+        ;;
+    i)
+        df_iss=$val
+        ;;
+    s)
+        df_scp=$val
+        ;;
+    v)
+        df_svr=$val
+        ;;
+    c)
+        df_ctg=$val
+        ;;
+    y)
+        df_spt=$val
+        ;;
+    r)
+        df_rtc=$val
+        ;;
+    o)
+        df_slt=$val
+        ;;
+    d)
+        df_dpd=$val
+        ;;
+    f)
+        df_rlf=$val
+        ;;
+    *)
+        err "invalid switch: $sw"
         ;;
     esac
 }
