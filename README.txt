@@ -13,7 +13,8 @@ inspect every script before running it.
 
     $ inspurcommit [ <操作> ]
 
-可选的操作有：amend, clean, diff, export, init, merge, push, template。
+可选的操作有：amend, clean, diff, export, init, merge, purge, push,
+template。
 详见“操作”章节。
 
 如果没有提供<操作>，则此命令为用来提交代码，详见“代码的提交”章节。
@@ -164,6 +165,10 @@ merge
 
     使用 Beyond Compare 解决合并时的冲突。如果要解决指定文件的冲突，在后面
     加上文件名。
+
+purge
+
+    移除并重新生成一份 ChangeHistory.txt。
 
 push
 

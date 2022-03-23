@@ -268,7 +268,7 @@ Usage:
     inspurcommit [<operation>]
 
 Operations:
-    amend, clean, diff, export, init, merge, push, template
+    amend, clean, diff, export, init, merge, purge, push, template
 
 For help on a specific operation:
     inspurcommit <operation> --help
@@ -282,6 +282,15 @@ the steps:
     3. Use command 'inspurcommit' to commit. Arguments, if any, will be
        passed to git commit.
 SHOWUSG
+}
+
+purgeUsage () {
+cat <<EOF
+Usage:
+    inspurcommit purge
+
+Remove $TMPF and regenerate one.
+EOF
 }
 
 pushUsage () {
@@ -1114,6 +1123,13 @@ initOp_Start () {
     Prompt green "Initialization completed successfully."
 }
 
+purgeOp () {
+    test $# -eq 0 || err "too many arguments"
+    PushdRoot || return
+    rm "$TMPF" || return
+    GenerateTmp 1>/dev/null || return 0
+}
+
 main () {
     local -r REVISION="0.9.6"
     local -r AUTHOR="Johnny Appleseed <liuzhaohui@inspur.com>"
@@ -1124,7 +1140,7 @@ main () {
     local -r OP="${1-}"
     LookupUsage "main" "$@" || exit 0
     case "$OP" in
-    amend|clean|diff|export|init|merge|push|template)
+    amend|clean|diff|export|init|merge|purge|push|template)
         shift
         ;;
     --version)
