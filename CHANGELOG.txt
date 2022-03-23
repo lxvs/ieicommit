@@ -1,3 +1,11 @@
+0.10.0 - 2022-03-23
+
+	* Add 'purge' operation to regenerate a change history
+	* Improvement argument parsing
+	* Boost performance of operation 'clean' greatly, again
+	* Bugfixes for 'clean' operation
+	* Improvements in usage texts, prompt texts and coding style
+
 0.9.6 - 2022-01-17
 
 	* Fix that clean operation returns 1
