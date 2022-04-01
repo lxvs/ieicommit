@@ -13,7 +13,7 @@ inspect every script before running it.
 
     $ inspurcommit [ <操作> ]
 
-可选的操作有：amend, clean, diff, export, init, merge, purge, push,
+可选的操作有：amend, clean, diff, export, init, load, merge, purge, push,
 template。
 详见“操作”章节。
 
@@ -160,6 +160,11 @@ init
         3. 将临界点 commit ID 写入文件 farewell-commit-id
         4. 将 /ChangeHistory.txt 和 /ChangeHistory-*.txt 加入 .gitignore
         5. 提交上述改动，生成一条标题为 INSPURCOMMIT-INIT 的 commit
+
+load
+
+    从指定的 commit 载入 message 内容到 ChangeHistory.txt，如果没有指定
+    commit，则从当前的 commit 载入。
 
 merge
 
