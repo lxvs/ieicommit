@@ -1126,7 +1126,10 @@ initOp_Start () {
 purgeOp () {
     test $# -eq 0 || err "too many arguments"
     PushdRoot || return
-    rm "$TMPF" || return
+    if test -e "$TMPF"
+    then
+        rm "$TMPF" || return
+    fi
     GenerateTmp 1>/dev/null || return 0
 }
 
