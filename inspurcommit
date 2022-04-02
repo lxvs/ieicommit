@@ -1154,7 +1154,7 @@ loadOp () {
 }
 
 main () {
-    local -r REVISION="0.10.0"
+    local -r REVISION="0.11.0"
     local -r AUTHOR="Johnny Appleseed <liuzhaohui@inspur.com>"
     local -r TEMPF="$template_file_name"
     local -r TMPF="$change_history_name"
