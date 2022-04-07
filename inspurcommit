@@ -1146,7 +1146,7 @@ purgeOp () {
 loadOp () {
     local id msg
     test $# -le 1 || err "too many arguments"
-    id=$(git rev-parse ${1-HEAD}) || return
+    id=$(git rev-parse "${1-HEAD}") || return
     PushdRoot || return
     msg=$(git show -s --format=%b "$id" | sed '/^RelatedFiles:/,$d')
     test "$msg" || err "got an empty result from $id; is it a merge?"
