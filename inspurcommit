@@ -498,20 +498,20 @@ pushOp () {
 }
 
 diffOp () {
-    local bcomp
+    local bc
     git rev-parse || return
     diffOp_GetBeyondCompare || return
     git -c "diff.tool=BeyondCompare" \
-        -c "difftool.BeyondCompare.cmd=\"${bcomp}\" \"\$(cygpath -w \"\$LOCAL\")\" \"\$REMOTE\"" \
+        -c "difftool.BeyondCompare.cmd=\"${bc}\" \"\$(cygpath -w \"\$LOCAL\")\" \"\$REMOTE\"" \
         difftool --dir-diff "$@"
 }
 
 mergeOp () {
-    local bcomp
+    local bc
     git rev-parse || return
     diffOp_GetBeyondCompare || return
     git -c "merge.tool=BeyondCompare" \
-        -c "mergetool.BeyondCompare.cmd=\"${bcomp}\" \"\$(cygpath -w \"\$LOCAL\")\" \"\$REMOTE\" \"\$BASE\" \"\$MERGED\"" \
+        -c "mergetool.BeyondCompare.cmd=\"${bc}\" \"\$(cygpath -w \"\$LOCAL\")\" \"\$REMOTE\" \"\$BASE\" \"\$MERGED\"" \
         -c "mergetool.BeyondCompare.trustExitCode=true" \
         mergetool "$@"
 }
@@ -519,13 +519,14 @@ mergeOp () {
 diffOp_GetBeyondCompare () {
     local -r bc_reg_p='HKCU\Software\Scooter Software\Beyond Compare'
     local -r bc_reg_k="ExePath"
-    bcomp=$(reg query "$bc_reg_p" //v "$bc_reg_k" 2>/dev/null)
-    if test ! "${bcomp-}"
+    test "$JG_BC_PATH" && bc=$JG_BC_PATH && return
+    bc=$(reg query "$bc_reg_p" //v "$bc_reg_k" 2>/dev/null)
+    if test ! "${bc-}"
     then
         >&2 Prompt red "error: Couldn't find Beyond Compare."
         return 1
     fi
-    bcomp=$(grep "ExePath" <<<"$bcomp" | sed 's/\s\{4\}.*\s\{4\}//')
+    bc=$(grep "ExePath" <<<"$bc" | sed 's/\s\{4\}.*\s\{4\}//')
 }
 
 amendOp () {
