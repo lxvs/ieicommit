@@ -498,20 +498,20 @@ pushOp () {
 }
 
 diffOp () {
-    local bc
+    local bc=
     git rev-parse || return
     diffOp_GetBeyondCompare || return
     git -c "diff.tool=BeyondCompare" \
-        -c "difftool.BeyondCompare.cmd=\"${bc}\" \"\$(cygpath -w \"\$LOCAL\")\" \"\$REMOTE\"" \
+        -c "difftool.BeyondCompare.cmd=\"$bc\" \"\$(cygpath -w \"\$LOCAL\")\" \"\$REMOTE\"" \
         difftool --dir-diff "$@"
 }
 
 mergeOp () {
-    local bc
+    local bc=
     git rev-parse || return
     diffOp_GetBeyondCompare || return
     git -c "merge.tool=BeyondCompare" \
-        -c "mergetool.BeyondCompare.cmd=\"${bc}\" \"\$(cygpath -w \"\$LOCAL\")\" \"\$REMOTE\" \"\$BASE\" \"\$MERGED\"" \
+        -c "mergetool.BeyondCompare.cmd=\"$bc\" \"\$(cygpath -w \"\$LOCAL\")\" \"\$REMOTE\" \"\$BASE\" \"\$MERGED\"" \
         -c "mergetool.BeyondCompare.trustExitCode=true" \
         mergetool "$@"
 }
@@ -521,9 +521,10 @@ diffOp_GetBeyondCompare () {
     local -r bc_reg_k="ExePath"
     test "$JG_BC_PATH" && bc=$JG_BC_PATH && return
     bc=$(reg query "$bc_reg_p" //v "$bc_reg_k" 2>/dev/null)
-    if test ! "${bc-}"
+    if test ! "$bc"
     then
-        >&2 Prompt red "error: Couldn't find Beyond Compare."
+        >&2 Prompt red "error: Couldn't find Beyond Compare." \
+            "Please defined the path to bcompare.exe in JG_BC_PATH and restart shell."
         return 1
     fi
     bc=$(grep "ExePath" <<<"$bc" | sed 's/\s\{4\}.*\s\{4\}//')
@@ -1162,6 +1163,7 @@ main () {
     local -r OLDF="$old_change_history_name"
     local -r FCIF="$fci_file_name"
     local -r OP="${1-}"
+    local -r JG_BC_PATH=${JG_BC_PATH-}
     LookupUsage "main" "$@" || exit 0
     case "$OP" in
     amend|clean|diff|export|init|load|merge|purge|push|template)
