@@ -520,6 +520,11 @@ diffOp_GetBeyondCompare () {
     local -r bc_reg_p='HKCU\Software\Scooter Software\Beyond Compare'
     local -r bc_reg_k="ExePath"
     test "$JG_BC_PATH" && bc=$JG_BC_PATH && return
+    if ! grep -Gqi '^win' <<<"$OS"
+    then
+        >&2 Prompt yellow "Sorry, this operation is Windows only for now."
+        return 1
+    fi
     bc=$(reg query "$bc_reg_p" //v "$bc_reg_k" 2>/dev/null)
     if test ! "$bc"
     then
@@ -1164,6 +1169,7 @@ main () {
     local -r FCIF="$fci_file_name"
     local -r OP="${1-}"
     local -r JG_BC_PATH=${JG_BC_PATH-}
+    local -r OS=${OS-}
     LookupUsage "main" "$@" || exit 0
     case "$OP" in
     amend|clean|diff|export|init|load|merge|purge|push|template)
