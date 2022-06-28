@@ -173,7 +173,7 @@ FilterOut () {
 
 PushdRoot () {
     git rev-parse || return
-    pushd $(git rev-parse --show-toplevel)
+    pushd "$(git rev-parse --show-toplevel)"
 }
 
 Commit () {
