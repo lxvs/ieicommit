@@ -520,9 +520,7 @@ diffOp () {
     local bc=
     git rev-parse || exit
     diffOp_GetBeyondCompare || return
-    git -c "diff.tool=BeyondCompare" \
-        -c "difftool.BeyondCompare.cmd=\"$bc\" \"\$(cygpath -w \"\$LOCAL\")\" \"\$REMOTE\"" \
-        difftool --dir-diff "$@"
+    git difftool --extcmd="$bc" --dir-diff "$@"
 }
 
 mergeOp () {
