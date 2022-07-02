@@ -71,23 +71,23 @@ jgn () {
         return 1
     fi
     moded=$(printf -- "%s" "$staged" | grep "$modtag")
-    test "${moded-}" &&
+    test "$moded" &&
         moded=$(printf -- "\n%s\n%s\n" "$mod_title" "$moded" |
         jgnInsNum "$modtag" "$mod_title")
     added=$(printf -- "%s\n" "$staged" | grep "$addtag")
-    test "${added-}" &&
+    test "$added" &&
         added=$(printf -- "\n%s\n%s\n" "$add_title" "$added" |
         jgnInsNum "$addtag" "$add_title")
     deled=$(printf -- "%s\n" "$staged" | grep "$deltag")
-    test "${deled-}" &&
+    test "$deled" &&
         deled=$(printf -- "\n%s\n%s\n" "$del_title" "$deled" |
         jgnInsNum "$deltag" "$del_title")
     rened=$(printf -- "%s\n" "$staged" | grep "$rentag")
-    test "${rened-}" &&
+    test "$rened" &&
         rened=$(printf -- "\n%s\n%s\n" "$ren_title" "$rened" |
         jgnInsNum "$rentag" "$ren_title")
     cpyed=$(printf -- "%s\n" "$staged" | grep "$cpytag")
-    test "${cpyed-}" &&
+    test "$cpyed" &&
         cpyed=$(printf -- "\n%s\n%s\n" "$cpy_title" "$cpyed" |
         jgnInsNum "$cpytag" "$cpy_title")
     printf -- "%s" "$title" "$moded" "$added" "$deled" "$rened" "$cpyed"
@@ -98,7 +98,7 @@ ValidateHistoryField () {
     local content=$1
     local field=$2
     GetField value "$content" "$field"
-    test "${value-}" && return
+    test "$value" && return
     >&2 Prompt red "error: Field \`$field' of change history is empty."
     return 1
 }
@@ -183,12 +183,13 @@ SetField () {
 #   $2: filters
 FilterOut () {
     local -n str=$1
-    local fo_fs=$2
+    local filter
+    local filters=$2
     local IFS=","
-    for fo_f in $fo_fs
+    for filter in $filters
     do
-        test "${fo_f-}" &&
-            str=$(grep -iv "^${fo_f}:" <<<"$str")
+        test "$filter" &&
+            str=$(grep -iv "^$filter:" <<<"$str")
     done
 }
 
@@ -237,7 +238,7 @@ Commit_IsNotAmend () {
     local chid
     test "$OP" != "amend" && return
     chid=$(git log -1 --format=%b | grep '^Change-Id:')
-    test "${chid-}" || >&2 Prompt y "warning: Failed to get Change-ID."
+    test "$chid" || >&2 Prompt y "warning: Failed to get Change-ID."
     git commit "$@" -m "$summary" -m "$details" -m "$chid"
     return 1
 }
@@ -251,17 +252,17 @@ InitTemplate () {
     dff="$(dirname "$0")/$TEMPF"
     FindFile "$dff" || return
     dfc=$(<"$dff")
-    test "${df_tag-}" && SetField dfc "Tag#" "$df_tag"
-    test "${df_lbl-}" && SetField dfc "Label#" "$df_lbl"
-    test "${df_iss-}" && SetField dfc "Issue#" "$df_iss"
-    test "${df_scp-}" && SetField dfc "Scope" "$df_scp"
-    test "${df_svr-}" && SetField dfc "Severity" "$df_svr"
-    test "${df_ctg-}" && SetField dfc "Category" "$df_ctg"
-    test "${df_spt-}" && SetField dfc "Symptom" "$df_spt"
-    test "${df_rtc-}" && SetField dfc "RootCause" "$df_rtc"
-    test "${df_slt-}" && SetField dfc "Solution" "$df_slt"
-    test "${df_dpd-}" && SetField dfc "SolutionDependency" "$df_dpd"
-    test "${df_rlf-}" && SetField dfc "RelatedFiles" "$df_rlf"
+    test "$df_tag" && SetField dfc "Tag#" "$df_tag"
+    test "$df_lbl" && SetField dfc "Label#" "$df_lbl"
+    test "$df_iss" && SetField dfc "Issue#" "$df_iss"
+    test "$df_scp" && SetField dfc "Scope" "$df_scp"
+    test "$df_svr" && SetField dfc "Severity" "$df_svr"
+    test "$df_ctg" && SetField dfc "Category" "$df_ctg"
+    test "$df_spt" && SetField dfc "Symptom" "$df_spt"
+    test "$df_rtc" && SetField dfc "RootCause" "$df_rtc"
+    test "$df_slt" && SetField dfc "Solution" "$df_slt"
+    test "$df_dpd" && SetField dfc "SolutionDependency" "$df_dpd"
+    test "$df_rlf" && SetField dfc "RelatedFiles" "$df_rlf"
     printf -- "%s\n" "$dfc" >"$TEMPF"
 }
 
@@ -494,14 +495,13 @@ commitOp () {
 }
 
 pushOp () {
-    local p_br
     local br_d
-    local sws
+    local p_br= sws=
     while test $# -ge 1
     do
-        case "${p_br-},$1" in
+        case "$p_br,$1" in
         *,-*)
-            sws="${sws-} $1"
+            sws="$sws $1"
             shift
             ;;
         '',*)
@@ -515,7 +515,7 @@ pushOp () {
     done
     git rev-parse || return
     br_d=$(git rev-parse --abbrev-ref HEAD) || return
-    git push ${sws-} origin HEAD:refs/for/"${p_br-$br_d}"
+    git push $sws origin HEAD:refs/for/"${p_br:-$br_d}"
 }
 
 diffOp () {
@@ -575,8 +575,8 @@ cleanOp () {
     st=$(git status --porcelain)
     tor=$(comm -12 - <<<"$fl" <(sed -n '/^ M /{s/^ M //p}' <<<"$st" | sort))
     toc=$(comm -12 - <<<"$fl" <(sed -n '/^?? /{s/^?? //p}' <<<"$st" | sort))
-    test "${tor-}" && xargs <<<"$tor" -d '\n' git restore --
-    test "${toc-}" && xargs <<<"$toc" -d '\n' git clean -qf --
+    test "$tor" && xargs <<<"$tor" -d '\n' git restore --
+    test "$toc" && xargs <<<"$toc" -d '\n' git clean -qf --
     return 0
 }
 
@@ -586,11 +586,8 @@ cleanOp () {
 # $fci: hash of the parent of INSPURCOMMIT-INIT
 # $fcic: hash of INSPURCOMMIT-INIT
 exportOp () {
-    local fltrs
-    local chfn
-    local fcic
-    local ch_c
-    local empty
+    local fltrs fcic ch_c empty
+    local chfn=
     git rev-parse || return
     CheckInit || return
     PushdRoot || return
@@ -630,7 +627,7 @@ exportOp_Parse_Again () {
         fltrs=
         ;;
     exclude,2)
-        test "${2-}" || err "switch \`$eff' requires a value"
+        test $# -ge 2 || err "switch \`$eff' requires a value"
         fltrs="${fltrs-},$2"
         sn=2
         ;;
@@ -638,7 +635,7 @@ exportOp_Parse_Again () {
         eqeff="${eff%%=*}"
         eqval="${eff#$eqeff=}"
         test "$eqval" || err "switch \`$eqeff' requires a value"
-        fltrs="${fltrs-},${eqval}"
+        fltrs="${fltrs-},$eqval"
         ;;
     *,1)
         while test ${#eff} -ge 1
@@ -654,7 +651,7 @@ exportOp_Parse_Again () {
                 then
                     fltrs="${fltrs-},$eff"
                     eff=
-                elif test "${2-}"
+                elif test $# -ge 2
                 then
                     fltrs="${fltrs-},$2"
                     sn=2
@@ -696,13 +693,13 @@ exportOp_Parse () {
             shift $sn
             ;;
         *)
-            test "${chfn-}" && err "invalid argument: $1"
+            test "$chfn" && err "invalid argument: $1"
             chfn=$1
             shift
             ;;
         esac
     done
-    case "${chfn-},$#" in
+    case "$chfn,$#" in
     *,0)
         ;;
     ,1)
@@ -729,7 +726,7 @@ exportOp_GetContent () {
         sed '/^Change-Id:\s\w\{41\}$/,+1d')
     FilterOut b_wo_chid "$fltrs"
     ch_c=$b_wo_chid
-    if test "${ch_c-}"
+    if test "$ch_c"
     then
         empty=no
     else
@@ -739,7 +736,7 @@ exportOp_GetContent () {
 
 exportOp_SetFileName () {
     local curr_h
-    test "${chfn-}" && return
+    test "$chfn" && return
     curr_h=$(git log -1 --format=%h)
     chfn="ChangeHistory-${curr_h}.txt"
 }
@@ -779,17 +776,17 @@ templateOp () {
 }
 
 initOp () {
-    local df_tag
-    local df_lbl
-    local df_iss
-    local df_scp
-    local df_svr
-    local df_ctg
-    local df_spt
-    local df_rtc
-    local df_slt
-    local df_dpd
-    local df_rlf
+    local df_tag=
+    local df_lbl=
+    local df_iss=
+    local df_scp=
+    local df_svr=
+    local df_ctg=
+    local df_spt=
+    local df_rtc=
+    local df_slt=
+    local df_dpd=
+    local df_rlf=
     git rev-parse || return
     PushdRoot || return
     initOp_CheckInit || return
@@ -912,7 +909,8 @@ initOp_ParseNo () {
 }
 
 initOp_Parse2 () {
-    val=${2-}
+    local val=
+    test $# -ge 2 && val=$2
     case $eff in
     tag)
         test "$val" || err "switch \`$eff' requires a value"
@@ -1062,7 +1060,7 @@ initOp_Parse1 () {
         sn=1
         sw=${eff:0:1}
         val=${eff#?}
-    elif test ${2-}
+    elif test $# -ge 2
     then
         sw=$eff
         val=$2
