@@ -15,12 +15,32 @@ popd () {
 }
 
 CheckInit () {
-    PushdRoot
-    test -e "$FCIF" && test -e "$TEMPF" && popd && return
+    local quiet=
+    local tree
+    while test $# -ge 1
+    do
+        case $1 in
+        -q|--quiet)
+            quiet=1
+            shift
+            ;;
+        --no-quiet)
+            quiet=
+            shift
+            ;;
+        *)
+            >&2 printf "%s\n" "warning: invalid \`$1' in CheckInit"
+            ;;
+        esac
+    done
+    tree=$(git ls-tree --full-tree --name-only HEAD) || exit
+    grep -G --quiet "^$FCIF$" <<<"$tree" &&
+        grep -G --quiet "^$TEMPF$" <<<"$tree" &&
+        return
+    test "$quiet" && return 1
     >&2 Prompt red \
         "error: This repository haven't been initialized." \
-        "Use command 'inspurcommit init --help' for help."
-    popd
+        "Use command \`inspurcommit init --help' for help."
     return 1
 }
 
@@ -781,7 +801,7 @@ initOp () {
 }
 
 initOp_CheckInit () {
-    CheckInit 2>/dev/null || return 0
+    CheckInit --quiet || return 0
     >&2 Prompt red "error: This repository has already been initialized."
     return 1
 }
