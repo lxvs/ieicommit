@@ -237,7 +237,7 @@ Commit_CreateRelatedFiles () {
 Commit_IsNotAmend () {
     local chid
     test "$OP" != "amend" && return
-    chid=$(git log -1 --format=%b | grep '^Change-Id:')
+    chid=$(git diff-tree --no-patch --format=%b HEAD | grep '^Change-Id:')
     test "$chid" || >&2 Prompt y "warning: Failed to get Change-ID."
     git commit "$@" -m "$summary" -m "$details" -m "$chid"
     return 1
