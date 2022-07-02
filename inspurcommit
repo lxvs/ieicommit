@@ -1173,10 +1173,13 @@ purgeOp () {
 loadOp () {
     local id msg
     test $# -le 1 || err "too many arguments"
-    id=$(git rev-parse "${1-HEAD}") || return
+    CheckInit || return
+    id=$(git rev-parse --verify "${1-HEAD}") || return
+    git rev-parse --verify --quiet --no-revs $id^2 &&
+        err "refuse to load a merge"
     PushdRoot || return
-    msg=$(git show -s --format=%b "$id" | sed '/^RelatedFiles:/,$d')
-    test "$msg" || err "got an empty result from $id; is it a merge?"
+    msg=$(git diff-tree --no-patch --format=%b $id | sed '/^RelatedFiles:/,$d')
+    test "$msg" || err "got an empty result"
     printf "%s\n" "$msg" "$(grep '^RelatedFiles:' "$TEMPF")" >"$TMPF"
 }
 
