@@ -194,7 +194,7 @@ FilterOut () {
 }
 
 PushdRoot () {
-    git rev-parse || return
+    git rev-parse || exit
     pushd "$(git rev-parse --show-toplevel)"
 }
 
@@ -486,7 +486,6 @@ Prompt () {
 }
 
 commitOp () {
-    git rev-parse || return
     CheckInit || return
     PushdRoot || return
     GenerateTmp || return 0
@@ -513,14 +512,13 @@ pushOp () {
             ;;
         esac
     done
-    git rev-parse || return
-    br_d=$(git rev-parse --abbrev-ref HEAD) || return
+    br_d=$(git rev-parse --abbrev-ref HEAD) || exit
     git push $sws origin HEAD:refs/for/"${p_br:-$br_d}"
 }
 
 diffOp () {
     local bc=
-    git rev-parse || return
+    git rev-parse || exit
     diffOp_GetBeyondCompare || return
     git -c "diff.tool=BeyondCompare" \
         -c "difftool.BeyondCompare.cmd=\"$bc\" \"\$(cygpath -w \"\$LOCAL\")\" \"\$REMOTE\"" \
@@ -529,7 +527,7 @@ diffOp () {
 
 mergeOp () {
     local bc=
-    git rev-parse || return
+    git rev-parse || exit
     diffOp_GetBeyondCompare || return
     git -c "merge.tool=BeyondCompare" \
         -c "mergetool.BeyondCompare.cmd=\"$bc\" \"\$(cygpath -w \"\$LOCAL\")\" \"\$REMOTE\" \"\$BASE\" \"\$MERGED\"" \
@@ -557,7 +555,6 @@ diffOp_GetBeyondCompare () {
 }
 
 amendOp () {
-    git rev-parse || return
     CheckInit || return
     PushdRoot || return
     GenerateTmp || return 0
@@ -588,7 +585,6 @@ cleanOp () {
 exportOp () {
     local fltrs fcic ch_c empty
     local chfn=
-    git rev-parse || return
     CheckInit || return
     PushdRoot || return
     exportOp_Parse "$@" || return
@@ -767,7 +763,6 @@ exportOp_Write_Cat () {
 }
 
 templateOp () {
-    git rev-parse || return
     CheckInit || return
     PushdRoot || return
     GenerateTmp || return 0
@@ -787,7 +782,6 @@ initOp () {
     local df_slt=
     local df_dpd=
     local df_rlf=
-    git rev-parse || return
     PushdRoot || return
     initOp_CheckInit || return
     initOp_CheckGitIgnore || return
