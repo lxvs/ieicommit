@@ -1,5 +1,6 @@
 #!/bin/bash
-set -o nounset   # abort on unbound variable
+set -o nounset
+set -o noglob
 
 declare -r template_file_name="ChangeHistoryTemplate.txt"
 declare -r change_history_name="ChangeHistory.txt"
