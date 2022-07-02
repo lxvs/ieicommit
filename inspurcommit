@@ -53,17 +53,17 @@ jgnInsNum () {
 }
 
 jgn () {
-    local -r title='RelatedFiles:'
-    local -r mod_title='Modified:'
-    local -r add_title='Added:'
-    local -r del_title='Deleted:'
-    local -r ren_title='Renamed:'
-    local -r cpy_title='Copied:'
-    local -r modtag='^M. '
-    local -r addtag='^A. '
-    local -r deltag='^D. '
-    local -r rentag='^R. '
-    local -r cpytag='^C. '
+    local -r title="RelatedFiles:"
+    local -r mod_title="Modified:"
+    local -r add_title="Added:"
+    local -r del_title="Deleted:"
+    local -r ren_title="Renamed:"
+    local -r cpy_title="Copied:"
+    local -r modtag="^M. "
+    local -r addtag="^A. "
+    local -r deltag="^D. "
+    local -r rentag="^R. "
+    local -r cpytag="^C. "
     local staged=$(git status --porcelain | grep '^[MADRC]')
     if test ! "$(git diff --cached --name-only 2>/dev/null)"
     then
@@ -95,26 +95,26 @@ jgn () {
 
 ValidateHistoryField () {
     local value
-    local content="$1"
-    local field="$2"
+    local content=$1
+    local field=$2
     GetField value "$content" "$field"
     test "${value-}" && return
-    >&2 Prompt red "error: Field '$field' of change history is empty."
+    >&2 Prompt red "error: Field \`$field' of change history is empty."
     return 1
 }
 
 ValidateHistory () {
-    local content="$1"
-    ValidateHistoryField "$content" 'Tag#' || return
-    ValidateHistoryField "$content" 'Label#' || return
-    ValidateHistoryField "$content" 'Issue#' || return
-    ValidateHistoryField "$content" 'Scope' || return
-    ValidateHistoryField "$content" 'Severity' || return
-    ValidateHistoryField "$content" 'Category' || return
-    ValidateHistoryField "$content" 'Symptom' || return
-    ValidateHistoryField "$content" 'RootCause' || return
-    ValidateHistoryField "$content" 'Solution' || return
-    ValidateHistoryField "$content" 'SolutionDependency' || return
+    local content=$1
+    ValidateHistoryField "$content" "Tag#" || return
+    ValidateHistoryField "$content" "Label#" || return
+    ValidateHistoryField "$content" "Issue#" || return
+    ValidateHistoryField "$content" "Scope" || return
+    ValidateHistoryField "$content" "Severity" || return
+    ValidateHistoryField "$content" "Category" || return
+    ValidateHistoryField "$content" "Symptom" || return
+    ValidateHistoryField "$content" "RootCause" || return
+    ValidateHistoryField "$content" "Solution" || return
+    ValidateHistoryField "$content" "SolutionDependency" || return
 }
 
 CheckStage () {
@@ -129,7 +129,7 @@ CheckStage_NoStage () {
     test "$option" = "amend" && return
     >&2 Prompt red \
         "error: There is no staged changes." \
-        "Stage changes to be committed with 'git add'."
+        "Stage changes to be committed with \`git add'."
     return 1
 }
 
@@ -138,19 +138,19 @@ CheckStage_HasTemp () {
     git restore --staged "$TEMPF" >/dev/null
     >&2 Prompt yellow \
 "warning: $TEMPF was staged. But was skipped." \
-"If you want to modify the template, use command 'inspurcommit template'."
+"If you want to modify the template, use command \`inspurcommit template'."
     CheckStage
 }
 
 CheckFileAlreadyExists () {
-    local filename="$1"
+    local filename=$1
     test ! -e "$filename" && return
     >&2 Prompt red "error: File $filename already exists."
     return 1
 }
 
 FindFile () {
-    local filename="$1"
+    local filename=$1
     test -e "$filename" && return
     >&2 Prompt red "error: Couldn't find file $filename."
     return 1
@@ -162,8 +162,8 @@ FindFile () {
 #   $3: field
 GetField () {
     local -n gf_var=$1
-    local -r CHC="$2"
-    local -r FIELD="$3"
+    local -r CHC=$2
+    local -r FIELD=$3
     gf_var=$(grep "^${FIELD}:" <<<"$CHC" | sed "s/^${FIELD}:\s*//")
 }
 
@@ -173,8 +173,8 @@ GetField () {
 #   $3: field content
 SetField () {
     local -n chc=$1
-    local -r SF_FLD="$2"
-    local -r SF_FLDC="$3"
+    local -r SF_FLD=$2
+    local -r SF_FLDC=$3
     chc=$(sed "s/^${SF_FLD}:.*$/${SF_FLD}: ${SF_FLDC}/" <<<"$chc")
 }
 
@@ -183,8 +183,8 @@ SetField () {
 #   $2: filters
 FilterOut () {
     local -n str=$1
-    local fo_fs="$2"
-    local IFS=','
+    local fo_fs=$2
+    local IFS=","
     for fo_f in $fo_fs
     do
         test "${fo_f-}" &&
@@ -296,11 +296,11 @@ For help on a specific operation:
 
 If no operation is specified, it is used to perform a git commit. Here are
 the steps:
-    1. Use command 'git add <file>', or 'git add .', etc. to stage changes.
+    1. Use git-add to stage changes.
     2. Write change history in file $TMPF.
-       If this file does not exist, use command 'inspurcommit' to generate
+       If this file does not exist, use command \`inspurcommit' to generate
        one, and then write change history in it.
-    3. Use command 'inspurcommit' to commit. Arguments, if any, will be
+    3. Use command \`inspurcommit' to commit. Arguments, if any, will be
        passed to git commit.
 SHOWUSG
 }
@@ -351,12 +351,12 @@ Usage:
     inspurcommit export [-a|--all] [{-x|--exclude} <filter>,...]
                         [--] [<filename>]
 
-Export a change history without 'scope' filed, unless '--all' is specified.
+Export a change history without `scope' filed, unless `--all' is specified.
 
-If '--exclude' is specified, export a change history with all fields except
-<filter>s. Multiple filters can be splitted by ',' as in '-x tag#,scope'.
+If `--exclude' is specified, export a change history with all fields except
+<filter>s. Multiple filters can be splitted by `,' as in `-x tag#,scope'.
 
-'--exclude' implies '--all'.
+`--exclude' implies `--all'.
 EXPORTUSG
 }
 
@@ -407,12 +407,12 @@ EOF
 diffUsage () {
 cat <<\DIFFUSG
 Usage:
-    inspurcommit diff [<option>...]
+    inspurcommit diff [<options>]
 
-Diff with Beyond Compare. <option>s will be passed to git difftool.
-Try 'git difftool --help' for more information.
+Diff with Beyond Compare. Options will be passed to git difftool.
+Try `git difftool --help' for more information.
 
-If you want to diff the staged changes, use 'inspurcommit diff --cached'.
+If you want to diff the staged changes, use `inspurcommit diff --cached'.
 DIFFUSG
 }
 
@@ -427,10 +427,10 @@ MERGEUSG
 }
 
 LookupUsage () {
-    local -r OPERATION="$1"
+    local -r OPERATION=$1
     local argument
     test "$#" -le 1 && return
-    argument="$2"
+    argument=$2
     if test "$argument" = "-?" ||
         test "$argument" = "-h" ||
         test "$argument" = "--help" ||
@@ -463,18 +463,18 @@ Prompt () {
     local -r GRN="[92m"
     local -r YLW="[93m"
     local -r RST="[0m"
-    local -r COLOR_ARG="$1"
+    local -r COLOR_ARG=$1
     local color
     shift
-    case "$COLOR_ARG" in
+    case $COLOR_ARG in
     r|red)
-        color="$RED"
+        color=$RED
         ;;
     g|grn|green)
-        color="$GRN"
+        color=$GRN
         ;;
     y|ylw|yellow)
-        color="$YLW"
+        color=$YLW
         ;;
     *)
         >&2 Prompt red "error: unknown color argument: $COLOR_ARG"
@@ -505,7 +505,7 @@ pushOp () {
             shift
             ;;
         '',*)
-            p_br="$1"
+            p_br=$1
             shift
             ;;
         *)
@@ -602,10 +602,10 @@ exportOp () {
 }
 
 exportOp_Parse_Again () {
-    local mode="$1" eff eqeff eqval flag
+    local mode=$1 eff eqeff eqval flag
     shift
     sn=1
-    case "$mode" in
+    case $mode in
     no)
         eff="${1#--no-}"
         ;;
@@ -621,23 +621,23 @@ exportOp_Parse_Again () {
     esac
     case "$eff,$mode" in
     all,no)
-        err "invalid switch '--no-all'"
+        err "invalid switch \`--no-all'"
         ;;
     all,2)
-        test "${fltrs+set}" || fltrs=""
+        test "${fltrs+set}" || fltrs=
         ;;
     exclude,no)
-        fltrs=""
+        fltrs=
         ;;
     exclude,2)
-        test "${2-}" || err "switch '$eff' requires a value"
+        test "${2-}" || err "switch \`$eff' requires a value"
         fltrs="${fltrs-},$2"
         sn=2
         ;;
     exclude=*,2)
         eqeff="${eff%%=*}"
         eqval="${eff#$eqeff=}"
-        test "$eqval" || err "switch '$eqeff' requires a value"
+        test "$eqval" || err "switch \`$eqeff' requires a value"
         fltrs="${fltrs-},${eqval}"
         ;;
     *,1)
@@ -647,19 +647,19 @@ exportOp_Parse_Again () {
             eff="${eff#?}"
             case $flag in
             a)
-                fltrs=""
+                fltrs=
                 ;;
             x)
                 if test "$eff"
                 then
                     fltrs="${fltrs-},$eff"
-                    eff=""
+                    eff=
                 elif test "${2-}"
                 then
                     fltrs="${fltrs-},$2"
                     sn=2
                 else
-                    err "switch '$flag' requires a value"
+                    err "switch \`$flag' requires a value"
                 fi
                 ;;
             *)
@@ -678,7 +678,7 @@ exportOp_Parse () {
     local -i sn=1
     while test "$#" -gt 0
     do
-        case "$1" in
+        case $1 in
         --)
             shift
             break
@@ -697,7 +697,7 @@ exportOp_Parse () {
             ;;
         *)
             test "${chfn-}" && err "invalid argument: $1"
-            chfn="$1"
+            chfn=$1
             shift
             ;;
         esac
@@ -706,7 +706,7 @@ exportOp_Parse () {
     *,0)
         ;;
     ,1)
-        chfn="$1"
+        chfn=$1
         ;;
     *)
         err "too many arguments"
@@ -728,7 +728,7 @@ exportOp_GetContent () {
     b_wo_chid=$(git log --format=%b --no-merges "$fcic".. |
         sed '/^Change-Id:\s\w\{41\}$/,+1d')
     FilterOut b_wo_chid "$fltrs"
-    ch_c="$b_wo_chid"
+    ch_c=$b_wo_chid
     if test "${ch_c-}"
     then
         empty=no
@@ -810,7 +810,7 @@ initOp_CheckInit () {
 initOp_CheckGitIgnore () {
     git status --porcelain | grep -q '\<.gitignore\>' || return 0
     >&2 Prompt red \
-"error: Please commit or stash your local changes of file '.gitignore'" \
+"error: Please commit or stash your local changes of file \`.gitignore'" \
 "before init."
     return 1
 }
@@ -847,7 +847,7 @@ initOp_Parse () {
 }
 
 initOp_Parse_Again () {
-    local mode="$1" eff
+    local mode=$1 eff
     shift
     sn=2
     case $mode in
@@ -873,37 +873,37 @@ initOp_Parse_Again () {
 initOp_ParseNo () {
     case $eff in
     tag)
-        df_tag=''
+        df_tag=
         ;;
     label)
-        df_lbl=''
+        df_lbl=
         ;;
     issue)
-        df_iss=''
+        df_iss=
         ;;
     scope)
-        df_scp=''
+        df_scp=
         ;;
     severity)
-        df_svr=''
+        df_svr=
         ;;
     category)
-        df_ctg=''
+        df_ctg=
         ;;
     symptom)
-        df_spt=''
+        df_spt=
         ;;
     rootcause)
-        df_rtc=''
+        df_rtc=
         ;;
     solution)
-        df_slt=''
+        df_slt=
         ;;
     dependency|solution-dependency)
-        df_dpd=''
+        df_dpd=
         ;;
     files|related-files)
-        df_rlf=''
+        df_rlf=
         ;;
     *)
         err "invalid switch: no-$eff"
@@ -915,138 +915,138 @@ initOp_Parse2 () {
     val=${2-}
     case $eff in
     tag)
-        test "$val" || err "switch '$eff' requires a value"
+        test "$val" || err "switch \`$eff' requires a value"
         df_tag=$val
         ;;
     tag=*)
         sn=1
         val=${eff#tag=}
         eff=${eff%=$val}
-        test "$val" || err "switch '$eff' requires a value"
+        test "$val" || err "switch \`$eff' requires a value"
         df_tag=$val
         ;;
     label)
-        test "$val" || err "switch '$eff' requires a value"
+        test "$val" || err "switch \`$eff' requires a value"
         df_lbl=$val
         ;;
     label=*)
         sn=1
         val=${eff#label=}
         eff=${eff%=$val}
-        test "$val" || err "switch '$eff' requires a value"
+        test "$val" || err "switch \`$eff' requires a value"
         df_lbl=$val
         ;;
     issue)
-        test "$val" || err "switch '$eff' requires a value"
+        test "$val" || err "switch \`$eff' requires a value"
         df_iss=$val
         ;;
     issue=*)
         sn=1
         val=${eff#issue=}
         eff=${eff%=$val}
-        test "$val" || err "switch '$eff' requires a value"
+        test "$val" || err "switch \`$eff' requires a value"
         df_iss=$val
         ;;
     scope)
-        test "$val" || err "switch '$eff' requires a value"
+        test "$val" || err "switch \`$eff' requires a value"
         df_scp=$val
         ;;
     scope=*)
         sn=1
         val=${eff#scope=}
         eff=${eff%=$val}
-        test "$val" || err "switch '$eff' requires a value"
+        test "$val" || err "switch \`$eff' requires a value"
         df_scp=$val
         ;;
     severity)
-        test "$val" || err "switch '$eff' requires a value"
+        test "$val" || err "switch \`$eff' requires a value"
         df_svr=$val
         ;;
     severity=*)
         sn=1
         val=${eff#severity=}
         eff=${eff%=$val}
-        test "$val" || err "switch '$eff' requires a value"
+        test "$val" || err "switch \`$eff' requires a value"
         df_svr=$val
         ;;
     category)
-        test "$val" || err "switch '$eff' requires a value"
+        test "$val" || err "switch \`$eff' requires a value"
         df_ctg=$val
         ;;
     category=*)
         sn=1
         val=${eff#category=}
         eff=${eff%=$val}
-        test "$val" || err "switch '$eff' requires a value"
+        test "$val" || err "switch \`$eff' requires a value"
         df_ctg=$val
         ;;
     symptom)
-        test "$val" || err "switch '$eff' requires a value"
+        test "$val" || err "switch \`$eff' requires a value"
         df_spt=$val
         ;;
     symptom=*)
         sn=1
         val=${eff#symptom=}
         eff=${eff%=$val}
-        test "$val" || err "switch '$eff' requires a value"
+        test "$val" || err "switch \`$eff' requires a value"
         df_spt=$val
         ;;
     rootcause)
-        test "$val" || err "switch '$eff' requires a value"
+        test "$val" || err "switch \`$eff' requires a value"
         df_rtc=$val
         ;;
     rootcause=*)
         sn=1
         val=${eff#rootcause=}
         eff=${eff%=$val}
-        test "$val" || err "switch '$eff' requires a value"
+        test "$val" || err "switch \`$eff' requires a value"
         df_rtc=$val
         ;;
     solution)
-        test "$val" || err "switch '$eff' requires a value"
+        test "$val" || err "switch \`$eff' requires a value"
         df_spt=$val
         ;;
     solution=*)
         sn=1
         val=${eff#solution=}
         eff=${eff%=$val}
-        test "$val" || err "switch '$eff' requires a value"
+        test "$val" || err "switch \`$eff' requires a value"
         df_spt=$val
         ;;
     dependency|solution-dependency)
-        test "$val" || err "switch '$eff' requires a value"
+        test "$val" || err "switch \`$eff' requires a value"
         df_dpd=$val
         ;;
     dependency=*)
         sn=1
         val=${eff#dependency=}
         eff=${eff%=$val}
-        test "$val" || err "switch '$eff' requires a value"
+        test "$val" || err "switch \`$eff' requires a value"
         df_dpd=$val
         ;;
     solution-dependency=*)
         sn=1
         val=${eff#solution-dependency=}
         eff=${eff%=$val}
-        test "$val" || err "switch '$eff' requires a value"
+        test "$val" || err "switch \`$eff' requires a value"
         df_dpd=$val
         ;;
     files|related-files)
-        test "$val" || err "switch '$eff' requires a value"
+        test "$val" || err "switch \`$eff' requires a value"
         df_rlf=$val
         ;;
     files=*)
         sn=1
         val=${eff#files=}
         eff=${eff%=$val}
-        test "$val" || err "switch '$eff' requires a value"
+        test "$val" || err "switch \`$eff' requires a value"
         df_rlf=$val
         ;;
     related-files=*)
         sn=1
         val=${eff#related-files=}
         eff=${eff%=$val}
-        test "$val" || err "switch '$eff' requires a value"
+        test "$val" || err "switch \`$eff' requires a value"
         df_rlf=$val
         ;;
     *)
@@ -1067,7 +1067,7 @@ initOp_Parse1 () {
         sw=$eff
         val=$2
     else
-        err "switch '$sw' requires a value"
+        err "switch \`$sw' requires a value"
     fi
     case $sw in
     t)
@@ -1187,15 +1187,15 @@ loadOp () {
 main () {
     local -r REVISION="0.12.1"
     local -r AUTHOR="Johnny Appleseed <liuzhaohui@inspur.com>"
-    local -r TEMPF="$template_file_name"
-    local -r TMPF="$change_history_name"
-    local -r OLDF="$old_change_history_name"
-    local -r FCIF="$fci_file_name"
-    local -r OP="${1-}"
+    local -r TEMPF=$template_file_name
+    local -r TMPF=$change_history_name
+    local -r OLDF=$old_change_history_name
+    local -r FCIF=$fci_file_name
+    local -r OP=${1-}
     local -r JG_BC_PATH=${JG_BC_PATH-}
     local -r OS=${OS-}
     LookupUsage "main" "$@" || exit 0
-    case "$OP" in
+    case $OP in
     amend|clean|diff|export|init|load|merge|purge|push|template)
         shift
         ;;
@@ -1209,11 +1209,11 @@ main () {
         ;;
     *)
         >&2 Prompt red "error: invalid argument: $OP" \
-            "Try 'inspurcommit --help' for help."
+            "Try \`inspurcommit --help' for help."
         exit 1
         ;;
     esac
-    LookupUsage "$OP" "$@" || return 0
+    LookupUsage $OP "$@" || return 0
     ${OP}Op "$@"
 }
 
