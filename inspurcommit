@@ -86,11 +86,9 @@ jgn () {
 }
 
 ValidateHistoryField () {
-    local value
     local content=$1
     local field=$2
-    GetField value "$content" "$field"
-    test "$value" && return
+    test "$(GetField "$content" "$field")" && return
     >&2 Prompt red "error: Field \`$field' of change history is empty."
     return 1
 }
@@ -143,38 +141,34 @@ CheckStage_HasTemp () {
 "commit without changing \`$TEMPF'"
 }
 
-# Get Field Content
-# & $1: variable byref
-#   $2: change history content
-#   $3: field
 GetField () {
-    local -n gf_var=$1
-    local -r CHC=$2
-    local -r FIELD=$3
-    gf_var=$(grep "^${FIELD}:" <<<"$CHC" | sed "s/^${FIELD}:\s*//")
+    local -r chc=$1
+    local -r field=$2
+    grep "^${field}:" <<<"$chc" | sed "s/^${field}:\s*//"
 }
 
 SetField () {
-    local -n chc=$1
+    local -r chc=$1
     local -r field=$2
     local -r content=$3
-    test "$content" || return
-    chc=$(sed "s/^${field}:.*$/${field}: ${content}/" <<<"$chc")
+    if test "$content"
+    then
+        sed "s/^${field}:.*$/${field}: ${content}/" <<<"$chc"
+    else
+        printf "%s" "$chc"
+    fi
 }
 
-# Filter Out, case insensitive
-# & $1: string variable byref
-#   $2: filters
 FilterOut () {
-    local -n str=$1
-    local filter
+    local str=$1
     local filters=$2
-    local IFS=","
+    local filter
+    local -r IFS=","
     for filter in $filters
     do
-        test "$filter" &&
-            str=$(grep -iv "^$filter:" <<<"$str")
+        str=$(grep -iv "^$filter:" <<<"$str")
     done
+    printf "%s" "$str"
 }
 
 PushdRoot () {
@@ -188,7 +182,7 @@ Commit () {
     local filelist
     details=$(grep -v '^#\|^\s*$' "$TMPF")
     ValidateHistory "$details" || return
-    GetField summary "$details" "Solution"
+    summary=$(GetField "$details" "Solution")
     Commit_CheckLastSummary || return
     Commit_CreateRelatedFiles || return
     Commit_IsNotAmend "$@" || return 0
@@ -225,17 +219,17 @@ InitTemplate () {
     dff="$(dirname "$0")/$TEMPF"
     test -e "$dff" || err "failed to find file \`$dff'"
     dfc=$(<"$dff")
-    SetField dfc "Tag#" "$df_tag"
-    SetField dfc "Label#" "$df_lbl"
-    SetField dfc "Issue#" "$df_iss"
-    SetField dfc "Scope" "$df_scp"
-    SetField dfc "Severity" "$df_svr"
-    SetField dfc "Category" "$df_ctg"
-    SetField dfc "Symptom" "$df_spt"
-    SetField dfc "RootCause" "$df_rtc"
-    SetField dfc "Solution" "$df_slt"
-    SetField dfc "SolutionDependency" "$df_dpd"
-    SetField dfc "RelatedFiles" "$df_rlf"
+    dfc=$(SetField "$dfc" "Tag#" "$df_tag")
+    dfc=$(SetField "$dfc" "Label#" "$df_lbl")
+    dfc=$(SetField "$dfc" "Issue#" "$df_iss")
+    dfc=$(SetField "$dfc" "Scope" "$df_scp")
+    dfc=$(SetField "$dfc" "Severity" "$df_svr")
+    dfc=$(SetField "$dfc" "Category" "$df_ctg")
+    dfc=$(SetField "$dfc" "Symptom" "$df_spt")
+    dfc=$(SetField "$dfc" "RootCause" "$df_rtc")
+    dfc=$(SetField "$dfc" "Solution" "$df_slt")
+    dfc=$(SetField "$dfc" "SolutionDependency" "$df_dpd")
+    dfc=$(SetField "$dfc" "RelatedFiles" "$df_rlf")
     printf "%s\n" "$dfc" >"$TEMPF"
 }
 
@@ -565,7 +559,6 @@ exportOp () {
     CheckInit || return
     PushdRoot || return
     exportOp_Parse "$@" || return
-    exportOp_GetFcic || return
     exportOp_GetContent || return
     exportOp_SetFileName
     exportOp_Write
@@ -685,15 +678,11 @@ exportOp_Parse () {
     test "${fltrs+set}" || fltrs="Scope"
 }
 
-exportOp_GetFcic () {
+exportOp_GetContent () {
     local fci
     fci=$(git cat-file blob HEAD:"$FCIF" 2>/dev/null) || return
     fcic=$(git rev-list HEAD ^$fci | tail -n1)
-}
-
-exportOp_GetContent () {
-    ch_c=$(git rev-list --no-commit-header --format=%b --no-merges HEAD ^$fcic | sed '/^Change-Id:\s\w\{41\}$/,+1d')
-    FilterOut ch_c "$fltrs"
+    ch_c=$(FilterOut "$(git rev-list --no-commit-header --format=%b --no-merges HEAD ^$fcic | sed '/^Change-Id:\s\w\{41\}$/,+1d')" "$fltrs")
 }
 
 exportOp_SetFileName () {
@@ -717,7 +706,7 @@ exportOp_Write () {
 exportOp_Write_Cat () {
     local oldc
     oldc=$(git cat-file blob HEAD:"$OLDF" 2>/dev/null) || return
-    FilterOut oldc "$fltrs"
+    oldc=$(FilterOut "$oldc" "$fltrs")
     test "$ch_c" && printf "\n" >>"$chfn"
     printf "%s\n" "$oldc" >>"$chfn"
 }
