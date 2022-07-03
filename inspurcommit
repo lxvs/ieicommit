@@ -46,51 +46,43 @@ CheckInit () {
 }
 
 jgnInsNum () {
-    vim - --not-a-term -es "+%s/$1//ge" \
-        "+let b:currline=search('^$2\$')" \
-        "+/^$2\$/+,\$s/^/\\=line('.')-b:currline.'. '/ge" \
+    vim - --not-a-term -es \
+        "+let b:currline=search('^$1\$')" \
+        "+/^$1\$/+,\$s/^/\\=line('.')-b:currline.'. '/ge" \
         "+%p|q!"
 }
 
 jgn () {
     local -r title="RelatedFiles:"
-    local -r mod_title="Modified:"
-    local -r add_title="Added:"
-    local -r del_title="Deleted:"
-    local -r ren_title="Renamed:"
-    local -r cpy_title="Copied:"
-    local -r modtag="^M. "
-    local -r addtag="^A. "
-    local -r deltag="^D. "
-    local -r rentag="^R. "
-    local -r cpytag="^C. "
-    local staged=$(git status --porcelain | grep '^[MADRC]')
-    if test ! "$(git diff --cached --name-only 2>/dev/null)"
-    then
-        Prompt red "error: no staged change"
-        return 1
-    fi
-    moded=$(printf -- "%s" "$staged" | grep "$modtag")
-    test "$moded" &&
-        moded=$(printf -- "\n%s\n%s\n" "$mod_title" "$moded" |
-        jgnInsNum "$modtag" "$mod_title")
-    added=$(printf -- "%s\n" "$staged" | grep "$addtag")
-    test "$added" &&
-        added=$(printf -- "\n%s\n%s\n" "$add_title" "$added" |
-        jgnInsNum "$addtag" "$add_title")
-    deled=$(printf -- "%s\n" "$staged" | grep "$deltag")
-    test "$deled" &&
-        deled=$(printf -- "\n%s\n%s\n" "$del_title" "$deled" |
-        jgnInsNum "$deltag" "$del_title")
-    rened=$(printf -- "%s\n" "$staged" | grep "$rentag")
-    test "$rened" &&
-        rened=$(printf -- "\n%s\n%s\n" "$ren_title" "$rened" |
-        jgnInsNum "$rentag" "$ren_title")
-    cpyed=$(printf -- "%s\n" "$staged" | grep "$cpytag")
-    test "$cpyed" &&
-        cpyed=$(printf -- "\n%s\n%s\n" "$cpy_title" "$cpyed" |
-        jgnInsNum "$cpytag" "$cpy_title")
-    printf -- "%s" "$title" "$moded" "$added" "$deled" "$rened" "$cpyed"
+    local -r mod_t="Modified:"
+    local -r add_t="Added:"
+    local -r del_t="Deleted:"
+    local -r ren_t="Renamed:"
+    local -r cpy_t="Copied:"
+    local -r oth_t="Other:"
+    local mod add del ren cpy oth
+    local tree=HEAD
+    test "$1" = "amend" && tree=HEAD^
+    git diff-index --quiet --name-only --cached $tree && return
+    mod=$(git diff-index --name-only --cached $tree -M100% -C100% --diff-filter=M)
+    add=$(git diff-index --name-only --cached $tree -M100% -C100% --diff-filter=A)
+    del=$(git diff-index --name-only --cached $tree -M100% -C100% --diff-filter=D)
+    ren=$(git diff-index --name-only --cached $tree -M100% -C100% --diff-filter=R)
+    cpy=$(git diff-index --name-only --cached $tree -M100% -C100% --diff-filter=C)
+    oth=$(git diff-index --name-only --cached $tree -M100% -C100% --diff-filter=madrc)
+    test "$mod" &&
+        mod=$(printf "\n%s\n%s\n" "$mod_t" "$mod" | jgnInsNum "$mod_t")
+    test "$add" &&
+        add=$(printf "\n%s\n%s\n" "$add_t" "$add" | jgnInsNum "$add_t")
+    test "$del" &&
+        del=$(printf "\n%s\n%s\n" "$del_t" "$del" | jgnInsNum "$del_t")
+    test "$ren" &&
+        ren=$(printf "\n%s\n%s\n" "$ren_t" "$ren" | jgnInsNum "$ren_t")
+    test "$cpy" &&
+        cpy=$(printf "\n%s\n%s\n" "$cpy_t" "$cpy" | jgnInsNum "$cpy_t")
+    test "$oth" &&
+        oth=$(printf "\n%s\n%s\n" "$oth_t" "$oth" | jgnInsNum "$oth_t")
+    printf "%s" "$title" "$mod" "$add" "$del" "$ren" "$cpy" "$oth"
 }
 
 ValidateHistoryField () {
@@ -222,15 +214,8 @@ Commit_CheckLastSummary () {
 Commit_CreateRelatedFiles () {
     ValidateHistoryField "$details" "RelatedFiles" 2>/dev/null || return 0
     details=$(sed '/^RelatedFiles:/,$d' <<<"$details")
-    if test "$OP" = "amend"
-    then
-        git reset --soft @^ || return
-        filelist=$(jgn)
-        git reset --soft ORIG_HEAD
-    else
-        filelist=$(jgn)
-    fi
-    printf -v details -- "%s\n%s" "$details" "$filelist"
+    filelist=$(jgn $OP)
+    printf -v details "%s\n%s" "$details" "$filelist"
 }
 
 Commit_IsNotAmend () {
