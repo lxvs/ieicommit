@@ -520,11 +520,8 @@ diffOp_GetBeyondCompare () {
     local -r bc_reg_p='HKCU\Software\Scooter Software\Beyond Compare'
     local -r bc_reg_k="ExePath"
     test "$JG_BC_PATH" && bc=$JG_BC_PATH && return
-    if ! grep -Gqi '^win' <<<"$OS"
-    then
-        >&2 Prompt yellow "Sorry, this operation is Windows only for now."
-        return 1
-    fi
+    grep -Gqi '^win' <<<"$OS" ||
+        err "this operation is for Windows only for now."
     bc=$(reg query "$bc_reg_p" //v "$bc_reg_k" 2>/dev/null)
     if test ! "$bc"
     then
@@ -1104,10 +1101,7 @@ initOp_Start () {
 purgeOp () {
     test $# -eq 0 || err "too many arguments"
     PushdRoot || return
-    if test -e "$TMPF"
-    then
-        rm "$TMPF" || return
-    fi
+    test ! -e "$TMPF" || rm "$TMPF" || return
     GenerateTmp 1>/dev/null || return 0
 }
 
