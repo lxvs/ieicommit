@@ -552,17 +552,16 @@ amendOp () {
 }
 
 cleanOp () {
-    local st fl md nw tor toc
+    local fl tor toc
     PushdRoot || return
-    fl=$(grep -rho --include=*.cif ';\s*"[^"]\+[^" ]' . |
+    fl=$(grep -Grho --include=*.cif ';\s*"[^"]\+[^" ]' . |
         sed -e 's/^;\s*"//' \
             -e 's/\\/\//g' |
         sort -u)
-    st=$(git status --porcelain)
-    tor=$(comm -12 - <<<"$fl" <(sed -n '/^ M /{s/^ M //p}' <<<"$st" | sort))
-    toc=$(comm -12 - <<<"$fl" <(sed -n '/^?? /{s/^?? //p}' <<<"$st" | sort))
-    test "$tor" && xargs <<<"$tor" -d '\n' git restore --
-    test "$toc" && xargs <<<"$toc" -d '\n' git clean -qf --
+    tor=$(comm -12 - <<<"$fl" <(git ls-files --modified | sort))
+    toc=$(comm -12 - <<<"$fl" <(git ls-files --others | sort))
+    test "$tor" && xargs <<<"$tor" -d '\n' git checkout-index --
+    test "$toc" && xargs <<<"$toc" -d '\n' rm -f --
     return 0
 }
 
