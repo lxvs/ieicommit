@@ -581,7 +581,7 @@ cleanOp () {
 # $fci: hash of the parent of INSPURCOMMIT-INIT
 # $fcic: hash of INSPURCOMMIT-INIT
 exportOp () {
-    local fltrs fcic ch_c empty
+    local fltrs fcic ch_c
     local chfn=
     CheckInit || return
     PushdRoot || return
@@ -708,56 +708,39 @@ exportOp_Parse () {
 
 exportOp_GetFcic () {
     local fci
-    FindFile "$FCIF" || return
-    fci=$(<"$FCIF")
-    fcic=$(git rev-list --reverse "$fci".. | head -1)
+    fci=$(git cat-file blob HEAD:"$FCIF" 2>/dev/null) || return
+    fcic=$(git rev-list HEAD ^$fci | tail -n1)
 }
 
-# b_wo_chid: commit body without change-ID
 exportOp_GetContent () {
-    local b_wo_chid
-    b_wo_chid=$(git log --format=%b --no-merges "$fcic".. |
-        sed '/^Change-Id:\s\w\{41\}$/,+1d')
-    FilterOut b_wo_chid "$fltrs"
-    ch_c=$b_wo_chid
-    if test "$ch_c"
-    then
-        empty=no
-    else
-        empty=empty
-    fi
+    ch_c=$(git rev-list --no-commit-header --format=%b --no-merges HEAD ^$fcic | sed '/^Change-Id:\s\w\{41\}$/,+1d')
+    FilterOut ch_c "$fltrs"
 }
 
 exportOp_SetFileName () {
     local curr_h
     test "$chfn" && return
-    curr_h=$(git log -1 --format=%h)
+    curr_h=$(git rev-parse --verify --short HEAD) || exit
     chfn="ChangeHistory-${curr_h}.txt"
 }
 
 exportOp_Write () {
-    CheckFileAlreadyExists "$chfn" || return
-    test "$empty" != "empty" && printf -- "%s\n" "$ch_c" >"$chfn"
-    if ! exportOp_Write_Cat && test "$empty" = "empty"
+    cat /dev/null >"$chfn"
+    test "$ch_c" && printf "%s\n" "$ch_c" >>"$chfn"
+    if ! exportOp_Write_Cat && test ! "$ch_c"
     then
-        >&2 Prompt red "error: Nothing to export."
-        return 1
+        rm -f "$chfn"
+        err "nothing to export"
     fi
     Prompt green "Exported file $chfn"
 }
 
 exportOp_Write_Cat () {
     local oldc
-    test -e "$OLDF" || return
-    d2u "$OLDF" 2>/dev/null || >&2 Prompt yellow "warning: D2U failed."
-    oldc=$(<"$OLDF")
+    oldc=$(git cat-file blob HEAD:"$OLDF" 2>/dev/null) || return
     FilterOut oldc "$fltrs"
-    if test "$empty" = "empty"
-    then
-        printf -- "%s\n" "$oldc" >"$chfn"
-    else
-        printf -- "\n%s\n" "$oldc" >>"$chfn"
-    fi
+    test "$ch_c" && printf "\n" >>"$chfn"
+    printf "%s\n" "$oldc" >>"$chfn"
 }
 
 templateOp () {
