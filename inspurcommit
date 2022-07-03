@@ -118,10 +118,16 @@ ValidateHistory () {
 }
 
 CheckStage () {
-    local option="${1-normal}"
-    local -r DIFF=$(git -c "core.safecrlf=false" diff --cached --name-only)
-    test "$DIFF" || CheckStage_NoStage || return
-    grep -q "\<$TEMPF\>" <<<"$DIFF" || return 0
+    local option=${1-normal}
+    local stage
+    if git diff-index --quiet --cached HEAD
+    then
+        CheckStage_NoStage
+        return
+    fi
+    git diff-index --name-only --cached HEAD |
+        grep -G --quiet "^$TEMPF\$" ||
+        return 0
     CheckStage_HasTemp
 }
 
@@ -135,18 +141,14 @@ CheckStage_NoStage () {
 
 CheckStage_HasTemp () {
     test "$option" = "template" && return
-    git restore --staged "$TEMPF" >/dev/null
-    >&2 Prompt yellow \
-"warning: $TEMPF was staged. But was skipped." \
-"If you want to modify the template, use command \`inspurcommit template'."
-    CheckStage
-}
-
-CheckFileAlreadyExists () {
-    local filename=$1
-    test ! -e "$filename" && return
-    >&2 Prompt red "error: File $filename already exists."
-    return 1
+    git ls-tree --full-tree HEAD -- .gitignore |
+        git update-index --index-info ||
+        return
+    err \
+"Template \`$TEMPF' was staged, and was unstaged by me." \
+"If you intend to modify the template, stage it again and use command" \
+"\`inspurcommit template'. Otherwise, use \`inspurcommit' again to" \
+"commit without changing \`$TEMPF'"
 }
 
 FindFile () {
@@ -167,15 +169,12 @@ GetField () {
     gf_var=$(grep "^${FIELD}:" <<<"$CHC" | sed "s/^${FIELD}:\s*//")
 }
 
-# Set Field Content
-# & $1: change history content byref
-#   $2: field
-#   $3: field content
 SetField () {
     local -n chc=$1
-    local -r SF_FLD=$2
-    local -r SF_FLDC=$3
-    chc=$(sed "s/^${SF_FLD}:.*$/${SF_FLD}: ${SF_FLDC}/" <<<"$chc")
+    local -r field=$2
+    local -r content=$3
+    test "$content" || return
+    chc=$(sed "s/^${field}:.*$/${field}: ${content}/" <<<"$chc")
 }
 
 # Filter Out, case insensitive
@@ -243,27 +242,23 @@ Commit_IsNotAmend () {
     return 1
 }
 
-# Init template with default values set
-# local dff: default template file
-# local dfc: content of $dff
 InitTemplate () {
-    local dff
-    local dfc
+    local dff dfc
     dff="$(dirname "$0")/$TEMPF"
     FindFile "$dff" || return
     dfc=$(<"$dff")
-    test "$df_tag" && SetField dfc "Tag#" "$df_tag"
-    test "$df_lbl" && SetField dfc "Label#" "$df_lbl"
-    test "$df_iss" && SetField dfc "Issue#" "$df_iss"
-    test "$df_scp" && SetField dfc "Scope" "$df_scp"
-    test "$df_svr" && SetField dfc "Severity" "$df_svr"
-    test "$df_ctg" && SetField dfc "Category" "$df_ctg"
-    test "$df_spt" && SetField dfc "Symptom" "$df_spt"
-    test "$df_rtc" && SetField dfc "RootCause" "$df_rtc"
-    test "$df_slt" && SetField dfc "Solution" "$df_slt"
-    test "$df_dpd" && SetField dfc "SolutionDependency" "$df_dpd"
-    test "$df_rlf" && SetField dfc "RelatedFiles" "$df_rlf"
-    printf -- "%s\n" "$dfc" >"$TEMPF"
+    SetField dfc "Tag#" "$df_tag"
+    SetField dfc "Label#" "$df_lbl"
+    SetField dfc "Issue#" "$df_iss"
+    SetField dfc "Scope" "$df_scp"
+    SetField dfc "Severity" "$df_svr"
+    SetField dfc "Category" "$df_ctg"
+    SetField dfc "Symptom" "$df_spt"
+    SetField dfc "RootCause" "$df_rtc"
+    SetField dfc "Solution" "$df_slt"
+    SetField dfc "SolutionDependency" "$df_dpd"
+    SetField dfc "RelatedFiles" "$df_rlf"
+    printf "%s\n" "$dfc" >"$TEMPF"
 }
 
 GenerateTmp () {
@@ -452,7 +447,12 @@ err () {
     local -r red="[91m"
     local -r rst="[0m"
     local msg="${1-unspecific error}"
-    >&2 printf -- "${red}error: %s${rst}\n" "$msg"
+    >&2 printf "${red}error: %s${rst}\n" "$msg"
+    while test $# -ge 2
+    do
+        >&2 printf "${red}%s${rst}\n" "$2"
+        shift
+    done
     exit 1
 }
 
@@ -752,20 +752,10 @@ templateOp () {
 }
 
 initOp () {
-    local df_tag=
-    local df_lbl=
-    local df_iss=
-    local df_scp=
-    local df_svr=
-    local df_ctg=
-    local df_spt=
-    local df_rtc=
-    local df_slt=
-    local df_dpd=
-    local df_rlf=
+    local df_tag= df_lbl= df_iss= df_scp= df_svr= df_ctg= df_spt=
+    local df_rtc= df_slt= df_dpd= df_rlf=
     PushdRoot || return
     initOp_CheckInit || return
-    initOp_CheckGitIgnore || return
     initOp_CheckStage || return
     initOp_Parse "$@" || return
     initOp_RenameTmp && initOp_Start && return
@@ -776,14 +766,6 @@ initOp () {
 initOp_CheckInit () {
     CheckInit --quiet || return 0
     >&2 Prompt red "error: This repository has already been initialized."
-    return 1
-}
-
-initOp_CheckGitIgnore () {
-    git status --porcelain | grep -q '\<.gitignore\>' || return 0
-    >&2 Prompt red \
-"error: Please commit or stash your local changes of file \`.gitignore'" \
-"before init."
     return 1
 }
 
@@ -1083,53 +1065,56 @@ initOp_Parse1 () {
 }
 
 initOp_CleanUp () {
-    initOp_CleanUp_IsCommited && git reset @^ 1>/dev/null
-    test -e "$OLDF" &&
-        git clean -qfX -- "$TMPF" 1>/dev/null &&
-        test ! -e "$TMPF" &&
-        mv "$OLDF" "$TMPF"
-    git restore --staged .
-    test -e "$TEMPF" && rm "$TEMPF"
-    test -e "$FCIF" && rm "$FCIF"
-    git clean -qf -- .gitignore
-    test -e .gitignore && git checkout -- .gitignore
-}
-
-initOp_CleanUp_IsCommited () {
-    local fci
-    local revlist
-    local cid
-    local pre_cid
-    test -e "$FCIF" || return
-    fci=$(<"$FCIF")
-    revlist=$(git rev-list @)
-    cid=$(head -1 <<<"$revlist")
-    test "$fci" != "$cid" || return
-    pre_cid=$(head -2 <<<"$revlist" | tail -1)
-    test "$fci" = "$pre_cid" && return
-    >&2 Prompt yellow \
-        "warning: Failed to get current state when cleaning up."
-    return 1
+    local -r reason="cleaning up after failed to initialize inspurcommit"
+    test "$(git ls-tree HEAD -- "$FCIF")" &&
+        git update-ref -m "$reason" HEAD HEAD^ &&
+        git restore --staged --worktree -- \
+        "$OLDF" "$TMPF" "$FCIF" .gitignore
 }
 
 initOp_RenameTmp () {
-    test ! -e "$TMPF" && return
-    CheckFileAlreadyExists "$OLDF" || return
-    d2u "$TMPF" 2>/dev/null || return
-    mv "$TMPF" "$OLDF" || return
-    git -c "core.safecrlf=false" add "$TMPF" "$OLDF" || return
+    local old obj
+    local dirty=
+    old=$(git cat-file blob HEAD:"$TMPF") || return 0
+    test "$(git ls-files -- "$OLDF")" && err "file \`$OLDF' found in index"
+    obj=$(printf "%s\n" "$old" | git hash-object -t blob -w --stdin) ||
+        return
+    printf "%s %s %s\t%s" 100644 blob $obj "$OLDF" |
+        git update-index --add --index-info ||
+        return
+    git checkout-index -- "$OLDF" || return
+    git diff-files -q -- "$TMPF" || dirty=1
+    if test "$dirty"
+    then
+        Prompt >&2 y "warning: File \`$TMPF' was kept as is in worktree."
+    else
+        git update-index --force-remove -- "$TMPF"
+    fi
 }
 
 initOp_Start () {
     local init_title="INSPURCOMMIT-INIT"
-    local init_msg
-    git log --format="%H" -1 1>"$FCIF" || return
+    local init_msg newgi
+    local dirty=
+    git rev-parse --verify HEAD >"$FCIF" || return
+    git diff-files --quiet -- .gitignore || dirty=1
     InitTemplate || return
-    printf -- "%s\n" "/$TMPF" "/ChangeHistory-*.txt">>.gitignore || return
-    git -c "core.safecrlf=false" add "$TEMPF" "$FCIF" .gitignore || return
-    printf -v init_msg -- "%s\n" \
-"This commit was automatically generated to initialize this repository in"\
-"order to use Inspur Commit Kit." || return
+    printf -v newgi "%s\n" "$(git cat-file blob HEAD:.gitignore)" \
+        "/$TMPF" "/ChangeHistory-*.txt"
+    git ls-tree --full-tree HEAD -- .gitignore |
+        sed "s/[[:xdigit:]]\{40\}/$(printf "%s" "$newgi" | git hash-object --stdin -t blob -w)/" |
+        git update-index --index-info ||
+        return
+    git update-index --add -- "$TEMPF" "$FCIF" || return
+    if test "$dirty"
+    then
+        >&2 Prompt y "warning: File .gitignore was kept as is in worktree."
+    else
+        git checkout-index --force -- .gitignore
+    fi
+    printf -v init_msg "%s\n" \
+"This commit was automatically generated to initialize this repository" \
+"in order to use Inspur Commit Kit." || return
     git commit -m "$init_title" -m "$init_msg" 1>/dev/null || return
     Prompt green "Initialization completed successfully."
 }
