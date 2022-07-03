@@ -143,13 +143,6 @@ CheckStage_HasTemp () {
 "commit without changing \`$TEMPF'"
 }
 
-FindFile () {
-    local filename=$1
-    test -e "$filename" && return
-    >&2 Prompt red "error: Couldn't find file $filename."
-    return 1
-}
-
 # Get Field Content
 # & $1: variable byref
 #   $2: change history content
@@ -230,7 +223,7 @@ Commit_IsNotAmend () {
 InitTemplate () {
     local dff dfc
     dff="$(dirname "$0")/$TEMPF"
-    FindFile "$dff" || return
+    test -e "$dff" || err "failed to find file \`$dff'"
     dfc=$(<"$dff")
     SetField dfc "Tag#" "$df_tag"
     SetField dfc "Label#" "$df_lbl"
