@@ -217,7 +217,11 @@ Commit_IsNotAmend () {
 InitTemplate () {
     local dff dfc
     dff="$(dirname "$0")/$TEMPF"
-    test -e "$dff" || err "failed to find file \`$dff'"
+    if ! test -e "$dff"
+    then
+        >&2 Prompt red "failed to find file \`$dff'"
+        return 1
+    fi
     dfc=$(<"$dff")
     dfc=$(SetField "$dfc" "Tag#" "$df_tag")
     dfc=$(SetField "$dfc" "Label#" "$df_lbl")
