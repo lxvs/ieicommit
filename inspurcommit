@@ -297,7 +297,7 @@ EOF
 }
 
 pushUsage () {
-cat <<\EOF
+cat <<EOF
 usage: inspurcommit push [<options>] [<branch>]
 
 Push local commits to Gerrit for review. Default <branch> is the current one.
@@ -337,7 +337,7 @@ EOF
 }
 
 templateUsage () {
-cat <<\EOF
+cat <<EOF
 usage: inspurcommit template [<options>]
 
 Normally, changes of the template cannot be committed, in case it is changed
@@ -347,7 +347,7 @@ EOF
 }
 
 initUsage () {
-cat <<\EOF
+cat <<EOF
 usage: inspurcommit init [<options>]
 
 Initialize current repository in order to use inspurcommit.
