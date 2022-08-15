@@ -1,3 +1,10 @@
+0.13.0 - 2022-08-15
+
+	* Refuse to `load' a merge
+	* Improve `diff' operation
+	* Replace some git porcelain commands with plumbing ones
+	* Improve script performance and coding style
+
 0.12.1 - 2022-06-28
 
 	* Fix an issue which occurs when path has spaces
