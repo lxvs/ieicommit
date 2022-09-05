@@ -103,21 +103,14 @@ CheckStage () {
     local option=${1-normal}
     if git diff-index --quiet --cached HEAD
     then
-        CheckStage_NoStage
-        return
+        test "$option" = "amend" && return
+        Prompt >&2 red "error: nothing staged" "Stage changes to be committed with \`git add'."
+        return 1
     fi
     git diff-index --name-only --cached HEAD |
         grep --quiet "^$TEMPF\$" ||
         return 0
     CheckStage_HasTemp
-}
-
-CheckStage_NoStage () {
-    test "$option" = "amend" && return
-    >&2 Prompt red \
-        "error: There is no staged changes." \
-        "Stage changes to be committed with \`git add'."
-    return 1
 }
 
 CheckStage_HasTemp () {
@@ -173,7 +166,7 @@ Commit () {
     details=$(grep -v '^#\|^\s*$' "$TMPF")
     ValidateHistory "$details" || return
     summary=$(GetField "$details" "Solution")
-    Commit_CheckLastSummary || return
+    Commit_CheckLastSummary
     Commit_CreateRelatedFiles || return
     Commit_IsNotAmend "$@" || return 0
     git commit "$@" -m "$summary" -m "$details"
@@ -184,8 +177,7 @@ Commit_CheckLastSummary () {
     test "$op" = "amend" && return
     last_summary=$(git diff-tree --no-patch --format=%s HEAD)
     test "$last_summary" != "$summary" && return
-    >&2 Prompt red "error: Solution is same with last one."
-    return 1
+    die "error: Solution is same with last one."
 }
 
 Commit_CreateRelatedFiles () {
@@ -524,12 +516,9 @@ diffOp_GetBeyondCompare () {
     printf "%s" "$OS" | grep -qi '^win' ||
         die "error: this operation is for Windows only for now."
     bc=$(reg query "$bc_reg_p" //v "$bc_reg_k" 2>/dev/null)
-    if test ! "$bc"
-    then
-        >&2 Prompt red "error: Couldn't find Beyond Compare." \
+    test "$bc" ||
+        die "error: Couldn't find Beyond Compare." \
             "Please defined the path to bcompare.exe in JG_BC_PATH and restart shell."
-        return 1
-    fi
     bc=$(printf "%s" "$bc" | grep "ExePath" | sed 's/\s\{4\}.*\s\{4\}//')
 }
 
@@ -555,11 +544,6 @@ cleanOp () {
     return 0
 }
 
-# Operation: Export a Change History
-# $0 export [-a|--all] [{-x|--exclude} <field>] [[--] <filename>]
-# <filename>: Use "ChangeHistory[-All]-%h" if not specified.
-# $fci: hash of the parent of INSPURCOMMIT-INIT
-# $fcic: hash of INSPURCOMMIT-INIT
 exportOp () {
     local fltrs fcic ch_c
     local chfn=
@@ -696,7 +680,7 @@ exportOp_SetFileName () {
     local curr_h
     test "$chfn" && return
     curr_h=$(git rev-parse --verify --short HEAD) || exit
-    chfn="ChangeHistory-${curr_h}.txt"
+    chfn="${TMPF}-${curr_h}.txt"
 }
 
 exportOp_Write () {
@@ -730,17 +714,11 @@ initOp () {
     local df_tag= df_lbl= df_iss= df_scp= df_svr= df_ctg= df_spt=
     local df_rtc= df_slt= df_dpd= df_rlf=
     CdRoot
-    initOp_CheckInit || return
+    CheckInit --quiet && die "error: repository already initialized"
     initOp_CheckStage || return
     initOp_Parse "$@" || return
     initOp_RenameTmp && initOp_Start && return
     initOp_CleanUp
-    return 1
-}
-
-initOp_CheckInit () {
-    CheckInit --quiet || return 0
-    >&2 Prompt red "error: This repository has already been initialized."
     return 1
 }
 
@@ -1074,7 +1052,7 @@ initOp_Start () {
     git rev-parse --verify HEAD >"$FCIF" || return
     git diff-files --quiet -- .gitignore || dirty=1
     InitTemplate || return
-    newgi=$(printf "%s\n" "$(git cat-file blob HEAD:.gitignore)" "/$TMPF" "/ChangeHistory-*.txt")
+    newgi=$(printf "%s\n" "$(git cat-file blob HEAD:.gitignore)" "/$TMPF" "/${TMPF}-*.txt")
     git ls-tree --full-tree HEAD -- .gitignore |
         sed "s/[[:xdigit:]]\{40\}/$(printf "%s\n" "$newgi" | git hash-object --stdin -t blob -w)/" |
         git update-index --index-info ||
@@ -1136,9 +1114,7 @@ main () {
         op=commit
         ;;
     *)
-        >&2 Prompt red "error: invalid argument: $op" \
-            "Try \`inspurcommit --help' for help."
-        exit 1
+        die "error: invalid argument: $op" "Try \`inspurcommit --help' for help."
         ;;
     esac
     LookupUsage $op "$@" || return 0
