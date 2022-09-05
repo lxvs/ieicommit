@@ -495,14 +495,14 @@ pushOp () {
 diffOp () {
     local bc=
     git rev-parse || exit
-    diffOp_GetBeyondCompare || return
+    diffOp_GetBeyondCompare
     git difftool --extcmd="$bc" --dir-diff "$@"
 }
 
 mergeOp () {
     local bc=
     git rev-parse || exit
-    diffOp_GetBeyondCompare || return
+    diffOp_GetBeyondCompare
     git -c "merge.tool=BeyondCompare" \
         -c "mergetool.BeyondCompare.cmd=\"$bc\" \"\$(cygpath -w \"\$LOCAL\")\" \"\$REMOTE\" \"\$BASE\" \"\$MERGED\"" \
         -c "mergetool.BeyondCompare.trustExitCode=true" \
@@ -510,16 +510,13 @@ mergeOp () {
 }
 
 diffOp_GetBeyondCompare () {
-    local bc_reg_p='HKCU\Software\Scooter Software\Beyond Compare'
-    local bc_reg_k="ExePath"
     test "$JG_BC_PATH" && bc=$JG_BC_PATH && return
-    printf "%s" "$OS" | grep -qi '^win' ||
-        die "error: this operation is for Windows only for now."
-    bc=$(reg query "$bc_reg_p" //v "$bc_reg_k" 2>/dev/null)
-    test "$bc" ||
-        die "error: Couldn't find Beyond Compare." \
-            "Please defined the path to bcompare.exe in JG_BC_PATH and restart shell."
-    bc=$(printf "%s" "$bc" | grep "ExePath" | sed 's/\s\{4\}.*\s\{4\}//')
+    printf "%s" "$OS" | grep -qi '^win' || die "error: this operation is for Windows only for now."
+    bc="$(cygpath -u "$PROGRAMFILES")/Beyond Compare 4/BComp.exe" && test -x "$bc" && return
+    bc="$(cygpath -u "$PROGRAMFILES") (x86)/Beyond Compare 4/BComp.exe" && test -x "$bc" && return
+    bc="$(cygpath -u "$PROGRAMFILES")/Beyond Compare 3/bcomp.exe" && test -x "$bc" && return
+    bc="$(cygpath -u "$PROGRAMFILES") (x86)/Beyond Compare 3/BComp.exe" && test -x "$bc" && return
+    die "error: Couldn't find Beyond Compare." "Please defined the path to BComp.exe in JG_BC_PATH and restart shell."
 }
 
 amendOp () {
