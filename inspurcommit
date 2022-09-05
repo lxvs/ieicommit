@@ -125,11 +125,10 @@ CheckStage_HasTemp () {
     git ls-tree --full-tree HEAD -- .gitignore |
         git update-index --index-info ||
         return
-    err \
-"Template \`$TEMPF' was staged, and was unstaged by me." \
-"If you intend to modify the template, stage it again and use command" \
-"\`inspurcommit template'. Otherwise, use \`inspurcommit' again to" \
-"commit without changing \`$TEMPF'"
+    die "error: Template \`$TEMPF' was staged, and was unstaged by me." \
+        "If you intend to modify the template, stage it again and use command" \
+        "\`inspurcommit template'. Otherwise, use \`inspurcommit' again to" \
+        "commit without changing \`$TEMPF'"
 }
 
 GetField () {
@@ -430,46 +429,44 @@ mainUsage () {
     ShowUsage
 }
 
-err () {
-    local red="[91m"
-    local rst="[0m"
-    local msg="${1-unspecific error}"
-    >&2 printf "${red}error: %s${rst}\n" "$msg"
-    while test $# -ge 2
+die () {
+    while test $# -ge 1
     do
-        >&2 printf "${red}%s${rst}\n" "$2"
+        Prompt >&2 red "$1"
         shift
     done
     exit 1
 }
 
-# Prompt
-# $1:   color, red/yellow/green
-# ...:  content lines
 Prompt () {
-    local RED="[91m"
-    local GRN="[92m"
-    local YLW="[93m"
-    local RST="[0m"
-    local COLOR_ARG=$1
-    local color
+    local red="[91m"
+    local green="[92m"
+    local yellow="[93m"
+    local reset="[0m"
+    local color=$1
     shift
-    case $COLOR_ARG in
+    if ! test -t 1
+    then
+        printf "%s\n" "$@"
+        return
+    fi
+    case $color in
     r|red)
-        color=$RED
+        color=$red
         ;;
     g|grn|green)
-        color=$GRN
+        color=$green
         ;;
     y|ylw|yellow)
-        color=$YLW
+        color=$yellow
         ;;
     *)
-        >&2 Prompt red "error: unknown color argument: $COLOR_ARG"
-        return 1
+        printf >&2 "warning: invalid color \`%s'\n" "$color"
+        printf "%s\n" "$@"
+        return
         ;;
     esac
-    printf -- "${color}%s${RST}\n" "$@"
+    printf "${color}%s${reset}\n" "$@"
 }
 
 commitOp () {
@@ -495,7 +492,7 @@ pushOp () {
             shift
             ;;
         *)
-            err "invalid argument: $1"
+            die "error: invalid argument: $1"
             ;;
         esac
     done
@@ -525,7 +522,7 @@ diffOp_GetBeyondCompare () {
     local bc_reg_k="ExePath"
     test "$JG_BC_PATH" && bc=$JG_BC_PATH && return
     printf "%s" "$OS" | grep -qi '^win' ||
-        err "this operation is for Windows only for now."
+        die "error: this operation is for Windows only for now."
     bc=$(reg query "$bc_reg_p" //v "$bc_reg_k" 2>/dev/null)
     if test ! "$bc"
     then
@@ -589,12 +586,12 @@ exportOp_Parse_Again () {
         eff="${1#-}"
         ;;
     *)
-        err "unknown mode: $mode"
+        die "error: unknown mode: $mode"
         ;;
     esac
     case "$eff,$mode" in
     all,no)
-        err "invalid switch \`--no-all'"
+        die "error: invalid switch \`--no-all'"
         ;;
     all,2)
         test "${fltrs+set}" || fltrs=
@@ -603,14 +600,14 @@ exportOp_Parse_Again () {
         fltrs=
         ;;
     exclude,2)
-        test $# -ge 2 || err "switch \`$eff' requires a value"
+        test $# -ge 2 || die "error: switch \`$eff' requires a value"
         fltrs="${fltrs-},$2"
         sn=2
         ;;
     exclude=*,2)
         eqeff="${eff%%=*}"
         eqval="${eff#$eqeff=}"
-        test "$eqval" || err "switch \`$eqeff' requires a value"
+        test "$eqval" || die "error: switch \`$eqeff' requires a value"
         fltrs="${fltrs-},$eqval"
         ;;
     *,1)
@@ -632,17 +629,17 @@ exportOp_Parse_Again () {
                     fltrs="${fltrs-},$2"
                     sn=2
                 else
-                    err "switch \`$flag' requires a value"
+                    die "error: switch \`$flag' requires a value"
                 fi
                 ;;
             *)
-                err "invalid switch: $flag"
+                die "error: invalid switch: $flag"
                 ;;
             esac
         done
         ;;
     *)
-        err "invalid switch: $eff"
+        die "error: invalid switch: $eff"
         ;;
     esac
 }
@@ -669,7 +666,7 @@ exportOp_Parse () {
             shift $sn
             ;;
         *)
-            test "$chfn" && err "invalid argument: $1"
+            test "$chfn" && die "error: invalid argument: $1"
             chfn=$1
             shift
             ;;
@@ -682,7 +679,7 @@ exportOp_Parse () {
         chfn=$1
         ;;
     *)
-        err "too many arguments"
+        die "error: too many arguments"
         ;;
     esac
     test "${fltrs+set}" || fltrs="Scope"
@@ -708,7 +705,7 @@ exportOp_Write () {
     if ! exportOp_Write_Cat && test ! "$ch_c"
     then
         rm -f "$chfn"
-        err "nothing to export"
+        die "error: nothing to export"
     fi
     Prompt green "Exported file $chfn"
 }
@@ -797,7 +794,7 @@ initOp_Parse_Again () {
         initOp_Parse1 "$@"
         ;;
     *)
-        err "unknown mode: $mode"
+        die "error: unknown mode: $mode"
         ;;
     esac
 }
@@ -838,7 +835,7 @@ initOp_ParseNo () {
         df_rlf=
         ;;
     *)
-        err "invalid switch: no-$eff"
+        die "error: invalid switch: no-$eff"
         ;;
     esac
 }
@@ -848,142 +845,142 @@ initOp_Parse2 () {
     test $# -ge 2 && val=$2
     case $eff in
     tag)
-        test "$val" || err "switch \`$eff' requires a value"
+        test "$val" || die "error: switch \`$eff' requires a value"
         df_tag=$val
         ;;
     tag=*)
         sn=1
         val=${eff#tag=}
         eff=${eff%=$val}
-        test "$val" || err "switch \`$eff' requires a value"
+        test "$val" || die "error: switch \`$eff' requires a value"
         df_tag=$val
         ;;
     label)
-        test "$val" || err "switch \`$eff' requires a value"
+        test "$val" || die "error: switch \`$eff' requires a value"
         df_lbl=$val
         ;;
     label=*)
         sn=1
         val=${eff#label=}
         eff=${eff%=$val}
-        test "$val" || err "switch \`$eff' requires a value"
+        test "$val" || die "error: switch \`$eff' requires a value"
         df_lbl=$val
         ;;
     issue)
-        test "$val" || err "switch \`$eff' requires a value"
+        test "$val" || die "error: switch \`$eff' requires a value"
         df_iss=$val
         ;;
     issue=*)
         sn=1
         val=${eff#issue=}
         eff=${eff%=$val}
-        test "$val" || err "switch \`$eff' requires a value"
+        test "$val" || die "error: switch \`$eff' requires a value"
         df_iss=$val
         ;;
     scope)
-        test "$val" || err "switch \`$eff' requires a value"
+        test "$val" || die "error: switch \`$eff' requires a value"
         df_scp=$val
         ;;
     scope=*)
         sn=1
         val=${eff#scope=}
         eff=${eff%=$val}
-        test "$val" || err "switch \`$eff' requires a value"
+        test "$val" || die "error: switch \`$eff' requires a value"
         df_scp=$val
         ;;
     severity)
-        test "$val" || err "switch \`$eff' requires a value"
+        test "$val" || die "error: switch \`$eff' requires a value"
         df_svr=$val
         ;;
     severity=*)
         sn=1
         val=${eff#severity=}
         eff=${eff%=$val}
-        test "$val" || err "switch \`$eff' requires a value"
+        test "$val" || die "error: switch \`$eff' requires a value"
         df_svr=$val
         ;;
     category)
-        test "$val" || err "switch \`$eff' requires a value"
+        test "$val" || die "error: switch \`$eff' requires a value"
         df_ctg=$val
         ;;
     category=*)
         sn=1
         val=${eff#category=}
         eff=${eff%=$val}
-        test "$val" || err "switch \`$eff' requires a value"
+        test "$val" || die "error: switch \`$eff' requires a value"
         df_ctg=$val
         ;;
     symptom)
-        test "$val" || err "switch \`$eff' requires a value"
+        test "$val" || die "error: switch \`$eff' requires a value"
         df_spt=$val
         ;;
     symptom=*)
         sn=1
         val=${eff#symptom=}
         eff=${eff%=$val}
-        test "$val" || err "switch \`$eff' requires a value"
+        test "$val" || die "error: switch \`$eff' requires a value"
         df_spt=$val
         ;;
     rootcause)
-        test "$val" || err "switch \`$eff' requires a value"
+        test "$val" || die "error: switch \`$eff' requires a value"
         df_rtc=$val
         ;;
     rootcause=*)
         sn=1
         val=${eff#rootcause=}
         eff=${eff%=$val}
-        test "$val" || err "switch \`$eff' requires a value"
+        test "$val" || die "error: switch \`$eff' requires a value"
         df_rtc=$val
         ;;
     solution)
-        test "$val" || err "switch \`$eff' requires a value"
+        test "$val" || die "error: switch \`$eff' requires a value"
         df_spt=$val
         ;;
     solution=*)
         sn=1
         val=${eff#solution=}
         eff=${eff%=$val}
-        test "$val" || err "switch \`$eff' requires a value"
+        test "$val" || die "error: switch \`$eff' requires a value"
         df_spt=$val
         ;;
     dependency|solution-dependency)
-        test "$val" || err "switch \`$eff' requires a value"
+        test "$val" || die "error: switch \`$eff' requires a value"
         df_dpd=$val
         ;;
     dependency=*)
         sn=1
         val=${eff#dependency=}
         eff=${eff%=$val}
-        test "$val" || err "switch \`$eff' requires a value"
+        test "$val" || die "error: switch \`$eff' requires a value"
         df_dpd=$val
         ;;
     solution-dependency=*)
         sn=1
         val=${eff#solution-dependency=}
         eff=${eff%=$val}
-        test "$val" || err "switch \`$eff' requires a value"
+        test "$val" || die "error: switch \`$eff' requires a value"
         df_dpd=$val
         ;;
     files|related-files)
-        test "$val" || err "switch \`$eff' requires a value"
+        test "$val" || die "error: switch \`$eff' requires a value"
         df_rlf=$val
         ;;
     files=*)
         sn=1
         val=${eff#files=}
         eff=${eff%=$val}
-        test "$val" || err "switch \`$eff' requires a value"
+        test "$val" || die "error: switch \`$eff' requires a value"
         df_rlf=$val
         ;;
     related-files=*)
         sn=1
         val=${eff#related-files=}
         eff=${eff%=$val}
-        test "$val" || err "switch \`$eff' requires a value"
+        test "$val" || die "error: switch \`$eff' requires a value"
         df_rlf=$val
         ;;
     *)
-        err "invalid switch: $eff"
+        die "error: invalid switch: $eff"
         ;;
     esac
 }
@@ -1000,7 +997,7 @@ initOp_Parse1 () {
         sw=$eff
         val=$2
     else
-        err "switch \`$sw' requires a value"
+        die "error: switch \`$sw' requires a value"
     fi
     case $sw in
     t)
@@ -1037,7 +1034,7 @@ initOp_Parse1 () {
         df_rlf=$val
         ;;
     *)
-        err "invalid switch: $sw"
+        die "error: invalid switch: $sw"
         ;;
     esac
 }
@@ -1054,7 +1051,7 @@ initOp_RenameTmp () {
     local old obj
     local dirty=
     old=$(git cat-file blob HEAD:"$TMPF") || return 0
-    test "$(git ls-files -- "$OLDF")" && err "file \`$OLDF' found in index"
+    test "$(git ls-files -- "$OLDF")" && die "error: file \`$OLDF' found in index"
     obj=$(printf "%s\n" "$old" | git hash-object -t blob -w --stdin) ||
         return
     printf "%s %s %s\t%s" 100644 blob $obj "$OLDF" |
@@ -1097,7 +1094,7 @@ initOp_Start () {
 }
 
 purgeOp () {
-    test $# -eq 0 || err "too many arguments"
+    test $# -eq 0 || die "error: too many arguments"
     CdRoot
     test ! -e "$TMPF" || rm "$TMPF" || return
     GenerateTmp 1>/dev/null || return 0
@@ -1105,14 +1102,14 @@ purgeOp () {
 
 loadOp () {
     local id msg
-    test $# -le 1 || err "too many arguments"
+    test $# -le 1 || die "error: too many arguments"
     CheckInit || return
     id=$(git rev-parse --verify "${1-HEAD}") || return
     git rev-parse --verify --quiet --no-revs $id^2 &&
-        err "refuse to load a merge"
+        die "error: refuse to load a merge"
     CdRoot
     msg=$(git diff-tree --no-patch --format=%b $id | sed '/^RelatedFiles:/,$d')
-    test "$msg" || err "got an empty result"
+    test "$msg" || die "error: got an empty result"
     printf "%s\n" "$msg" "$(grep '^RelatedFiles:' "$TEMPF")" >"$TMPF"
 }
 
