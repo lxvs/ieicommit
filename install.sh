@@ -81,7 +81,7 @@ GetTargetDir () {
 
 main () {
     local name="inspurcommit installation script"
-    local link="https://github.com/islzh/inspurcommit"
+    local link="https://gitlab.com/lzhh/inspurcommit"
     local target_dir
     cd "$(dirname "$0")" || return
     GetTargetDir
