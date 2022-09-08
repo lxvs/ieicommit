@@ -1,3 +1,13 @@
+0.14.0 - 2022-09-11
+
+	* Add `amendtemplate' operation
+	* Make it POSIX compliant
+	* Refactor the whole script
+	* Recompose usages
+	* Fix that cleaning up is skipped when template is not found
+	* Improve the method of looking for Beyond Compare
+	* Other improvements on coding/performance/appearance
+
 0.13.0 - 2022-08-15
 
 	* Refuse to `load' a merge
