@@ -205,7 +205,7 @@ Commit () {
 Commit_CheckLastSummary () {
     local last_summary
     test "$op" = "amend" && return
-    last_summary=$(git log -1 --format=%s)
+    last_summary=$(git diff-tree --no-patch --format=%s HEAD)
     test "$last_summary" != "$summary" && return
     >&2 Prompt red "error: Solution is same with last one."
     return 1
