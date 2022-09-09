@@ -204,7 +204,7 @@ Commit () {
 
 Commit_CheckLastSummary () {
     local last_summary
-    test "$OP" = "amend" && return
+    test "$op" = "amend" && return
     last_summary=$(git log -1 --format=%s)
     test "$last_summary" != "$summary" && return
     >&2 Prompt red "error: Solution is same with last one."
@@ -214,13 +214,13 @@ Commit_CheckLastSummary () {
 Commit_CreateRelatedFiles () {
     ValidateHistoryField "$details" "RelatedFiles" 2>/dev/null || return 0
     details=$(sed '/^RelatedFiles:/,$d' <<<"$details")
-    filelist=$(jgn $OP)
+    filelist=$(jgn $op)
     printf -v details "%s\n%s" "$details" "$filelist"
 }
 
 Commit_IsNotAmend () {
     local chid
-    test "$OP" != "amend" && return
+    test "$op" != "amend" && return
     chid=$(git diff-tree --no-patch --format=%b HEAD | grep '^Change-Id:')
     test "$chid" || >&2 Prompt y "warning: Failed to get Change-ID."
     git commit "$@" -m "$summary" -m "$details" -m "$chid"
@@ -1134,11 +1134,11 @@ main () {
     local -r TMPF=$change_history_name
     local -r OLDF=$old_change_history_name
     local -r FCIF=$fci_file_name
-    local -r OP=${1-}
+    local -r op=${1-}
     local -r JG_BC_PATH=${JG_BC_PATH-}
     local -r OS=${OS-}
     LookupUsage "main" "$@" || exit 0
-    case $OP in
+    case $op in
     amend|clean|diff|export|init|load|merge|purge|push|template)
         shift
         ;;
@@ -1151,13 +1151,13 @@ main () {
         return
         ;;
     *)
-        >&2 Prompt red "error: invalid argument: $OP" \
+        >&2 Prompt red "error: invalid argument: $op" \
             "Try \`inspurcommit --help' for help."
         exit 1
         ;;
     esac
-    LookupUsage $OP "$@" || return 0
-    ${OP}Op "$@"
+    LookupUsage $op "$@" || return 0
+    ${op}Op "$@"
 }
 
 main "$@"
