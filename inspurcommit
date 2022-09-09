@@ -242,35 +242,51 @@ GenerateTmp () {
 }
 
 ShowLogo () {
-cat <<LOGO
+cat <<EOF
 
-    inspurcommit v$REVISION
-    $AUTHOR
+    inspurcommit $version
+    $author
 
-LOGO
+EOF
 }
 
 ShowUsage () {
-cat <<SHOWUSG
-Usage:
-    inspurcommit [<operation>]
+cat <<EOF
+usage: inspurcommit [<operation>]
 
-Operations:
-    amend, clean, diff, export, init, load, merge, purge, push, template
+Operation is \`commit' if not specified.
 
-For help on a specific operation:
+These are all operations used in various situations:
+
+manipulate current repository
+    init        Initialize current repository to use inspurcommit
+    template    Commit with template changes
+    clean       Clean up overridden files
+
+work on the current change
+    commit      Record changes to the repository
+    amend       Amend previous commit
+    push        Push local commits to Gerrit for review
+    merge       Resolve merge conflicts with Beyond Compare
+    purge       Regenerate a change history from template
+    load        Read a specific commit message to change history
+
+examine things
+    diff        Show changes using beyond Compare
+    export      Export a full change history
+
+get detailed help for a specific operation:
     inspurcommit <operation> --help
     inspurcommit commit --help
-SHOWUSG
+EOF
 }
 
 commitUsage () {
 cat <<EOF
-Usage:
-    inspurcommit [<options>]
+usage: inspurcommit [<options>]
 
 Commit staged changes with messages read from file \`$TMPF'. If this file does
-not exist, it will generate one from template. Fill it in and use this command
+not exist, will be generated from template. Fill it in and use this command
 again to commit.
 
 Options will be passed to git-commit; try \`git commit -h' or \`git help commit'
@@ -280,123 +296,123 @@ EOF
 
 purgeUsage () {
 cat <<EOF
-Usage:
-    inspurcommit purge
+usage: inspurcommit purge
 
-Remove $TMPF and regenerate one.
+Remove \`$TMPF' and regenerate one from template.
 EOF
 }
 
 pushUsage () {
-cat <<\PUSHUSG
-Usage:
-    inspurcommit push [<option>...] [<branch>]
+cat <<\EOF
+usage: inspurcommit push [<options>] [<branch>]
 
-Push local commits to Gerrit. Default <branch> is the current one.
-<option>s will be passed to git push.  This command is equivalent to:
+Push local commits to Gerrit for review. Default <branch> is the current one.
+Options will be passed to git-push. This command is equivalent to:
 
-    git push [<option>...] origin HEAD:refs/for/<branch>
-PUSHUSG
+    git push [<options>] origin HEAD:refs/for/<branch>
+EOF
 }
 
 amendUsage () {
-cat <<AMENDUSG
-Usage:
-    inspurcommit amend [<option>...]
+cat <<EOF
+usage: inspurcommit amend [<options>]
 
-Amend last commit with current $TMPF and staged changes.
-<option>s will be passed to git commit.
-AMENDUSG
+Amend previous commit with staged changes, messages read from \`$TMPF'
+Options will be passed to git-commit.
+EOF
 }
 
 cleanUsage () {
-cat <<CLEANUSG
-Usage:
-    inspurcommit clean
+cat <<EOF
+usage: inspurcommit clean
 
-Clean changes of overridden files.
-CLEANUSG
+Clean up overridden files.
+EOF
 }
 
 exportUsage () {
-cat <<\EXPORTUSG
-Usage:
-    inspurcommit export [-a|--all] [{-x|--exclude} <filter>,...]
-                        [--] [<filename>]
+cat <<EOF
+usage: inspurcommit export [<options>] [--] [<filename>]
 
-Export a change history without `scope' filed, unless `--all' is specified.
+Export a change history without \`scope' field, unless \`--all' is specified.
 
-If `--exclude' is specified, export a change history with all fields except
-<filter>s. Multiple filters can be splitted by `,' as in `-x tag#,scope'.
-
-`--exclude' implies `--all'.
-EXPORTUSG
+    -a, --all               Export all fields
+    -x, --exclude FIELD     Exclude specific fileds; separate multiple fields
+                            with \`,' as in \`-xFILED1,FILED2'. Implies \`--all'
+EOF
 }
 
 templateUsage () {
-cat <<\TEMPLATEUSG
-Usage:
-    inspurcommit template [<option>...]
+cat <<\EOF
+usage: inspurcommit template [<options>]
 
-Normally, changes of the template cannot be committed, in case it is
-changed by accident. When you intend to change the template, you can use
-this operation. <option>s will be passed to git commit.
-TEMPLATEUSG
+Normally, changes of the template cannot be committed, in case it is changed
+by accident. When you intend to change the template, you can use this
+operation. Options will be passed to git-commit.
+EOF
 }
 
 initUsage () {
-cat <<\INITUSG
-Usage:
-    inspurcommit init [<defaults> ...]
+cat <<\EOF
+usage: inspurcommit init [<options>]
 
-Defaults:
-    -t, --tag <tag#>
-    -l, --label <label#>
-    -i, --issue <Issue#>
-    -s, --scope <Scope>
-    -v, --severity <Severity>
-    -c, --category <Category>
-    -y, --symptom <Symptom>
-    -r, --rootcause <RootCause>
-    -o, --solution <Solution>
-    -d, --dependency <SolutionDependency>
-    -f, --files <RelatedFiles>
+Initialize current repository in order to use inspurcommit.
 
-Example:
-    inspurcommit init -t "5.19_CedarIslandCrb_0ACMT_013"
-INITUSG
+    -t, --tag           Specify content of tag# in template
+    -l, --label         Specify content of label in template
+    -i, --issue         Specify content of issue# in template
+    -s, --scope         Specify content of scope in template
+    -v, --severity      Specify content of severity in template
+    -c, --category      Specify content of category in template
+    -y, --symptom       Specify content of symptom in template
+    -r, --rootcause     Specify content of rootcause in template
+    -o, --solution      Specify content of solution in template
+    -d, --dependency    Specify content of solution dependency in template
+    -f, --files         Specify content of related files in template
+EOF
 }
 
 loadUsage () {
 cat <<EOF
-Usage:
-    inspurcommit load [<commit-id>]
+usage: inspurcommit load [<commit-id>]
 
-Load messages to $TMPF from specific <commit-id>.
-If <commit-id> is not specified, load from current commit.
+Read messages of specific <commit-id> to \`$TMPF'.
+<commit-id> is the current HEAD if not specified.
 EOF
 }
 
 diffUsage () {
-cat <<\DIFFUSG
-Usage:
-    inspurcommit diff [<options>]
+cat <<EOF
+usage: inspurcommit diff [<options>]
 
-Diff with Beyond Compare. Options will be passed to git difftool.
-Try `git difftool --help' for more information.
+Show changes using Beyond Compare. Options will be passed to git-difftool.
+Try \`git difftool -h' or \`git help difftool' for more information.
 
-If you want to diff the staged changes, use `inspurcommit diff --cached'.
-DIFFUSG
+Path to Beyond Compare will be queried from Registry; it can be overridden
+by setting environment variable JG_BC_PATH to the absolute path to Beyound
+Compare.
+EOF
 }
 
 mergeUsage () {
-cat <<\MERGEUSG
-Usage:
-    inspurcommit merge [<file to merge> ...]
+cat <<EOF
+usage: inspurcommit merge [<file to merge> ...]
 
-Resolve merge conflicts with Beyond Compare. If <file to merge> is not
+Resolve merge conflicts using Beyond Compare. If <file to merge> is not
 specified, resolve all conflicted files one by one.
-MERGEUSG
+
+By default, git creates \`*.orig' backup files while resolving merges. These
+are safe to remove once a file has been merged and its git mergetool
+session has completed.
+
+Setting the mergetool.keepBackup configuration variable to false causes git
+mergetool to automatically remove the backup as files are successfully
+merged.
+
+Path to Beyond Compare will be queried from Registry; it can be overridden
+by setting environment variable JG_BC_PATH to the absolute path to Beyound
+Compare.
+EOF
 }
 
 LookupUsage () {
@@ -1108,8 +1124,8 @@ loadOp () {
 }
 
 main () {
-    local -r REVISION="0.13.0"
-    local -r AUTHOR="Johnny Appleseed <liuzhaohui@inspur.com>"
+    local -r version="0.13.0"
+    local -r author="Johnny Appleseed <liuzhaohui@inspur.com>"
     local -r TEMPF=$template_file_name
     local -r TMPF=$change_history_name
     local -r OLDF=$old_change_history_name
