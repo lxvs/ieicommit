@@ -1025,7 +1025,7 @@ initOp_CleanUp () {
 initOp_RenameTmp () {
     local old obj
     local dirty=
-    old=$(git cat-file blob HEAD:"$TMPF") || return 0
+    old=$(git cat-file blob HEAD:"$TMPF" 2>/dev/null) || return 0
     test "$(git ls-files -- "$OLDF")" && die "error: file \`$OLDF' found in index"
     obj=$(printf "%s\n" "$old" | git hash-object -t blob -w --stdin) ||
         return
