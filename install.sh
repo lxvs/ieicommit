@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 set -o nounset
 
 Logo () {
@@ -12,8 +12,8 @@ EOF
 
 Usage () {
 cat <<EOF
-usage: ./$script_name
-   or: ./$script_name uninstall
+usage: ./install.sh
+   or: ./install.sh uninstall
 EOF
 }
 
@@ -30,15 +30,12 @@ Uninstall () {
         >&2 printf "error: not installed\n"
         return 1
     fi
-    pushd "$target_dir" 1>/dev/null
-    rm -f "inspurcommit" "ChangeHistoryTemplate.txt" || return
-    popd 1>/dev/null
+    rm -f "$target_dir/inspurcommit" "$target_dir/ChangeHistoryTemplate.txt" || return
     rmdir "$target_dir" 2>/dev/null
     printf "Uninstall complete.\n"
 }
 
 ParseArgs () {
-    local val
     if test $# -eq 0
     then
         Install
@@ -51,11 +48,11 @@ ParseArgs () {
             Usage
             exit 0
             ;;
-        0|uninstall)
+        0|uninstall|--uninstall)
             Uninstall
             return
             ;;
-        1|install)
+        1|install|--install)
             Install
             return
             ;;
@@ -74,7 +71,7 @@ ParseArgs () {
 
 GetTargetDir () {
     local OS=${OS-}
-    if grep -Gqi "win" <<<"$OS"
+    if printf "%s" "$OS" | grep -qi "win"
     then
         target_dir="$HOME/bin"
     else
@@ -83,12 +80,10 @@ GetTargetDir () {
 }
 
 main () {
-    local -r script_name=$(basename "$0")
-    local -r script_dir=$(dirname "$0")
-    local -r name="inspurcommit installation script"
-    local -r link="https://github.com/islzh/inspurcommit"
+    local name="inspurcommit installation script"
+    local link="https://github.com/islzh/inspurcommit"
     local target_dir
-    pushd "$script_dir" 1>/dev/null
+    cd "$(dirname "$0")" || return
     GetTargetDir
     ParseArgs "$@" || return
 }

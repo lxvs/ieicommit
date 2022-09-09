@@ -1,19 +1,11 @@
-#!/bin/bash
+#!/bin/sh
 set -o nounset
 set -o noglob
 
-declare -r template_file_name="ChangeHistoryTemplate.txt"
-declare -r change_history_name="ChangeHistory.txt"
-declare -r old_change_history_name="Old$change_history_name"
-declare -r fci_file_name="farewell-commit-id"
-
-pushd () {
-    command pushd "$@" 1>/dev/null
-}
-
-popd () {
-    command popd "$@" 1>/dev/null
-}
+template_file_name="ChangeHistoryTemplate.txt"
+change_history_name="ChangeHistory.txt"
+old_change_history_name="Old$change_history_name"
+fci_file_name="farewell-commit-id"
 
 CheckInit () {
     local quiet=
@@ -35,8 +27,8 @@ CheckInit () {
         esac
     done
     tree=$(git ls-tree --full-tree --name-only HEAD) || exit
-    grep -G --quiet "^$FCIF$" <<<"$tree" &&
-        grep -G --quiet "^$TEMPF$" <<<"$tree" &&
+    printf "%s" "$tree" | grep --quiet "^$FCIF\$" &&
+        printf "%s" "$tree" | grep --quiet "^$TEMPF\$" &&
         return
     test "$quiet" && return 1
     >&2 Prompt red \
@@ -53,13 +45,13 @@ jgnInsNum () {
 }
 
 jgn () {
-    local -r title="RelatedFiles:"
-    local -r mod_t="Modified:"
-    local -r add_t="Added:"
-    local -r del_t="Deleted:"
-    local -r ren_t="Renamed:"
-    local -r cpy_t="Copied:"
-    local -r oth_t="Other:"
+    local title="RelatedFiles:"
+    local mod_t="Modified:"
+    local add_t="Added:"
+    local del_t="Deleted:"
+    local ren_t="Renamed:"
+    local cpy_t="Copied:"
+    local oth_t="Other:"
     local mod add del ren cpy oth
     local tree=HEAD
     test "$1" = "amend" && tree=HEAD^
@@ -109,14 +101,13 @@ ValidateHistory () {
 
 CheckStage () {
     local option=${1-normal}
-    local stage
     if git diff-index --quiet --cached HEAD
     then
         CheckStage_NoStage
         return
     fi
     git diff-index --name-only --cached HEAD |
-        grep -G --quiet "^$TEMPF\$" ||
+        grep --quiet "^$TEMPF\$" ||
         return 0
     CheckStage_HasTemp
 }
@@ -142,18 +133,18 @@ CheckStage_HasTemp () {
 }
 
 GetField () {
-    local -r chc=$1
-    local -r field=$2
-    grep "^${field}:" <<<"$chc" | sed "s/^${field}:\s*//"
+    local chc=$1
+    local field=$2
+    printf "%s" "$chc" | grep "^${field}:" | sed "s/^${field}:\s*//"
 }
 
 SetField () {
-    local -r chc=$1
-    local -r field=$2
-    local -r content=$3
+    local chc=$1
+    local field=$2
+    local content=$3
     if test "$content"
     then
-        sed "s/^${field}:.*$/${field}: ${content}/" <<<"$chc"
+        printf "%s" "$chc" | sed "s/^${field}:.*$/${field}: ${content}/"
     else
         printf "%s" "$chc"
     fi
@@ -163,17 +154,17 @@ FilterOut () {
     local str=$1
     local filters=$2
     local filter
-    local -r IFS=","
+    local IFS=','
     for filter in $filters
     do
-        str=$(grep -iv "^$filter:" <<<"$str")
+        str=$(printf "%s" "$str" | grep -iv "^$filter:")
     done
     printf "%s" "$str"
 }
 
-PushdRoot () {
+CdRoot () {
     git rev-parse || exit
-    pushd "$(git rev-parse --show-toplevel)"
+    cd "$(git rev-parse --show-toplevel)" || exit
 }
 
 Commit () {
@@ -200,9 +191,9 @@ Commit_CheckLastSummary () {
 
 Commit_CreateRelatedFiles () {
     ValidateHistoryField "$details" "RelatedFiles" 2>/dev/null || return 0
-    details=$(sed '/^RelatedFiles:/,$d' <<<"$details")
+    details=$(printf "%s" "$details" | sed '/^RelatedFiles:/,$d')
     filelist=$(jgn $op)
-    printf -v details "%s\n%s" "$details" "$filelist"
+    details=$(printf "%s\n%s" "$details" "$filelist")
 }
 
 Commit_IsNotAmend () {
@@ -420,7 +411,6 @@ EOF
 }
 
 LookupUsage () {
-    local -r OPERATION=$1
     local argument
     test "$#" -le 1 && return
     argument=$2
@@ -429,7 +419,7 @@ LookupUsage () {
         test "$argument" = "--help" ||
         test "$argument" = "--usage"
     then
-        ${OPERATION}Usage
+        ${1}Usage
         return 1
     fi
     return 0
@@ -441,8 +431,8 @@ mainUsage () {
 }
 
 err () {
-    local -r red="[91m"
-    local -r rst="[0m"
+    local red="[91m"
+    local rst="[0m"
     local msg="${1-unspecific error}"
     >&2 printf "${red}error: %s${rst}\n" "$msg"
     while test $# -ge 2
@@ -457,11 +447,11 @@ err () {
 # $1:   color, red/yellow/green
 # ...:  content lines
 Prompt () {
-    local -r RED="[91m"
-    local -r GRN="[92m"
-    local -r YLW="[93m"
-    local -r RST="[0m"
-    local -r COLOR_ARG=$1
+    local RED="[91m"
+    local GRN="[92m"
+    local YLW="[93m"
+    local RST="[0m"
+    local COLOR_ARG=$1
     local color
     shift
     case $COLOR_ARG in
@@ -484,7 +474,7 @@ Prompt () {
 
 commitOp () {
     CheckInit || return
-    PushdRoot || return
+    CdRoot
     GenerateTmp || return 0
     CheckStage || return
     Commit "$@"
@@ -531,10 +521,10 @@ mergeOp () {
 }
 
 diffOp_GetBeyondCompare () {
-    local -r bc_reg_p='HKCU\Software\Scooter Software\Beyond Compare'
-    local -r bc_reg_k="ExePath"
+    local bc_reg_p='HKCU\Software\Scooter Software\Beyond Compare'
+    local bc_reg_k="ExePath"
     test "$JG_BC_PATH" && bc=$JG_BC_PATH && return
-    grep -Gqi '^win' <<<"$OS" ||
+    printf "%s" "$OS" | grep -qi '^win' ||
         err "this operation is for Windows only for now."
     bc=$(reg query "$bc_reg_p" //v "$bc_reg_k" 2>/dev/null)
     if test ! "$bc"
@@ -543,12 +533,12 @@ diffOp_GetBeyondCompare () {
             "Please defined the path to bcompare.exe in JG_BC_PATH and restart shell."
         return 1
     fi
-    bc=$(grep "ExePath" <<<"$bc" | sed 's/\s\{4\}.*\s\{4\}//')
+    bc=$(printf "%s" "$bc" | grep "ExePath" | sed 's/\s\{4\}.*\s\{4\}//')
 }
 
 amendOp () {
     CheckInit || return
-    PushdRoot || return
+    CdRoot
     GenerateTmp || return 0
     CheckStage amend || return
     Commit --amend "$@"
@@ -556,15 +546,15 @@ amendOp () {
 
 cleanOp () {
     local fl tor toc
-    PushdRoot || return
-    fl=$(grep -Grho --include=*.cif ';\s*"[^"]\+[^" ]' . |
+    CdRoot
+    fl=$(grep -rho --include=*.cif ';\s*"[^"]\+[^" ]' . |
         sed -e 's/^;\s*"//' \
             -e 's/\\/\//g' |
         sort -u)
-    tor=$(comm -12 - <<<"$fl" <(git ls-files --modified | sort))
-    toc=$(comm -12 - <<<"$fl" <(git ls-files --others | sort))
-    test "$tor" && xargs <<<"$tor" -d '\n' git checkout-index --
-    test "$toc" && xargs <<<"$toc" -d '\n' rm -f --
+    tor=$(printf "%s" "$fl" | comm -12 - <(git ls-files --modified | sort))
+    toc=$(printf "%s" "$fl" | comm -12 - <(git ls-files --others | sort))
+    test "$tor" && printf "%s" "$tor" | xargs -d '\n' git checkout-index --
+    test "$toc" && printf "%s" "$toc" | xargs -d '\n' rm -f --
     return 0
 }
 
@@ -577,7 +567,7 @@ exportOp () {
     local fltrs fcic ch_c
     local chfn=
     CheckInit || return
-    PushdRoot || return
+    CdRoot
     exportOp_Parse "$@" || return
     exportOp_GetContent || return
     exportOp_SetFileName
@@ -733,7 +723,7 @@ exportOp_Write_Cat () {
 
 templateOp () {
     CheckInit || return
-    PushdRoot || return
+    CdRoot
     GenerateTmp || return 0
     CheckStage template || return
     Commit "$@"
@@ -742,7 +732,7 @@ templateOp () {
 initOp () {
     local df_tag= df_lbl= df_iss= df_scp= df_svr= df_ctg= df_spt=
     local df_rtc= df_slt= df_dpd= df_rlf=
-    PushdRoot || return
+    CdRoot
     initOp_CheckInit || return
     initOp_CheckStage || return
     initOp_Parse "$@" || return
@@ -1053,7 +1043,7 @@ initOp_Parse1 () {
 }
 
 initOp_CleanUp () {
-    local -r reason="cleaning up after failed to initialize inspurcommit"
+    local reason="cleaning up after failed to initialize inspurcommit"
     test "$(git ls-tree HEAD -- "$FCIF")" &&
         git update-ref -m "$reason" HEAD HEAD^ &&
         git restore --staged --worktree -- \
@@ -1087,10 +1077,9 @@ initOp_Start () {
     git rev-parse --verify HEAD >"$FCIF" || return
     git diff-files --quiet -- .gitignore || dirty=1
     InitTemplate || return
-    printf -v newgi "%s\n" "$(git cat-file blob HEAD:.gitignore)" \
-        "/$TMPF" "/ChangeHistory-*.txt"
+    newgi=$(printf "%s\n" "$(git cat-file blob HEAD:.gitignore)" "/$TMPF" "/ChangeHistory-*.txt")
     git ls-tree --full-tree HEAD -- .gitignore |
-        sed "s/[[:xdigit:]]\{40\}/$(printf "%s" "$newgi" | git hash-object --stdin -t blob -w)/" |
+        sed "s/[[:xdigit:]]\{40\}/$(printf "%s\n" "$newgi" | git hash-object --stdin -t blob -w)/" |
         git update-index --index-info ||
         return
     git update-index --add -- "$TEMPF" "$FCIF" || return
@@ -1100,16 +1089,16 @@ initOp_Start () {
     else
         git checkout-index --force -- .gitignore
     fi
-    printf -v init_msg "%s\n" \
-"This commit was automatically generated to initialize this repository" \
-"in order to use Inspur Commit Kit." || return
+    init_msg=$(printf "%s\n" \
+        "This commit was automatically generated to initialize this repository" \
+        "in order to use Inspur Commit Kit.") || return
     git commit -m "$init_title" -m "$init_msg" 1>/dev/null || return
     Prompt green "Initialization completed successfully."
 }
 
 purgeOp () {
     test $# -eq 0 || err "too many arguments"
-    PushdRoot || return
+    CdRoot
     test ! -e "$TMPF" || rm "$TMPF" || return
     GenerateTmp 1>/dev/null || return 0
 }
@@ -1121,21 +1110,21 @@ loadOp () {
     id=$(git rev-parse --verify "${1-HEAD}") || return
     git rev-parse --verify --quiet --no-revs $id^2 &&
         err "refuse to load a merge"
-    PushdRoot || return
+    CdRoot
     msg=$(git diff-tree --no-patch --format=%b $id | sed '/^RelatedFiles:/,$d')
     test "$msg" || err "got an empty result"
     printf "%s\n" "$msg" "$(grep '^RelatedFiles:' "$TEMPF")" >"$TMPF"
 }
 
 main () {
-    local -r version="0.13.0"
-    local -r author="Johnny Appleseed <liuzhaohui@inspur.com>"
-    local -r TEMPF=$template_file_name
-    local -r TMPF=$change_history_name
-    local -r OLDF=$old_change_history_name
-    local -r FCIF=$fci_file_name
-    local -r JG_BC_PATH=${JG_BC_PATH-}
-    local -r OS=${OS-}
+    local version="0.13.0"
+    local author="Johnny Appleseed <liuzhaohui@inspur.com>"
+    local TEMPF=$template_file_name
+    local TMPF=$change_history_name
+    local OLDF=$old_change_history_name
+    local FCIF=$fci_file_name
+    local JG_BC_PATH=${JG_BC_PATH-}
+    local OS=${OS-}
     local op=${1-}
     LookupUsage "main" "$@" || exit 0
     case $op in
