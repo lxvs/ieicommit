@@ -1044,15 +1044,21 @@ initOp_RenameTmp () {
 
 initOp_Start () {
     local init_title="INSPURCOMMIT-INIT"
-    local init_msg newgi
+    local init_msg oldgi newgi
     local dirty=
     git rev-parse --verify HEAD >"$FCIF" || return
     git diff-files --quiet -- .gitignore || dirty=1
     InitTemplate || return
-    newgi=$(printf "%s\n" "$(git cat-file blob HEAD:.gitignore)" "/$TMPF" "/${TMPF}-*.txt")
-    git ls-tree --full-tree HEAD -- .gitignore |
-        sed "s/[[:xdigit:]]\{40\}/$(printf "%s\n" "$newgi" | git hash-object --stdin -t blob -w)/" |
-        git update-index --index-info ||
+    if oldgi=$(git cat-file blob HEAD:.gitignore 2>/dev/null)
+    then
+        newgi=$(printf "%s\n" "$oldgi" "/$TMPF" "/${TMPF}-*.txt")
+        gimode=$(git ls-tree --full-tree --format="%(objectmode)" HEAD -- .gitignore)
+    else
+        newgi=$(printf "%s\n" "/$TMPF" "/${TMPF}-*.txt")
+        gimode="100644"
+    fi
+    printf "%s %s %s\t%s" $gimode blob $(printf "%s\n" "$newgi" | git hash-object --stdin -t blob -w) .gitignore |
+        git update-index --add --index-info ||
         return
     git update-index --add -- "$TEMPF" "$FCIF" || return
     if test "$dirty"
