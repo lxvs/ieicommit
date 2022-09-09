@@ -274,16 +274,22 @@ Operations:
 
 For help on a specific operation:
     inspurcommit <operation> --help
-
-If no operation is specified, it is used to perform a git commit. Here are
-the steps:
-    1. Use git-add to stage changes.
-    2. Write change history in file $TMPF.
-       If this file does not exist, use command \`inspurcommit' to generate
-       one, and then write change history in it.
-    3. Use command \`inspurcommit' to commit. Arguments, if any, will be
-       passed to git commit.
+    inspurcommit commit --help
 SHOWUSG
+}
+
+commitUsage () {
+cat <<EOF
+Usage:
+    inspurcommit [<options>]
+
+Commit staged changes with messages read from file \`$TMPF'. If this file does
+not exist, it will generate one from template. Fill it in and use this command
+again to commit.
+
+Options will be passed to git-commit; try \`git commit -h' or \`git help commit'
+for more information.
+EOF
 }
 
 purgeUsage () {
@@ -1134,12 +1140,12 @@ main () {
     local -r TMPF=$change_history_name
     local -r OLDF=$old_change_history_name
     local -r FCIF=$fci_file_name
-    local -r op=${1-}
     local -r JG_BC_PATH=${JG_BC_PATH-}
     local -r OS=${OS-}
+    local op=${1-}
     LookupUsage "main" "$@" || exit 0
     case $op in
-    amend|clean|diff|export|init|load|merge|purge|push|template)
+    amend|clean|commit|diff|export|init|load|merge|purge|push|template)
         shift
         ;;
     --version)
@@ -1147,8 +1153,7 @@ main () {
         exit
         ;;
     ''|-*)
-        commitOp "$@"
-        return
+        op=commit
         ;;
     *)
         >&2 Prompt red "error: invalid argument: $op" \
