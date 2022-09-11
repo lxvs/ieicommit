@@ -116,7 +116,7 @@ CheckStage () {
 
 CheckStage_HasTemp () {
     test "$option" = "template" && return
-    git ls-tree --full-tree HEAD -- .gitignore |
+    git ls-tree --full-tree HEAD -- "$TEMPF$EXT" |
         git update-index --index-info ||
         return
     die "error: Template \`$TEMPF$EXT' was staged, and was unstaged by me." \
