@@ -22,6 +22,7 @@ init 命令可以使用参数为模板对应字段设置默认值，如 `--tag E
 
 IMPORTANT: 为保证能正确导出提交历史，此后所有提交动作只能通过此脚本进行。
 
+[#commit]
 == 代码的提交
 
 提交代码步骤：
@@ -76,6 +77,8 @@ TIP: 如果待改正的提交包含模板的改动，应使用 `amendtemplate` �
 amendtemplate:: 如果待改正的提交包含模板的改动，需要使用此操作。除此之外与 `amend` 相同。
 
 clean:: 清理代码中被 override 的文件。
+
+commit:: 此为默认操作，详见 <<commit, 代码的提交>>。
 
 diff:: 使用 Beyond Compare 对比当前改动。如果提供了参数，它们会被传递给 git-difftool。如果要对比已添加（staged）的改动，使用如下命令：
 +
