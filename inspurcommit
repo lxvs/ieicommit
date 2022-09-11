@@ -2,9 +2,10 @@
 set -o nounset
 set -o noglob
 
-template_file_name="ChangeHistoryTemplate.txt"
-change_history_name="ChangeHistory.txt"
+template_file_name="ChangeHistoryTemplate"
+change_history_name="ChangeHistory"
 old_change_history_name="Old$change_history_name"
+change_history_extension=".txt"
 fci_file_name="farewell-commit-id"
 
 CheckInit () {
@@ -28,7 +29,7 @@ CheckInit () {
     done
     tree=$(git ls-tree --full-tree --name-only HEAD) || exit
     printf "%s" "$tree" | grep --quiet "^$FCIF\$" &&
-        printf "%s" "$tree" | grep --quiet "^$TEMPF\$" &&
+        printf "%s" "$tree" | grep --quiet "^$TEMPF$EXT\$" &&
         return
     test "$quiet" && return 1
     >&2 Prompt red \
@@ -108,7 +109,7 @@ CheckStage () {
         return 1
     fi
     git diff-index --name-only --cached HEAD |
-        grep --quiet "^$TEMPF\$" ||
+        grep --quiet "^$TEMPF$EXT\$" ||
         return 0
     CheckStage_HasTemp
 }
@@ -118,10 +119,10 @@ CheckStage_HasTemp () {
     git ls-tree --full-tree HEAD -- .gitignore |
         git update-index --index-info ||
         return
-    die "error: Template \`$TEMPF' was staged, and was unstaged by me." \
+    die "error: Template \`$TEMPF$EXT' was staged, and was unstaged by me." \
         "If you intend to modify the template, stage it again and use command" \
         "\`inspurcommit template'. Otherwise, use \`inspurcommit' again to" \
-        "commit without changing \`$TEMPF'"
+        "commit without changing \`$TEMPF$EXT'"
 }
 
 GetField () {
@@ -163,7 +164,7 @@ Commit () {
     local summary
     local details
     local filelist
-    details=$(grep -v '^#\|^\s*$' "$TMPF")
+    details=$(grep -v '^#\|^\s*$' "$TMPF$EXT")
     ValidateHistory "$details" || return
     summary=$(GetField "$details" "Solution")
     Commit_CheckLastSummary
@@ -198,7 +199,7 @@ Commit_IsNotAmend () {
 
 InitTemplate () {
     local dff dfc
-    dff="$(dirname "$0")/$TEMPF"
+    dff="$(dirname "$0")/$TEMPF$EXT"
     if ! test -e "$dff"
     then
         >&2 Prompt red "failed to find file \`$dff'"
@@ -216,13 +217,13 @@ InitTemplate () {
     dfc=$(SetField "$dfc" "Solution" "$df_slt")
     dfc=$(SetField "$dfc" "SolutionDependency" "$df_dpd")
     dfc=$(SetField "$dfc" "RelatedFiles" "$df_rlf")
-    printf "%s\n" "$dfc" >"$TEMPF"
+    printf "%s\n" "$dfc" >"$TEMPF$EXT"
 }
 
 GenerateTmp () {
-    test -e "$TMPF" && return
-    git cat-file blob HEAD:"$TEMPF" >"$TMPF" || return
-    Prompt yellow "Generated file \`$TMPF'" \
+    test -e "$TMPF$EXT" && return
+    git cat-file blob HEAD:"$TEMPF$EXT" >"$TMPF$EXT" || return
+    Prompt yellow "Generated file \`$TMPF$EXT'" \
         "Write change history in this file and save, and commit again."
     return 1
 }
@@ -271,9 +272,9 @@ commitUsage () {
 cat <<EOF
 usage: inspurcommit [<options>]
 
-Commit staged changes with messages read from file \`$TMPF'. If this file does
-not exist, will be generated from template. Fill it in and use this command
-again to commit.
+Commit staged changes with messages read from file \`$TMPF$EXT'.
+If this file does not exist, will be generated from template. Fill it in and
+use this command again to commit.
 
 Options will be passed to git-commit; try \`git commit -h' or \`git help commit'
 for more information.
@@ -284,7 +285,7 @@ purgeUsage () {
 cat <<EOF
 usage: inspurcommit purge
 
-Remove \`$TMPF' and regenerate one from template.
+Remove \`$TMPF$EXT' and regenerate one from template.
 EOF
 }
 
@@ -303,7 +304,7 @@ amendUsage () {
 cat <<EOF
 usage: inspurcommit amend [<options>]
 
-Amend previous commit with staged changes, messages read from \`$TMPF'
+Amend previous commit with staged changes, messages read from \`$TMPF$EXT'
 Options will be passed to git-commit.
 EOF
 }
@@ -362,7 +363,7 @@ loadUsage () {
 cat <<EOF
 usage: inspurcommit load [<commit-id>]
 
-Read messages of specific <commit-id> to \`$TMPF'.
+Read messages of specific <commit-id> to \`$TMPF$EXT'.
 <commit-id> is the current HEAD if not specified.
 EOF
 }
@@ -677,7 +678,7 @@ exportOp_SetFileName () {
     local curr_h
     test "$chfn" && return
     curr_h=$(git rev-parse --verify --short HEAD) || exit
-    chfn="${TMPF}-${curr_h}.txt"
+    chfn="$TMPF-$curr_h$EXT"
 }
 
 exportOp_Write () {
@@ -1019,13 +1020,13 @@ initOp_CleanUp () {
     test "$(git ls-tree HEAD -- "$FCIF")" &&
         git update-ref -m "$reason" HEAD HEAD^ &&
         git restore --staged --worktree -- \
-        "$OLDF" "$TMPF" "$FCIF" .gitignore
+        "$OLDF" "$TMPF$EXT" "$FCIF" .gitignore
 }
 
 initOp_RenameTmp () {
     local old obj
     local dirty=
-    old=$(git cat-file blob HEAD:"$TMPF" 2>/dev/null) || return 0
+    old=$(git cat-file blob HEAD:"$TMPF$EXT" 2>/dev/null) || return 0
     test "$(git ls-files -- "$OLDF")" && die "error: file \`$OLDF' found in index"
     obj=$(printf "%s\n" "$old" | git hash-object -t blob -w --stdin) ||
         return
@@ -1033,12 +1034,12 @@ initOp_RenameTmp () {
         git update-index --add --index-info ||
         return
     git checkout-index -- "$OLDF" || return
-    git diff-files -q -- "$TMPF" || dirty=1
+    git diff-files -q -- "$TMPF$EXT" || dirty=1
     if test "$dirty"
     then
-        Prompt >&2 y "warning: File \`$TMPF' was kept as is in worktree."
+        Prompt >&2 y "warning: File \`$TMPF$EXT' was kept as is in worktree."
     else
-        git update-index --force-remove -- "$TMPF"
+        git update-index --force-remove -- "$TMPF$EXT"
     fi
 }
 
@@ -1051,16 +1052,16 @@ initOp_Start () {
     InitTemplate || return
     if oldgi=$(git cat-file blob HEAD:.gitignore 2>/dev/null)
     then
-        newgi=$(printf "%s\n" "$oldgi" "/$TMPF" "/${TMPF}-*.txt")
+        newgi=$(printf "%s\n" "$oldgi" "/$TMPF$EXT" "/$TMPF-*$EXT")
         gimode=$(git ls-tree --full-tree --format="%(objectmode)" HEAD -- .gitignore)
     else
-        newgi=$(printf "%s\n" "/$TMPF" "/${TMPF}-*.txt")
+        newgi=$(printf "%s\n" "/$TMPF$EXT" "/$TMPF-*$EXT")
         gimode="100644"
     fi
     printf "%s %s %s\t%s" $gimode blob $(printf "%s\n" "$newgi" | git hash-object --stdin -t blob -w) .gitignore |
         git update-index --add --index-info ||
         return
-    git update-index --add -- "$TEMPF" "$FCIF" || return
+    git update-index --add -- "$TEMPF$EXT" "$FCIF" || return
     if test "$dirty"
     then
         >&2 Prompt y "warning: File .gitignore was kept as is in worktree."
@@ -1077,7 +1078,7 @@ initOp_Start () {
 purgeOp () {
     test $# -eq 0 || die "error: too many arguments"
     CdRoot
-    test ! -e "$TMPF" || rm "$TMPF" || return
+    test ! -e "$TMPF$EXT" || rm "$TMPF$EXT" || return
     GenerateTmp 1>/dev/null || return 0
 }
 
@@ -1091,7 +1092,7 @@ loadOp () {
     CdRoot
     msg=$(git diff-tree --no-patch --format=%b $id | sed '/^RelatedFiles:/,$d')
     test "$msg" || die "error: got an empty result"
-    printf "%s\n" "$msg" "$(grep '^RelatedFiles:' "$TEMPF")" >"$TMPF"
+    printf "%s\n" "$msg" "$(grep '^RelatedFiles:' "$TEMPF$EXT")" >"$TMPF$EXT"
 }
 
 main () {
@@ -1100,6 +1101,7 @@ main () {
     local TEMPF=$template_file_name
     local TMPF=$change_history_name
     local OLDF=$old_change_history_name
+    local EXT=$change_history_extension
     local FCIF=$fci_file_name
     local JG_BC_PATH=${JG_BC_PATH-}
     local OS=${OS-}
