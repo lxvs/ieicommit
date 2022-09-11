@@ -264,12 +264,12 @@ These are all operations used in various situations:
 manipulate current repository
     init        Initialize current repository to use inspurcommit
     template    Commit with template changes
-    clean       Clean up overridden files
 
 work on the current change
     commit      Record changes to the repository
     amend       Amend previous commit
     push        Push local commits to Gerrit for review
+    clean       Clean up overridden files
     merge       Resolve merge conflicts with Beyond Compare
     purge       Regenerate a change history from template
     load        Read a specific commit message to change history
