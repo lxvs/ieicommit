@@ -101,10 +101,26 @@ ValidateHistory () {
 }
 
 CheckStage () {
-    local option=${1-normal}
+    local amend= template=
+    while test $# -ge 1
+    do
+        case $1 in
+        amend)
+            amend=1
+            shift
+            ;;
+        template)
+            template=1
+            shift
+            ;;
+        *)
+            die "error: invalid argument \`$1' for CheckStage"
+            ;;
+        esac
+    done
     if git diff-index --quiet --cached HEAD
     then
-        test "$option" = "amend" && return
+        test "$amend" && return
         Prompt >&2 red "error: nothing staged" "Stage changes to be committed with \`git add'."
         return 1
     fi
@@ -115,7 +131,7 @@ CheckStage () {
 }
 
 CheckStage_HasTemp () {
-    test "$option" = "template" && return
+    test "$template" && return
     git ls-tree --full-tree HEAD -- "$TEMPF$EXT" |
         git update-index --index-info ||
         return
@@ -304,8 +320,23 @@ amendUsage () {
 cat <<EOF
 usage: inspurcommit amend [<options>]
 
-Amend previous commit with staged changes, messages read from \`$TMPF$EXT'
+Amend previous commit with staged changes, messages read from \`$TMPF$EXT'.
+
 Options will be passed to git-commit.
+
+To amend with template changes, use \`amendtemplate' instead.
+EOF
+}
+
+amendtemplateUsage () {
+cat <<EOF
+usage: inspurcommit amendtemplate [<options>]
+
+Amend previous commit with staged changes, messages read from \`$TMPF$EXT'.
+
+Options will be passed to git-commit.
+
+This is for commits including template changes.
 EOF
 }
 
@@ -525,6 +556,14 @@ amendOp () {
     CdRoot
     GenerateTmp || return 0
     CheckStage amend || return
+    Commit --amend "$@"
+}
+
+amendtemplateOp () {
+    CheckInit || return
+    CdRoot
+    GenerateTmp || return 0
+    CheckStage amend template || return
     Commit --amend "$@"
 }
 
@@ -1108,7 +1147,7 @@ main () {
     local op=${1-}
     LookupUsage "main" "$@" || exit 0
     case $op in
-    amend|clean|commit|diff|export|init|load|merge|purge|push|template)
+    amend|amendtemplate|clean|commit|diff|export|init|load|merge|purge|push|template)
         shift
         ;;
     --version)
