@@ -6,9 +6,9 @@
 
  inspurcommit [<操作>]
 
-可选的操作有：amend, clean, diff, export, init, load, merge, purge, push, template。详见 <<operation, 操作>> 章节。
+可选的操作有：amend, clean, commit, diff, export, init, load, merge, purge, push, template。详见 <<operation, 操作>> 章节。
 
-如果没有提供 _操作_，则此命令为用来提交代码，详见 <<commit, 代码的提交>> 章节。
+如果没有提供 _操作_，则执行默认操作 <<op-commit, commit>>。
 
 [#init]
 == 初始化
@@ -79,7 +79,8 @@ amendtemplate:: 如果待改正的提交包含模板的改动，需要使用此�
 
 clean:: 清理代码中被 override 的文件。
 
-commit:: 此为默认操作，详见 <<commit, 代码的提交>>。
+[#op-commit]
+commit:: 当文件 ChangeHistory.txt 不存在时，执行一次此操作会从模板生成文件 ChangeHistory.txt。再次使用（或当 ChangeHistory.txt 已存在）时，此操作会以 _ChangeHistory.txt 的内容_ 和 _当前改动的文件列表_ 为 commit messages 提交当前改动。如有提供参数，将会提交给 https://git-scm.com/docs/git-commit[git-commit^]。
 
 diff:: 使用 Beyond Compare 对比当前改动。如果提供了参数，它们会被传递给 https://git-scm.com/docs/git-difftool[git-difftool^]。如果要对比已添加（staged）的改动，使用如下命令：
 +
