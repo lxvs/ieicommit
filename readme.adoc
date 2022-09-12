@@ -1,15 +1,16 @@
 = Inspur Commit Kit
+:toc:
 
-https://gitlab.com/lzhh/inspurcommit[在 GitLab 查看]
+[#synopsis]
+== 用法
 
-== 用 法
+ inspurcommit [<操作>]
 
- inspurcommit [ <操作> ]
+可选的操作有：amend, clean, diff, export, init, load, merge, purge, push, template。详见 <<operation, 操作>> 章节。
 
-可选的操作有：amend, clean, diff, export, init, load, merge, purge, push, template。详见“操作”章节。
+如果没有提供 _操作_，则此命令为用来提交代码，详见 <<commit, 代码的提交>> 章节。
 
-如果没有提供<操作>，则此命令为用来提交代码，详见“代码的提交”章节。
-
+[#init]
 == 初始化
 
 代码仓库初次使用该脚本时，需在 Git Bash 中执行以下命令进行初始化：
@@ -27,20 +28,20 @@ IMPORTANT: 为保证能正确导出提交历史，此后所有提交动作只能
 
 提交代码步骤：
 
-. 在 Git Bash 中使用 git add 命令添加将要提交的代码改动。
+. 在 Git Bash 中使用 https://git-scm.com/docs/git-add[git-add^] 添加将要提交的代码改动。
 ** 使用 `git add .` 添加当前目录下所有改动（注意末尾的 `.` ）。
 ** 使用 `git add <path>` 按文件名添加改动，可以使用通配符。
 ** 使用 `git add -u` 添加当前目录下的 _修改_ 和 _删除_ 改动，不添加新增的文件。
-. 使用英文填写 ChangeHistory.txt 并保存。模板文件中的空行和以 `#` 开头的行将被忽略。如果代码库里面没有该文件，使用一次命令 `inspurcommit` 会生成文件 ChangeHistory.txt。填写该文件并保存。
-. 使用命令 inspurcommit。如果给此命令提供了参数，它们将会被传递给 `git commit` 。
+. 如果代码库里面没有文件 ChangeHistory.txt，使用一次命令 `inspurcommit` 会生成该文件。使用英文填写 ChangeHistory.txt 并保存。模板文件中的空行和以 `#` 开头的行将被忽略。
+. 使用命令 `inspurcommit` 。如果给此命令提供了参数，它们将会被传递给 https://git-scm.com/docs/git-commit[git-commit^]。
 . 若要把当前分支提交的改动上传至 Gerrit 对应分支，使用命令 `inspurcommit push` 。
 
 TIP: ChangeHistoryTemplate.txt 文件的改动是无法被提交的，如需修改模板，使用命令 `inspurcommit template` 。
 
+[#operation]
 == 操作
 
-amend::
-使用命令 `inspurcommit amend` 来改正上一个提交。用以下几个情况来举例说明使用方法。
+amend:: 使用命令 `inspurcommit amend` 来改正上一个提交。用以下几个情况来举例说明使用方法。
 +
 --
 * 模板文件填写有误
@@ -80,7 +81,7 @@ clean:: 清理代码中被 override 的文件。
 
 commit:: 此为默认操作，详见 <<commit, 代码的提交>>。
 
-diff:: 使用 Beyond Compare 对比当前改动。如果提供了参数，它们会被传递给 git-difftool。如果要对比已添加（staged）的改动，使用如下命令：
+diff:: 使用 Beyond Compare 对比当前改动。如果提供了参数，它们会被传递给 https://git-scm.com/docs/git-difftool[git-difftool^]。如果要对比已添加（staged）的改动，使用如下命令：
 +
  inspurcommit diff --cached
 
@@ -137,6 +138,6 @@ push::
 +
  inspurcommit push [<options> ...] [<branch>]
 +
-将本地提交推送至 Gerrit 的同名分支。如果提供了 <options>，它们将会被传递给 git-push。 如果指定了 <branch>，则推送到 Gerrit 的此分支。
+将本地提交推送至 Gerrit 的同名分支。如果提供了 <options>，它们将会被传递给 https://git-scm.com/docs/git-push[git-push^]。 如果指定了 <branch>，则推送到 Gerrit 的此分支。
 
 template:: 默认情况下提交码时如果包含了模板文件，脚本会自动排除它但仍然提交其余改动。如果要修改模板并提交，需要使用 `template` 操作。
