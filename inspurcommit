@@ -584,7 +584,7 @@ cleanOp () {
     rm "$tmpm"
     toc=$(printf "%s" "$fl" | comm -12 - "$tmpo")
     rm "$tmpo"
-    test "$tor" && printf "%s" "$tor" | xargs -d '\n' git checkout-index --
+    test "$tor" && printf "%s" "$tor" | xargs -d '\n' git checkout-index --force --
     test "$toc" && printf "%s" "$toc" | xargs -d '\n' rm -f --
     return 0
 }
