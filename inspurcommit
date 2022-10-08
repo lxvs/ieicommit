@@ -207,9 +207,14 @@ Commit_CreateRelatedFiles () {
 Commit_IsNotAmend () {
     local chid
     test "$op" != "amend" && return
-    chid=$(git diff-tree --no-patch --format=%b HEAD | grep '^Change-Id:')
-    test "$chid" || >&2 Prompt y "warning: Failed to get Change-ID."
-    git commit "$@" -m "$summary" -m "$details" -m "$chid"
+    if git rev-parse --quiet --verify --no-revs HEAD^2
+    then
+        git commit --no-edit "$@" || exit
+    else
+        chid=$(git diff-tree --no-patch --format=%b HEAD | grep '^Change-Id:')
+        test "$chid" || >&2 Prompt y "warning: Failed to get Change-ID."
+        git commit -m "$summary" -m "$details" -m "$chid" "$@" || exit
+    fi
     return 1
 }
 
