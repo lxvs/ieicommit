@@ -573,14 +573,17 @@ amendtemplateOp () {
 }
 
 cleanOp () {
-    local fl tor toc
+    local fl tor toc tmpm tmpo
     CdRoot
-    fl=$(grep -rho --include=*.cif ';\s*"[^"]\+[^" ]' . |
-        sed -e 's/^;\s*"//' \
-            -e 's/\\/\//g' |
-        sort -u)
-    tor=$(printf "%s" "$fl" | comm -12 - <(git ls-files --modified | sort))
-    toc=$(printf "%s" "$fl" | comm -12 - <(git ls-files --others | sort))
+    fl=$(grep -rho --include=*.cif ';\s*"[^"]\+[^" ]' . | sed -e 's/^;\s*"//' -e 's/\\/\//g' | sort -u)
+    tmpm=$(mktemp) || return
+    tmpo=$(mktemp) || return
+    git ls-files --modified | sort >"$tmpm"
+    git ls-files --others | sort >"$tmpo"
+    tor=$(printf "%s" "$fl" | comm -12 - "$tmpm")
+    rm "$tmpm"
+    toc=$(printf "%s" "$fl" | comm -12 - "$tmpo")
+    rm "$tmpo"
     test "$tor" && printf "%s" "$tor" | xargs -d '\n' git checkout-index --
     test "$toc" && printf "%s" "$toc" | xargs -d '\n' rm -f --
     return 0
