@@ -4,8 +4,8 @@ set -o noglob
 
 template_file_name="ChangeHistoryTemplate"
 change_history_name="ChangeHistory"
-old_change_history_name="Old$change_history_name"
 change_history_extension=".txt"
+old_change_history_name="Old$change_history_name$change_history_extension"
 fci_file_name="farewell-commit-id"
 
 CheckInit () {
