@@ -1,3 +1,7 @@
+0.14.2 - 2022-12-29
+
+	* Fix that there is no old change history in exported one
+
 0.14.1 - 2022-10-08
 
 	* Fix that `clean' does not work
