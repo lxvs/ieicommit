@@ -718,7 +718,7 @@ exportOp_GetContent () {
     local fci
     fci=$(git cat-file blob HEAD:"$FCIF" 2>/dev/null) || return
     fcic=$(git rev-list HEAD ^$fci | tail -n1)
-    ch_c=$(FilterOut "$(git rev-list --no-commit-header --format=%b --no-merges HEAD ^$fcic | sed '/^Change-Id:\s\w\{41\}$/,+1d')" "$fltrs")
+    ch_c=$(FilterOut "$(git --no-pager log --no-color --format=%b --no-merges HEAD ^$fcic | sed '/^Change-Id:\s\w\{41\}$/,+1d')" "$fltrs")
 }
 
 exportOp_SetFileName () {
