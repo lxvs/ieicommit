@@ -27,10 +27,13 @@ CheckInit () {
             ;;
         esac
     done
-    tree=$(git ls-tree --full-tree --name-only HEAD) || exit
-    printf "%s" "$tree" | grep --quiet "^$FCIF\$" &&
-        printf "%s" "$tree" | grep --quiet "^$TEMPF$EXT\$" &&
-        return
+    if git rev-parse --verify --quiet --no-revs HEAD
+    then
+        tree=$(git ls-tree --full-tree --name-only HEAD) || exit
+        printf "%s" "$tree" | grep --quiet "^$FCIF\$" &&
+            printf "%s" "$tree" | grep --quiet "^$TEMPF$EXT\$" &&
+            return
+    fi
     test "$quiet" && return 1
     >&2 Prompt red \
         "error: This repository haven't been initialized." \
