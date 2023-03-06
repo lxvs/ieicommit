@@ -121,6 +121,11 @@ CheckStage () {
             ;;
         esac
     done
+    if ! git rev-parse --verify --quiet --no-revs HEAD
+    then
+        test "$(git status --porcelain | grep '^A')"
+        return
+    fi
     if git diff-index --quiet --cached HEAD
     then
         test "$amend" && return
