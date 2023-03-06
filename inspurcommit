@@ -598,7 +598,7 @@ cleanOp () {
 }
 
 exportOp () {
-    local fltrs fcic ch_c
+    local fltrs ch_c
     local chfn=
     CheckInit || return
     CdRoot
@@ -723,10 +723,15 @@ exportOp_Parse () {
 }
 
 exportOp_GetContent () {
-    local fci
+    local fci fci_range
     fci=$(git cat-file blob HEAD:"$FCIF" 2>/dev/null) || return
-    fcic=$(git rev-list HEAD ^$fci | tail -n1)
-    ch_c=$(FilterOut "$(git --no-pager log --no-color --format=%b --no-merges HEAD ^$fcic | sed '/^Change-Id:\s\w\{41\}$/,+1d')" "$fltrs")
+    if test "$fci" = "0"
+    then
+        fci_range="^$(git rev-list HEAD | tail -n1)"
+    else
+        fci_range="^$(git rev-list HEAD ^$fci | tail -n1)"
+    fi
+    ch_c=$(FilterOut "$(git --no-pager log --no-color --format=%b --no-merges HEAD $fci_range | sed '/^Change-Id:\s\w\{41\}$/,+1d')" "$fltrs")
 }
 
 exportOp_SetFileName () {
