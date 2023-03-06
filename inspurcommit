@@ -1072,6 +1072,11 @@ initOp_Parse1 () {
 
 initOp_CleanUp () {
     local reason="cleaning up after failed to initialize inspurcommit"
+    if ! git rev-parse --verify --quiet --no-revs HEAD
+    then
+        rm -- "$FCIF" "$TEMPF$EXT"
+        return
+    fi
     test "$(git ls-tree HEAD -- "$FCIF")" &&
         git update-ref -m "$reason" HEAD HEAD^ &&
         git restore --staged --worktree -- \
@@ -1102,7 +1107,12 @@ initOp_Start () {
     local init_title="INSPURCOMMIT-INIT"
     local init_msg oldgi newgi
     local dirty=
-    git rev-parse --verify HEAD >"$FCIF" || return
+    if git rev-parse --verify --quiet --no-revs HEAD
+    then
+        git rev-parse --verify HEAD >"$FCIF" || return
+    else
+        printf "0" >"$FCIF" || return
+    fi
     git diff-files --quiet -- .gitignore || dirty=1
     InitTemplate || return
     if oldgi=$(git cat-file blob HEAD:.gitignore 2>/dev/null)
