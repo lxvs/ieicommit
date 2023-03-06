@@ -643,14 +643,14 @@ exportOp_Parse_Again () {
         ;;
     exclude=*,2)
         eqeff="${eff%%=*}"
-        eqval="${eff#$eqeff=}"
+        eqval="${eff#"$eqeff="}"
         test "$eqval" || die "error: switch \`$eqeff' requires a value"
         fltrs="${fltrs-},$eqval"
         ;;
     *,1)
         while test ${#eff} -ge 1
         do
-            flag="${eff:0:1}"
+            flag="$(printf "%s" "$eff" | cut -c 1)"
             eff="${eff#?}"
             case $flag in
             a)
@@ -887,7 +887,7 @@ initOp_Parse2 () {
     tag=*)
         sn=1
         val=${eff#tag=}
-        eff=${eff%=$val}
+        eff=${eff%"=$val"}
         test "$val" || die "error: switch \`$eff' requires a value"
         df_tag=$val
         ;;
@@ -898,7 +898,7 @@ initOp_Parse2 () {
     label=*)
         sn=1
         val=${eff#label=}
-        eff=${eff%=$val}
+        eff=${eff%"=$val"}
         test "$val" || die "error: switch \`$eff' requires a value"
         df_lbl=$val
         ;;
@@ -909,7 +909,7 @@ initOp_Parse2 () {
     issue=*)
         sn=1
         val=${eff#issue=}
-        eff=${eff%=$val}
+        eff=${eff%"=$val"}
         test "$val" || die "error: switch \`$eff' requires a value"
         df_iss=$val
         ;;
@@ -920,7 +920,7 @@ initOp_Parse2 () {
     scope=*)
         sn=1
         val=${eff#scope=}
-        eff=${eff%=$val}
+        eff=${eff%"=$val"}
         test "$val" || die "error: switch \`$eff' requires a value"
         df_scp=$val
         ;;
@@ -931,7 +931,7 @@ initOp_Parse2 () {
     severity=*)
         sn=1
         val=${eff#severity=}
-        eff=${eff%=$val}
+        eff=${eff%"=$val"}
         test "$val" || die "error: switch \`$eff' requires a value"
         df_svr=$val
         ;;
@@ -942,7 +942,7 @@ initOp_Parse2 () {
     category=*)
         sn=1
         val=${eff#category=}
-        eff=${eff%=$val}
+        eff=${eff%"=$val"}
         test "$val" || die "error: switch \`$eff' requires a value"
         df_ctg=$val
         ;;
@@ -953,7 +953,7 @@ initOp_Parse2 () {
     symptom=*)
         sn=1
         val=${eff#symptom=}
-        eff=${eff%=$val}
+        eff=${eff%"=$val"}
         test "$val" || die "error: switch \`$eff' requires a value"
         df_spt=$val
         ;;
@@ -964,7 +964,7 @@ initOp_Parse2 () {
     rootcause=*)
         sn=1
         val=${eff#rootcause=}
-        eff=${eff%=$val}
+        eff=${eff%"=$val"}
         test "$val" || die "error: switch \`$eff' requires a value"
         df_rtc=$val
         ;;
@@ -975,7 +975,7 @@ initOp_Parse2 () {
     solution=*)
         sn=1
         val=${eff#solution=}
-        eff=${eff%=$val}
+        eff=${eff%"=$val"}
         test "$val" || die "error: switch \`$eff' requires a value"
         df_spt=$val
         ;;
@@ -986,14 +986,14 @@ initOp_Parse2 () {
     dependency=*)
         sn=1
         val=${eff#dependency=}
-        eff=${eff%=$val}
+        eff=${eff%"=$val"}
         test "$val" || die "error: switch \`$eff' requires a value"
         df_dpd=$val
         ;;
     solution-dependency=*)
         sn=1
         val=${eff#solution-dependency=}
-        eff=${eff%=$val}
+        eff=${eff%"=$val"}
         test "$val" || die "error: switch \`$eff' requires a value"
         df_dpd=$val
         ;;
@@ -1004,14 +1004,14 @@ initOp_Parse2 () {
     files=*)
         sn=1
         val=${eff#files=}
-        eff=${eff%=$val}
+        eff=${eff%"=$val"}
         test "$val" || die "error: switch \`$eff' requires a value"
         df_rlf=$val
         ;;
     related-files=*)
         sn=1
         val=${eff#related-files=}
-        eff=${eff%=$val}
+        eff=${eff%"=$val"}
         test "$val" || die "error: switch \`$eff' requires a value"
         df_rlf=$val
         ;;
@@ -1026,7 +1026,7 @@ initOp_Parse1 () {
     if test ${#eff} -gt 1
     then
         sn=1
-        sw=${eff:0:1}
+        sw="$(printf "%s" "$eff" | cut -c 1)"
         val=${eff#?}
     elif test $# -ge 2
     then
