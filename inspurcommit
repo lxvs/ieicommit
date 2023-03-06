@@ -1166,7 +1166,7 @@ loadOp () {
 }
 
 main () {
-    local version="0.14.3"
+    local version="0.15.0"
     local author="Liu, Zhao-hui <liuzhaohui@inspur.com>"
     local TEMPF=$template_file_name
     local TMPF=$change_history_name
