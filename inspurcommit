@@ -27,10 +27,13 @@ CheckInit () {
             ;;
         esac
     done
-    tree=$(git ls-tree --full-tree --name-only HEAD) || exit
-    printf "%s" "$tree" | grep --quiet "^$FCIF\$" &&
-        printf "%s" "$tree" | grep --quiet "^$TEMPF$EXT\$" &&
-        return
+    if git rev-parse --verify --quiet --no-revs HEAD
+    then
+        tree=$(git ls-tree --full-tree --name-only HEAD) || exit
+        printf "%s" "$tree" | grep --quiet "^$FCIF\$" &&
+            printf "%s" "$tree" | grep --quiet "^$TEMPF$EXT\$" &&
+            return
+    fi
     test "$quiet" && return 1
     >&2 Prompt red \
         "error: This repository haven't been initialized." \
@@ -118,6 +121,11 @@ CheckStage () {
             ;;
         esac
     done
+    if ! git rev-parse --verify --quiet --no-revs HEAD
+    then
+        test "$(git status --porcelain | grep '^A')"
+        return
+    fi
     if git diff-index --quiet --cached HEAD
     then
         test "$amend" && return
@@ -590,7 +598,7 @@ cleanOp () {
 }
 
 exportOp () {
-    local fltrs fcic ch_c
+    local fltrs ch_c
     local chfn=
     CheckInit || return
     CdRoot
@@ -715,10 +723,15 @@ exportOp_Parse () {
 }
 
 exportOp_GetContent () {
-    local fci
+    local fci fci_range
     fci=$(git cat-file blob HEAD:"$FCIF" 2>/dev/null) || return
-    fcic=$(git rev-list HEAD ^$fci | tail -n1)
-    ch_c=$(FilterOut "$(git --no-pager log --no-color --format=%b --no-merges HEAD ^$fcic | sed '/^Change-Id:\s\w\{41\}$/,+1d')" "$fltrs")
+    if test "$fci" = "0"
+    then
+        fci_range="^$(git rev-list HEAD | tail -n1)"
+    else
+        fci_range="^$(git rev-list HEAD ^$fci | tail -n1)"
+    fi
+    ch_c=$(FilterOut "$(git --no-pager log --no-color --format=%b --no-merges HEAD $fci_range | sed '/^Change-Id:\s\w\{41\}$/,+1d')" "$fltrs")
 }
 
 exportOp_SetFileName () {
@@ -1064,6 +1077,11 @@ initOp_Parse1 () {
 
 initOp_CleanUp () {
     local reason="cleaning up after failed to initialize inspurcommit"
+    if ! git rev-parse --verify --quiet --no-revs HEAD
+    then
+        rm -- "$FCIF" "$TEMPF$EXT"
+        return
+    fi
     test "$(git ls-tree HEAD -- "$FCIF")" &&
         git update-ref -m "$reason" HEAD HEAD^ &&
         git restore --staged --worktree -- \
@@ -1094,7 +1112,12 @@ initOp_Start () {
     local init_title="INSPURCOMMIT-INIT"
     local init_msg oldgi newgi
     local dirty=
-    git rev-parse --verify HEAD >"$FCIF" || return
+    if git rev-parse --verify --quiet --no-revs HEAD
+    then
+        git rev-parse --verify HEAD >"$FCIF" || return
+    else
+        printf "0" >"$FCIF" || return
+    fi
     git diff-files --quiet -- .gitignore || dirty=1
     InitTemplate || return
     if oldgi=$(git cat-file blob HEAD:.gitignore 2>/dev/null)
