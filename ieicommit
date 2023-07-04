@@ -142,6 +142,13 @@ CheckStage_HasTemp () {
     git ls-tree --full-tree HEAD -- "$TEMPF$EXT" |
         git update-index --index-info ||
         return
+    test "$amend" &&
+        die "error: template \`$TEMPF$EXT' staged" \
+            "Now it is unstaged by ieicommit." \
+            " * If you intend to modify the template, git-add it again, and use command" \
+            "   \`ieicommit amendtemplate' to amend last commit with template changes." \
+            " * Otherwise, use \`ieicommit amend' again to amend last commit without changing" \
+            "   the template."
     die "error: template \`$TEMPF$EXT' staged" \
         "Now it is unstaged by ieicommit." \
         " * If you intend to modify the template, git-add it again, and use command" \
