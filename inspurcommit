@@ -448,17 +448,25 @@ EOF
 }
 
 LookupUsage () {
-    local argument
+    local op
     test "$#" -le 1 && return
-    argument=$2
-    if test "$argument" = "-?" ||
-        test "$argument" = "-h" ||
-        test "$argument" = "--help" ||
-        test "$argument" = "--usage"
-    then
-        ${1}Usage
-        return 1
-    fi
+    op=$1
+    shift
+    while test $# -ge 1
+    do
+        case $1 in
+        -h|--help|--usage|-\?)
+            ${op}Usage
+            return 1
+            ;;
+        -*)
+            shift
+            ;;
+        *)
+            break
+            ;;
+        esac
+    done
     return 0
 }
 
