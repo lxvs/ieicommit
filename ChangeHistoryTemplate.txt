@@ -3,19 +3,19 @@
 # Tag# is the codebase version such as '5.19_CedarIslandCrb_0ACMT_013'
 Tag#: 
 
-# Label# example: Inspur-LZH20210709V001
+# Label# example: XCradle-LZH20210709V001
 Label#: 
 
 # Write "None" if not applicable.
 Issue#: 
 
-# Scope examples: ALL, Standard, Tencent, BaiDu, ByteDance, NF5260M7
+# Scope examples: All, Standard
 Scope: 
 
-# Severity options: High, Middle, Normal, Low
+# Severity options: High, Medium, Low
 Severity: 
 
-# Category examples: Redfish/Improvement, SMBIOS/Bugfixed, PCIe/NewFeature
+# Category examples: Redfish/Improvement, SMBIOS/Bugfix, PCIe/NewFeature
 Category: 
 
 # If the commit is not about an issue, write 'None'.
@@ -24,12 +24,8 @@ Symptom:
 # If the commit is not about an issue, write 'None'.
 RootCause: 
 
-# If your solution is too long, better write it as multiple lines, and
-# write a summary in first line.
-# Example:
-# Solution: Fix a 0x31 hang issue
-#           Set token HANG_MODE from Enabled to Disabled.
-#           Set token HANG_POINT from 0x31 to 0.
+# If your solution is longer than 50 characters, write it as multiple lines,
+# and write a summary (shorter than 50 characters) in the first line.
 Solution: 
 
 # Is your solution based on other's? Write the label# or 'None'
@@ -38,4 +34,4 @@ SolutionDependency:
 # Related files list will be generated automatically.
 # If you want to write it manually, clear the words after 'RelatedFiles:',
 # and write the file list below (Use '/' as path seperator).
-RelatedFiles:(Auto Generate)
+RelatedFiles: (auto generate)

@@ -1,10 +1,10 @@
-= Inspur Commit Kit
+= IEICOMMIT
 :toc:
 
 [#synopsis]
 == 用法
 
- inspurcommit [<操作>]
+ ieicommit [<操作>]
 
 可选的操作有：amend, clean, commit, diff, export, init, load, merge, purge, push, template。详见 <<operation, 操作>> 章节。
 
@@ -15,9 +15,9 @@
 
 代码仓库初次使用该脚本时，需在 Git Bash 中执行以下命令进行初始化：
 
- inspurcommit init [<options>]
+ ieicommit init [<options>]
 
-此动作是针对代码库进行的，每个代码库只需要初始化使用一次。只要有一位成员进行了初始化动作 _并上传_ 至 Gerrit，其他成员下载到的代码即是已初始化完成的，不需要再次进行初始化。
+此动作是针对代码库进行的，每个代码库只需要初始化使用一次。只要有一位成员进行了初始化动作并推送至 Gerrit 、完成审批，其他成员下载到的代码即是已初始化完成的，不需要再次进行初始化。
 
 init 命令可以使用参数为模板对应字段设置默认值，如 `--tag EXAMPLE_TAG` 参数可将模板中 `Tag#` 字段内容设置为 `EXAMPLE_TAG`。参数详细信息及“初始化”所做的操作请见“操作”章节。
 
@@ -28,41 +28,46 @@ IMPORTANT: 为保证能正确导出提交历史，此后所有提交动作只能
 
 提交代码步骤：
 
-. 在 Git Bash 中使用 https://git-scm.com/docs/git-add[git-add^] 添加将要提交的代码改动。
+. 在 Git Bash 中使用 `git status` 命令可以查看当前工作区状态。
+. 使用 `ieicommit clean` 命令可以清理被 overridden 的改动。
+. 使用 https://git-scm.com/docs/git-add[git-add^] 添加将要提交的代码改动。
 ** 使用 `git add .` 添加当前目录下所有改动（注意末尾的 `.` ）。
 ** 使用 `git add <path>` 按文件名添加改动，可以使用通配符。
 ** 使用 `git add -u` 添加当前目录下的 _修改_ 和 _删除_ 改动，不添加新增的文件。
-. 如果代码库里面没有文件 ChangeHistory.txt，使用一次命令 `inspurcommit` 会生成该文件。使用英文填写 ChangeHistory.txt 并保存。模板文件中的空行和以 `#` 开头的行将被忽略。
-. 使用命令 `inspurcommit` 。如果给此命令提供了参数，它们将会被传递给 https://git-scm.com/docs/git-commit[git-commit^]。
-. 若要把当前分支提交的改动上传至 Gerrit 对应分支，使用命令 `inspurcommit push` 。
+. 如果代码库里面没有文件 ChangeHistory.txt，使用命令 `ieicommit purge` 生成该文件。
+. 使用英文填写 ChangeHistory.txt 并保存。模板文件中的空行和以 `#` 开头的行将被忽略。
+. 其中末尾的 `RelatedFiles:` 后方如有任意非空内容，则改动文件列表会自动生成。如果改动涉及文件太多（如上百个），则可以删除 RelatedFiles: 后方的内容，在下方手动简要列出改动文件概要，或直接留空。
+. 使用命令 `ieicommit` 。如果给此命令提供了参数，它们将会被传递给 https://git-scm.com/docs/git-commit[git-commit^]。
+. 若要把当前分支提交的改动上传至 Gerrit 对应的审批分支，使用命令 `ieicommit push` ；命令后面加上分支名可以指定推送至 Gerrit 的哪个分支。
 
-TIP: ChangeHistoryTemplate.txt 文件的改动是无法被提交的，如需修改模板，使用命令 `inspurcommit template` 。
+TIP: ChangeHistoryTemplate.txt 文件的改动是无法被提交的，如需修改模板，使用 <<op-template, template>> 或 <<op-amendtemplate, amendtemplate>> 操作 。
 
 [#operation]
 == 操作
 
-amend:: 使用命令 `inspurcommit amend` 来改正上一个提交。用以下几个情况来举例说明使用方法。
+amend:: 使用命令 `ieicommit amend` 来改正上一个提交。对于已经 push（但尚未完成审批）的 commit，amend 之后需要再次 push。对于已经完成审批的 commit，无法进行 amend。
++
+用以下几个情况来举例说明使用方法。
 +
 --
-* 模板文件填写有误
+* 修改历史填写有误
 .. 修正 ChangeHistory.txt 文件，并保存
-.. 执行命令 `inspurcommit amend`
-.. 确认无误后执行命令 `inspurcommit push`
+.. 执行命令 `ieicommit amend`
+.. 确认无误后执行命令 `ieicommit push`
 * 提交的代码内容有误
 .. 修正有误的代码，并保存
-.. 使用命令 `git add <文件路径>`
-.. 如果需要更改 ChangeHistory.txt，更改并保存。
-.. 使用命令 `inspurcommit amend`
-.. 确认无误后执行命令 `inspurcommit push`
+.. 参考 <<commit, 代码的提交>> 章节，选择合适的 `git add` 命令添加改动
+.. 如果需要更改 ChangeHistory.txt，更改并保存
+.. 使用命令 `ieicommit amend`
+.. 确认无误后执行命令 `ieicommit push`
 * 错误地提交了本不应提交的文件
-.. 使用命令 `git restore -s HEAD^ -SW <文件路径>`
-.. 使用命令 `inspurcommit amend`
-.. 确认无误后执行命令 `inspurcommit push`
+.. 使用命令 `git restore -s HEAD~1 -S <文件路径>` （如果提示 restore 不是一个 git 命令，使用 `git checkout HEAD~1 <文件路径>` ）。
+.. 使用命令 `ieicommit amend`
+.. 确认无误后执行命令 `ieicommit push`
 * 错误地提交了新文件
-.. 删除错误提交的新文件
-.. 使用命令 git add <文件路径>
-.. 使用命令 inspurcommit amend。
-.. 确认无误后执行命令 inspurcommit push
+.. 使用命令 `git rm -r --cached <文件路径>`
+.. 使用命令 `ieicommit amend`
+.. 确认无误后执行命令 `ieicommit push`
 --
 +
 [TIP]
@@ -75,28 +80,40 @@ amend:: 使用命令 `inspurcommit amend` 来改正上一个提交。用以下�
 +
 TIP: 如果待改正的提交包含模板的改动，应使用 `amendtemplate` 操作。
 
+[#op-amendtemplate]
 amendtemplate:: 如果待改正的提交包含模板的改动，需要使用此操作。除此之外与 `amend` 相同。
 
 clean:: 清理代码中被 override 的文件。
 
 [#op-commit]
-commit:: 当文件 ChangeHistory.txt 不存在时，执行一次此操作会从模板生成文件 ChangeHistory.txt。再次使用（或当 ChangeHistory.txt 已存在）时，此操作会以 _ChangeHistory.txt 的内容_ 和 _当前改动的文件列表_ 为 commit messages 提交当前改动。如有提供参数，将会提交给 https://git-scm.com/docs/git-commit[git-commit^]。
+commit:: 当 ChangeHistory.txt 已存在时，此操作会以 _ChangeHistory.txt 的内容_ 和 _当前改动的文件列表_ 为 commit messages 提交当前改动。如有提供参数，将会传递给 https://git-scm.com/docs/git-commit[git-commit^]。
++
+[TIP]
+====
+当文件 ChangeHistory.txt 不存在时，此操作与 <<op-purge, purge>> 操作等效——会生成一份新的 ChangeHistory.txt。
+
+推荐的做法是使用 purge（而不是 commit）来生成 ChangeHistory.txt，以避免 ChangeHistory.txt 已存在时意外提交。
+====
++
+TIP: ChangeHistoryTemplate.txt 文件的改动是无法被提交的，如需修改模板，使用 <<op-template, template>> 操作。
 
 diff:: 使用 Beyond Compare 对比当前改动。如果提供了参数，它们会被传递给 https://git-scm.com/docs/git-difftool[git-difftool^]。如果要对比已添加（staged）的改动，使用如下命令：
 +
- inspurcommit diff --cached
+ ieicommit diff --cached
 
 export::
 +
- inspurcommit export [-a|--all] [{-x|--exclude} <filter>,...] [--] [<filename>]
+ ieicommit export [-a|--all] [{-x|--exclude} <filter>,...] [--] [<filename>]
 +
-导出一份 change-history 到 `ChangeHistory-<hash>.txt`，`<hash>` 表示当前 commit ID，不包含 _scope_ 字段（除非使用了 `--all` 参数）。
+导出一份 change history，不包含 _scope_ 字段（除非使用了 `--all` 参数）。
 +
 如果指定了 --exclude <filter> 参数，则包含 _scope_ 字段，但会排除所有指定的 <filter>。多个 <filter> 用英文逗号 (`,`) 分隔。如 `-x tag#,scope` 。
 +
+导出的文件将会生成在代码库根目录。如果没有指定 `<filename>` ，则使用缺省文件名 `ChangeHistory-<hash>.txt` ，`<hash>` 表示当前的 commit ID。
++
 TIP: `--exclude` 隐含 `--all` 。
 
-init:: 当一个代码仓库开始使用此脚本提交之前，需要用一次 `inspurcommit init` 命令以标示一个临界点，未来使用 export 或 exportall 操作进行导出时，将只会导出此临界点之后的提交历史。
+init:: 当一个代码仓库开始使用此脚本提交之前，需要用一次 `ieicommit init` 命令标示一个临界点，以使脚本可以正确地导出全部的改动历史。
 +
 此操作支持以下参数：
 +
@@ -114,7 +131,7 @@ init:: 当一个代码仓库开始使用此脚本提交之前，需要用一次 
 +
 例如，
 +
- inspurcommit init -t "5.19_CedarIslandCrb_0ACMT_013" -d "None"
+ ieicommit init -t "5.19_CedarIslandCrb_0ACMT_013" -d "None"
 +
 上述命令会将模板的 tag# 设为 5.19_CedarIslandCrb_0ACMT_013，将 SolutionDependency 设为 None。
 +
@@ -126,19 +143,27 @@ init:: 当一个代码仓库开始使用此脚本提交之前，需要用一次 
 . 将默认模板放入代码库根目录，如果提供了参数，则根据参数修改模板
 . 将临界点 commit ID 写入文件 farewell-commit-id
 . 将 /ChangeHistory.txt 和 /ChangeHistory-*.txt 加入 .gitignore
-. 提交上述改动，生成一条标题为 INSPURCOMMIT-INIT 的 commit
+. 提交上述改动，生成一条标题为 _IEICOMMIT-INIT_ 的 commit
 ====
 
-load:: 从指定的 commit 载入 message 内容到 ChangeHistory.txt，如果没有指定 commit，则从当前的 commit 载入。
+load:: 从指定的 commit 载入 messages 内容到 ChangeHistory.txt，如果没有指定 `<commit-id>` ，则从当前的 commit （即 HEAD） 载入。
 
-merge:: 使用 Beyond Compare 解决合并时的冲突。如果要解决指定文件的冲突，在后面加上文件名。
+merge:: 使用 Beyond Compare 解决冲突。如果要解决指定文件的冲突，在后面加上文件名。
 
-purge:: 移除并重新生成一份 ChangeHistory.txt。
+[#op-purge]
+purge::
++
+ ieicommit purge [-H|--head]
++
+移除并重新生成一份 ChangeHistory.txt。
++
+如果指定了 `-H` 或 `--head` ，从 HEAD（而不是 index）生成。
 
 push::
 +
- inspurcommit push [<options> ...] [<branch>]
+ ieicommit push [<options> ...] [<branch>]
 +
-将本地提交推送至 Gerrit 的同名分支。如果提供了 <options>，它们将会被传递给 https://git-scm.com/docs/git-push[git-push^]。 如果指定了 <branch>，则推送到 Gerrit 的此分支。
+将本地提交推送至 Gerrit 的同名审查分支（ `refs/for/*` ）。如果提供了 <options>，它们将会被传递给 https://git-scm.com/docs/git-push[git-push^]。 如果指定了 <branch>，则推送到 Gerrit 的此审查分支。
 
-template:: 默认情况下提交码时如果包含了模板文件，脚本会自动排除它但仍然提交其余改动。如果要修改模板并提交，需要使用 `template` 操作。
+[#op-template]
+template:: 默认情况下，提交时如果包含了模板文件，脚本会将其 unstage（git add 的反向操作）并中止。如果要修改模板并提交，需要再次 git add 模板文件，并使用 template 操作进行提交。

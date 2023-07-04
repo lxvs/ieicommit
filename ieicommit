@@ -37,7 +37,7 @@ CheckInit () {
     test "$quiet" && return 1
     >&2 Prompt red \
         "error: This repository haven't been initialized." \
-        "Use command \`inspurcommit init --help' for help."
+        "Use command \`ieicommit init --help' for help."
     return 1
 }
 
@@ -142,10 +142,11 @@ CheckStage_HasTemp () {
     git ls-tree --full-tree HEAD -- "$TEMPF$EXT" |
         git update-index --index-info ||
         return
-    die "error: Template \`$TEMPF$EXT' was staged, and was unstaged by me." \
-        "If you intend to modify the template, stage it again and use command" \
-        "\`inspurcommit template'. Otherwise, use \`inspurcommit' again to" \
-        "commit without changing \`$TEMPF$EXT'"
+    die "error: template \`$TEMPF$EXT' staged" \
+        "Now it is unstaged by ieicommit." \
+        " * If you intend to modify the template, git-add it again, and use command" \
+        "   \`ieicommit template' to commit with template changes." \
+        " * Otherwise, use \`ieicommit' again to commit without changing the template."
 }
 
 GetField () {
@@ -259,7 +260,7 @@ GenerateTmp () {
 ShowLogo () {
 cat <<EOF
 
-    inspurcommit $version
+    ieicommit $version
     $author
 
 EOF
@@ -267,14 +268,14 @@ EOF
 
 ShowUsage () {
 cat <<EOF
-usage: inspurcommit [<operation>]
+usage: ieicommit [<operation>]
 
 Operation is \`commit' if not specified.
 
 These are all operations used in various situations:
 
 manipulate current repository
-    init        Initialize current repository to use inspurcommit
+    init        Initialize current repository to use ieicommit
     template    Commit with template changes
 
 work on the current change
@@ -291,14 +292,14 @@ examine things
     export      Export a full change history
 
 get detailed help for a specific operation:
-    inspurcommit <operation> --help
-    inspurcommit commit --help
+    ieicommit <operation> --help
+    ieicommit commit --help
 EOF
 }
 
 commitUsage () {
 cat <<EOF
-usage: inspurcommit [<options>]
+usage: ieicommit [<options>]
 
 Commit staged changes with messages read from file \`$TMPF$EXT'.
 If this file does not exist, will be generated from template. Fill it in and
@@ -311,7 +312,7 @@ EOF
 
 purgeUsage () {
 cat <<EOF
-usage: inspurcommit purge [-H|--head]
+usage: ieicommit purge [-H|--head]
 
 Remove \`$TMPF$EXT' and regenerate one from template.
 
@@ -321,7 +322,7 @@ EOF
 
 pushUsage () {
 cat <<EOF
-usage: inspurcommit push [<options>] [<branch>]
+usage: ieicommit push [<options>] [<branch>]
 
 Push local commits to Gerrit for review. Default <branch> is the current one.
 Options will be passed to git-push. This command is equivalent to:
@@ -332,7 +333,7 @@ EOF
 
 amendUsage () {
 cat <<EOF
-usage: inspurcommit amend [<options>]
+usage: ieicommit amend [<options>]
 
 Amend previous commit with staged changes, messages read from \`$TMPF$EXT'.
 
@@ -344,7 +345,7 @@ EOF
 
 amendtemplateUsage () {
 cat <<EOF
-usage: inspurcommit amendtemplate [<options>]
+usage: ieicommit amendtemplate [<options>]
 
 Amend previous commit with staged changes, messages read from \`$TMPF$EXT'.
 
@@ -356,7 +357,7 @@ EOF
 
 cleanUsage () {
 cat <<EOF
-usage: inspurcommit clean
+usage: ieicommit clean
 
 Clean up overridden files.
 EOF
@@ -364,7 +365,7 @@ EOF
 
 exportUsage () {
 cat <<EOF
-usage: inspurcommit export [<options>] [--] [<filename>]
+usage: ieicommit export [<options>] [--] [<filename>]
 
 Export a change history without \`scope' field, unless \`--all' is specified.
 
@@ -376,7 +377,7 @@ EOF
 
 templateUsage () {
 cat <<EOF
-usage: inspurcommit template [<options>]
+usage: ieicommit template [<options>]
 
 Normally, changes of the template cannot be committed, in case it is changed
 by accident. When you intend to change the template, you can use this
@@ -386,9 +387,9 @@ EOF
 
 initUsage () {
 cat <<EOF
-usage: inspurcommit init [<options>]
+usage: ieicommit init [<options>]
 
-Initialize current repository in order to use inspurcommit.
+Initialize current repository in order to use ieicommit.
 
     -t, --tag           Specify content of tag# in template
     -l, --label         Specify content of label in template
@@ -406,7 +407,7 @@ EOF
 
 loadUsage () {
 cat <<EOF
-usage: inspurcommit load [<commit-id>]
+usage: ieicommit load [<commit-id>]
 
 Read messages of specific <commit-id> to \`$TMPF$EXT'.
 <commit-id> is the current HEAD if not specified.
@@ -415,7 +416,7 @@ EOF
 
 diffUsage () {
 cat <<EOF
-usage: inspurcommit diff [<options>]
+usage: ieicommit diff [<options>]
 
 Show changes using Beyond Compare. Options will be passed to git-difftool.
 Try \`git difftool -h' or \`git help difftool' for more information.
@@ -428,7 +429,7 @@ EOF
 
 mergeUsage () {
 cat <<EOF
-usage: inspurcommit merge [<file to merge> ...]
+usage: ieicommit merge [<file to merge> ...]
 
 Resolve merge conflicts using Beyond Compare. If <file to merge> is not
 specified, resolve all conflicted files one by one.
@@ -1085,7 +1086,7 @@ initOp_Parse1 () {
 }
 
 initOp_CleanUp () {
-    local reason="cleaning up after failed to initialize inspurcommit"
+    local reason="cleaning up after failed to initialize ieicommit"
     if ! git rev-parse --verify --quiet --no-revs HEAD
     then
         rm -- "$FCIF" "$TEMPF$EXT"
@@ -1118,7 +1119,7 @@ initOp_RenameTmp () {
 }
 
 initOp_Start () {
-    local init_title="INSPURCOMMIT-INIT"
+    local init_title="IEICOMMIT-INIT"
     local init_msg oldgi newgi
     local dirty=
     if git rev-parse --verify --quiet --no-revs HEAD
@@ -1147,9 +1148,7 @@ initOp_Start () {
     else
         git checkout-index --force -- .gitignore
     fi
-    init_msg=$(printf "%s\n" \
-        "This commit was automatically generated to initialize this repository" \
-        "in order to use Inspur Commit Kit.") || return
+    init_msg=$(printf "This commit is automatically generated by ieicommit.\n") || return
     git commit -m "$init_title" -m "$init_msg" 1>/dev/null || return
     Prompt green "Initialization completed successfully."
 }
@@ -1191,7 +1190,7 @@ loadOp () {
 
 main () {
     local version="0.15.0"
-    local author="Liu, Zhao-hui <liuzhaohui@inspur.com>"
+    local author="Liu, Zhao-hui <liuzhaohui@ieisystem.com>"
     local TEMPF=$template_file_name
     local TMPF=$change_history_name
     local OLDF=$old_change_history_name
@@ -1213,7 +1212,7 @@ main () {
         op=commit
         ;;
     *)
-        die "error: invalid argument: $op" "Try \`inspurcommit --help' for help."
+        die "error: invalid argument: $op" "Try \`ieicommit --help' for help."
         ;;
     esac
     LookupUsage $op "$@" || return 0

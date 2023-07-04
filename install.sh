@@ -19,7 +19,8 @@ EOF
 
 Install () {
     test -d "$target_dir" || mkdir -p "$target_dir" || return
-    install "inspurcommit" "$target_dir" || return
+    install "ieicommit" "$target_dir" || return
+    install -T "ieicommit" "$target_dir/inspurcommit" || return
     install --mode=644 "ChangeHistoryTemplate.txt" "$target_dir" || return
     printf "Install complete.\n"
 }
@@ -30,7 +31,7 @@ Uninstall () {
         >&2 printf "error: not installed\n"
         return 1
     fi
-    rm -f "$target_dir/inspurcommit" "$target_dir/ChangeHistoryTemplate.txt" || return
+    rm -f "$target_dir/ieicommit" "$target_dir/inspurcommit" "$target_dir/ChangeHistoryTemplate.txt" || return
     rmdir "$target_dir" 2>/dev/null
     printf "Uninstall complete.\n"
 }
@@ -80,8 +81,8 @@ GetTargetDir () {
 }
 
 main () {
-    local name="inspurcommit installation script"
-    local link="https://gitlab.com/lzhh/inspurcommit"
+    local name="ieicommit installation script"
+    local link="https://gitlab.com/lzhh/ieicommit"
     local target_dir
     cd "$(dirname "$0")" || return
     GetTargetDir
