@@ -250,7 +250,7 @@ InitTemplate () {
 
 GenerateTmp () {
     test -e "$TMPF$EXT" && return
-    git cat-file blob HEAD:"$TEMPF$EXT" >"$TMPF$EXT" || return
+    git cat-file blob ${purge_from_head:+HEAD}:"$TEMPF$EXT" >"$TMPF$EXT" || return
     Prompt yellow "Generated file \`$TMPF$EXT'" \
         "Write change history in this file and save, and commit again."
     return 1
@@ -311,9 +311,11 @@ EOF
 
 purgeUsage () {
 cat <<EOF
-usage: inspurcommit purge
+usage: inspurcommit purge [-H|--head]
 
 Remove \`$TMPF$EXT' and regenerate one from template.
+
+if -H or --head is specified, generate from HEAD instead of index.
 EOF
 }
 
@@ -1145,7 +1147,22 @@ initOp_Start () {
 }
 
 purgeOp () {
-    test $# -eq 0 || die "error: too many arguments"
+    local purge_from_head
+    while test $# -ge 1
+    do
+        case $1 in
+        -H|--head)
+            purge_from_head=1
+            shift
+            ;;
+        -*)
+            die "error: invalid switch \`$1'"
+            ;;
+        *)
+            die "error: invalid argument \`$1'"
+            ;;
+        esac
+    done
     CdRoot
     test ! -e "$TMPF$EXT" || rm "$TMPF$EXT" || return
     GenerateTmp 1>/dev/null || return 0
