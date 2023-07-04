@@ -1204,7 +1204,7 @@ loadOp () {
 }
 
 main () {
-    local version="0.15.0"
+    local version="0.16.0"
     local author="Liu, Zhao-hui <liuzhaohui@ieisystem.com>"
     local TEMPF=$template_file_name
     local TMPF=$change_history_name

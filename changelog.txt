@@ -1,3 +1,13 @@
+0.16.0 - 2023-07-04
+
+	* Rename to ieicommit
+	* Purge will read template from index now, instead of HEAD, unless -H or
+	  --head is specified
+	* -h or --help etc. after other switches now can also show help
+	* Use awk instead of vim for inserting numbers to file list
+	* Prompt to use amendtemplate when amending with template changes
+	* Fix that git complains HEAD^ unknown when amending root commit
+
 0.15.0 - 2023-03-06
 
 	* Support initialization on an empty repository
