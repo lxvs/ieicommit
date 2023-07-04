@@ -63,7 +63,15 @@ jgn () {
     local oth_t="Other:"
     local mod add del ren cpy oth
     local tree=HEAD
-    test "$1" = "amend" && tree=HEAD^
+    if test "$1" = "amend"
+    then
+        if git rev-parse --quiet --verify --no-revs HEAD^
+        then
+            tree=HEAD^
+        else
+            tree=$(git hash-object -t tree /dev/null)
+        fi
+    fi
     git diff-index --quiet --name-only --cached $tree && return
     mod=$(git diff-index --name-only --cached $tree -M100% -C100% --diff-filter=M)
     add=$(git diff-index --name-only --cached $tree -M100% -C100% --diff-filter=A)
