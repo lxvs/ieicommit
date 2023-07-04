@@ -42,10 +42,15 @@ CheckInit () {
 }
 
 jgnInsNum () {
-    vim - --not-a-term -es \
-        "+let b:currline=search('^$1\$')" \
-        "+/^$1\$/+,\$s/^/\\=line('.')-b:currline.'. '/ge" \
-        "+%p|q!"
+    awk '
+    NR == 1 {
+        print $0
+        next
+    }
+    {
+        printf "%d. %s\n", NR-1, $0
+    }
+    '
 }
 
 jgn () {
@@ -66,19 +71,13 @@ jgn () {
     ren=$(git diff-index --name-only --cached $tree -M100% -C100% --diff-filter=R)
     cpy=$(git diff-index --name-only --cached $tree -M100% -C100% --diff-filter=C)
     oth=$(git diff-index --name-only --cached $tree -M100% -C100% --diff-filter=madrc)
-    test "$mod" &&
-        mod=$(printf "\n%s\n%s\n" "$mod_t" "$mod" | jgnInsNum "$mod_t")
-    test "$add" &&
-        add=$(printf "\n%s\n%s\n" "$add_t" "$add" | jgnInsNum "$add_t")
-    test "$del" &&
-        del=$(printf "\n%s\n%s\n" "$del_t" "$del" | jgnInsNum "$del_t")
-    test "$ren" &&
-        ren=$(printf "\n%s\n%s\n" "$ren_t" "$ren" | jgnInsNum "$ren_t")
-    test "$cpy" &&
-        cpy=$(printf "\n%s\n%s\n" "$cpy_t" "$cpy" | jgnInsNum "$cpy_t")
-    test "$oth" &&
-        oth=$(printf "\n%s\n%s\n" "$oth_t" "$oth" | jgnInsNum "$oth_t")
-    printf "%s" "$title" "$mod" "$add" "$del" "$ren" "$cpy" "$oth"
+    test "$mod" && mod=$(printf "%s\n%s\n" "$mod_t" "$mod" | jgnInsNum)
+    test "$add" && add=$(printf "%s\n%s\n" "$add_t" "$add" | jgnInsNum)
+    test "$del" && del=$(printf "%s\n%s\n" "$del_t" "$del" | jgnInsNum)
+    test "$ren" && ren=$(printf "%s\n%s\n" "$ren_t" "$ren" | jgnInsNum)
+    test "$cpy" && cpy=$(printf "%s\n%s\n" "$cpy_t" "$cpy" | jgnInsNum)
+    test "$oth" && oth=$(printf "%s\n%s\n" "$oth_t" "$oth" | jgnInsNum)
+    printf "%s\n" ${title:+"$title"} ${mod:+"$mod"} ${add:+"$add"} ${del:+"$del"} ${ren:+"$ren"} ${cpy:+"$cpy"} ${oth:+"$oth"}
 }
 
 ValidateHistoryField () {
