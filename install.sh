@@ -82,7 +82,7 @@ GetTargetDir () {
 
 main () {
     local name="ieicommit installation script"
-    local link="https://gitlab.com/lzhh/ieicommit"
+    local link="https://github.com/lxvs/ieicommit"
     local target_dir
     cd "$(dirname "$0")" || return
     GetTargetDir
