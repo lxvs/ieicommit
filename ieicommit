@@ -290,21 +290,22 @@ Operation is \`commit' if not specified.
 These are all operations used in various situations:
 
 manipulate current repository
-    init        Initialize current repository to use ieicommit
-    template    Commit with template changes
+    init            Initialize current repository to use ieicommit
+    template        Commit with template changes
 
 work on the current change
-    commit      Record changes to the repository
-    amend       Amend previous commit
-    push        Push local commits to Gerrit for review
-    clean       Clean up overridden files
-    merge       Resolve merge conflicts with Beyond Compare
-    purge       Regenerate a change history from template
-    load        Read a specific commit message to change history
+    commit          Record changes to the repository
+    amend           Amend previous commit
+    push            Push local commits to Gerrit for review
+    clean           Clean up overridden files
+    merge           Resolve merge conflicts with Beyond Compare
+    purge           Regenerate a change history from template
+    load            Read a specific commit message to change history
 
 examine things
-    diff        Show changes using beyond Compare
-    export      Export a full change history
+    diff            Show changes using beyond Compare
+    export          Export a full change history
+    fetch-change    Fetch a change from Gerrit
 
 get detailed help for a specific operation:
     ieicommit <operation> --help
@@ -1203,6 +1204,99 @@ loadOp () {
     printf "%s\n" "$msg" "$(grep '^RelatedFiles:' "$TEMPF$EXT")" >"$TMPF$EXT"
 }
 
+fetch_changeUsage () {
+cat <<EOF
+usage: ieicommit fetch-change [<options>] <change> <patchset>
+   or: ieicommit fetch-change [<options>] <change>/<patchset>
+
+Fetch change from Gerrit.
+
+options:
+    -o, --checkout          checkout the fetched change after fetching
+    -c, --create <branch>   create a new branch for the change and switch to it
+    -r, --remote <remote>   remote to fetch from, default \`origin'
+EOF
+}
+
+fetch_changeOp () {
+    local change= patchset= checkout= create= remote=origin
+    local change_prefix
+    fetch_changeOp_parse_args "$@"
+    fetch_changeOp_validate_args
+    change_prefix=$(printf "%s" "$change" | tail -c2)
+    git fetch $remote refs/changes/$change_prefix/$change/$patchset || return
+    test "$checkout" &&
+        git checkout FETCH_HEAD
+    test "$create" &&
+        git switch --create="$create" FETCH_HEAD
+}
+
+fetch_changeOp_parse_args () {
+    while test $# -ge 1
+    do
+        case $1 in
+        -o|--checkout)
+            checkout=1
+            shift
+            ;;
+        --no-checkout)
+            checkout=
+            shift
+            ;;
+        -c|--create)
+            test $# -ge 2 || die "error: switch \`$1' requires a value"
+            create=$2
+            shift 2
+            ;;
+        -c*)
+            create=${1#-c}
+            shift
+            ;;
+        --no-create)
+            create=
+            shift
+            ;;
+        -r|--remote)
+            test $# -ge 2 || die "error: switch \`$1' requires a value"
+            remote=$2
+            shift 2
+            ;;
+        -r*)
+            remote=${1#-r}
+            shift
+            ;;
+        *)
+            case $1,$change,$patchset in
+            */*,,)
+                change=${1%/*}
+                patchset=${1#*/}
+                ;;
+            */*,*)
+                die "error: too many arugments: $1"
+                ;;
+            *,,*)
+                change=$1
+                ;;
+            *,*,)
+                patchset=$1
+                ;;
+            *,*,*)
+                die "error: too many arugments: $1"
+                ;;
+            esac
+            shift
+            ;;
+        esac
+    done
+}
+
+fetch_changeOp_validate_args () {
+    (test "$change" && test "$patchset") ||
+        die "error: <change> and <patchset> are required"
+    test "$checkout" && test "$create" &&
+        die "error: --checkout and --create cannot be used together"
+}
+
 main () {
     local version="0.16.0"
     local author="Liu, Zhao-hui <liuzhaohui@ieisystem.com>"
@@ -1217,6 +1311,10 @@ main () {
     LookupUsage "main" "$@" || exit 0
     case $op in
     amend|amendtemplate|clean|commit|diff|export|init|load|merge|purge|push|template)
+        shift
+        ;;
+    fetch-change)
+        op=$(printf "%s" "$op" | tr '-' '_')
         shift
         ;;
     --version)
