@@ -301,6 +301,7 @@ work on the current change
     merge           Resolve merge conflicts with Beyond Compare
     purge           Regenerate a change history from template
     load            Read a specific commit message to change history
+    strip           Remove trailing whitespaces from staged files
 
 examine things
     diff            Show changes using beyond Compare
@@ -1204,6 +1205,28 @@ loadOp () {
     printf "%s\n" "$msg" "$(grep '^RelatedFiles:' "$TEMPF$EXT")" >"$TMPF$EXT"
 }
 
+stripUsage () {
+cat <<EOF
+usage: ieicommit strip
+
+Remove trailing whitespaces from staged text files, excluding files in Original
+or OVERRIDE directories.
+EOF
+}
+
+stripOp () {
+    local staged_files
+    staged_files=$(git diff-index --cached --name-only HEAD)
+    test "$staged_files" || return 0
+    printf "%s\n" "$staged_files" |
+        grep -v '^Original/' |
+        grep -v '/OVERRIDE/' |
+        xargs file --mime-type |
+        grep ':\s*text/' |
+        cut -d: -f1 |
+        xargs -n1 sed -i 's/\s\+$//'
+}
+
 fetch_changeUsage () {
 cat <<EOF
 usage: ieicommit fetch-change [<options>] <change> <patchset>
@@ -1310,7 +1333,7 @@ main () {
     local op=${1-}
     LookupUsage "main" "$@" || exit 0
     case $op in
-    amend|amendtemplate|clean|commit|diff|export|init|load|merge|purge|push|template)
+    amend|amendtemplate|clean|commit|diff|export|init|load|merge|purge|push|strip|template)
         shift
         ;;
     fetch-change)
