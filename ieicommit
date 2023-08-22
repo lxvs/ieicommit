@@ -283,11 +283,11 @@ EOF
 
 ShowUsage () {
 cat <<EOF
-usage: ieicommit [<operation>]
+usage: ieicommit [<command>]
 
-Operation is \`commit' if not specified.
+Command is \`commit' if not specified.
 
-These are all operations used in various situations:
+These are all commands used in various situations:
 
 manipulate current repository
     init            Initialize current repository to use ieicommit
@@ -308,8 +308,8 @@ examine things
     export          Export a full change history
     fetch-change    Fetch a change from Gerrit
 
-get detailed help for a specific operation:
-    ieicommit <operation> --help
+get detailed help for a specific command:
+    ieicommit <command> --help
     ieicommit commit --help
 EOF
 }
@@ -398,7 +398,7 @@ usage: ieicommit template [<options>]
 
 Normally, changes of the template cannot be committed, in case it is changed
 by accident. When you intend to change the template, you can use this
-operation. Options will be passed to git-commit.
+command. Options will be passed to git-commit.
 EOF
 }
 
@@ -583,7 +583,7 @@ mergeOp () {
 
 diffOp_GetBeyondCompare () {
     test "$JG_BC_PATH" && bc=$JG_BC_PATH && return
-    printf "%s" "$OS" | grep -qi '^win' || die "error: this operation is for Windows only for now."
+    printf "%s" "$OS" | grep -qi '^win' || die "error: this command is for Windows only for now."
     bc="$(cygpath -u "$PROGRAMFILES")/Beyond Compare 4/BComp.exe" && test -x "$bc" && return
     bc="$(cygpath -u "$PROGRAMFILES") (x86)/Beyond Compare 4/BComp.exe" && test -x "$bc" && return
     bc="$(cygpath -u "$PROGRAMFILES")/Beyond Compare 3/bcomp.exe" && test -x "$bc" && return
