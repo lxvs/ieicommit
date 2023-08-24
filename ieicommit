@@ -568,6 +568,11 @@ diffOp () {
     local bc=
     git rev-parse || exit
     diffOp_GetBeyondCompare
+    case $* in
+    *--no-dir-diff*)
+        bc="\"${bc}\""
+        ;;
+    esac
     git difftool --extcmd="$bc" --dir-diff "$@"
 }
 
