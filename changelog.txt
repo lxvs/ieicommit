@@ -1,3 +1,9 @@
+0.17.0 - 2023-08-24
+
+	* Add fetch-change command to fetch unreviewed changes from Gerrit
+	* Add strip command to remove trailing whitespaces from staged files
+	* Fix that `diff' errors when `--no-dir-diff' is specified
+
 0.16.0 - 2023-07-04
 
 	* Rename to ieicommit
