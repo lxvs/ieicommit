@@ -1,4 +1,5 @@
-= IEICOMMIT
+= ieicommit User Manual
+Liu, Zhao-hui <liuzhaohui@ieisystem.com>
 :toc:
 :toc-placement!:
 
@@ -10,16 +11,37 @@ ifdef::env-github[]
 :warning-caption: :warning:
 endif::[]
 
+For ieicommit 0.17.0
+
 toc::[]
 
+[#install]
+== 安装
+
+访问 https://github.com/lxvs/ieicommit/releases[GitHub Releases^] 获取最新版本。如果已经安装，可以在使用 `ieicommit --version` 命令检查当前安装的版本。
+
+[#install-windows]
+=== Windows
+
+下载 ieicommit-x.y.z.exe（其中 x.y.z 为版本号）后执行，安装成功后会提示 _Install complete_。
+
+如果已经安装过，会提示选择要进行的操作，输入字母 `O` 覆盖安装，用于升级场景；输入 `I` 重新安装；输入 `U` 卸载；输入 `Q` 退出。
+
+[#install-unix-like]
+=== Unix-like
+
+下载 ieicommit-x.y.z.tgz，解压后执行 `sudo ./install.sh` ，安装成功后会提示 _Install complete_。
+
+如需卸载，执行 `sudo ./install.sh --uninstall` 。
+
 [#synopsis]
-== 用法
+== 简介
 
- ieicommit [<操作>]
+ ieicommit [<command>]
 
-可选的操作有：amend, clean, commit, diff, export, init, load, merge, purge, push, template。详见 <<operation, 操作>> 章节。
+可选的 `<command>` 详见 <<commands, 命令列表>> 章节。
 
-如果没有提供 _操作_，则执行默认操作 <<op-commit, commit>>。
+如果没有提供 `<command>` ，则进行 <<cmd-commit, commit>> 操作。
 
 [#init]
 == 初始化
@@ -30,7 +52,7 @@ toc::[]
 
 此动作是针对代码库进行的，每个代码库只需要初始化使用一次。只要有一位成员进行了初始化动作并推送至 Gerrit 、完成审批，其他成员下载到的代码即是已初始化完成的，不需要再次进行初始化。
 
-init 命令可以使用参数为模板对应字段设置默认值，如 `--tag EXAMPLE_TAG` 参数可将模板中 `Tag#` 字段内容设置为 `EXAMPLE_TAG`。参数详细信息及“初始化”所做的操作请见“操作”章节。
+init 命令可以使用参数为模板对应字段设置默认值，如 `--tag EXAMPLE_TAG` 参数可将模板中 `Tag#` 字段内容设置为 `EXAMPLE_TAG`。参数详细信息及“初始化”所做的操作请见 <<cmd-init, 命令列表 - init>> 章节。
 
 IMPORTANT: 为保证能正确导出提交历史，此后所有提交动作只能通过此脚本进行。
 
@@ -42,25 +64,32 @@ IMPORTANT: 为保证能正确导出提交历史，此后所有提交动作只能
 . 在 Git Bash 中使用 `git status` 命令可以查看当前工作区状态。
 . 使用 `ieicommit clean` 命令可以清理被 overridden 的改动。
 . 使用 https://git-scm.com/docs/git-add[git-add^] 添加将要提交的代码改动。
-** 使用 `git add .` 添加当前目录下所有改动（注意末尾的 `.` ）。
-** 使用 `git add <path>` 按文件名添加改动，可以使用通配符。
-** 使用 `git add -u` 添加当前目录下的 _修改_ 和 _删除_ 改动，不添加新增的文件。
 . 如果代码库里面没有文件 ChangeHistory.txt，使用命令 `ieicommit purge` 生成该文件。
 . 使用英文填写 ChangeHistory.txt 并保存。模板文件中的空行和以 `#` 开头的行将被忽略。
 . 其中末尾的 `RelatedFiles:` 后方如有任意非空内容，则改动文件列表会自动生成。如果改动涉及文件太多（如上百个），则可以删除 RelatedFiles: 后方的内容，在下方手动简要列出改动文件概要，或直接留空。
 . 使用命令 `ieicommit` 。如果给此命令提供了参数，它们将会被传递给 https://git-scm.com/docs/git-commit[git-commit^]。
-. 若要把当前分支提交的改动上传至 Gerrit 对应的审批分支，使用命令 `ieicommit push` ；命令后面加上分支名可以指定推送至 Gerrit 的哪个分支。
+. 使用命令 `ieicommit push` 可以把当前分支提交的改动上传至 Gerrit 对应的审批分支，命令后面加上分支名可以指定推送至 Gerrit 的哪个分支。
 
-TIP: ChangeHistoryTemplate.txt 文件的改动是无法被提交的，如需修改模板，使用 <<op-template, template>> 或 <<op-amendtemplate, amendtemplate>> 操作 。
+NOTE: ChangeHistoryTemplate.txt 文件的改动是无法被提交的，如需修改模板，使用 <<cmd-template, template>> 或 <<cmd-amendtemplate, amendtemplate>> 操作 。
 
-[#operation]
-== 操作
+[TIP]
+====
+* 使用 `git add .` 添加当前目录下所有改动（注意末尾的 `.` ）。
+* 使用 `git add <path>` 按文件名添加改动，可以使用通配符。
+* 使用 `git add -u` 添加当前目录下的 _修改_ 和 _删除_ 改动，不添加新增的文件。
+====
 
-amend:: 使用命令 `ieicommit amend` 来改正上一个提交。对于已经 push（但尚未完成审批）的 commit，amend 之后需要再次 push。对于已经完成审批的 commit，无法进行 amend。
-+
+[#commands]
+== 命令列表
+
+[#cmd-amend]
+=== amend
+
+使用命令 `ieicommit amend` 来改正上一个提交。对于已经 push（但尚未完成审批）的 commit，amend 之后需要再次 push。对于已经完成审批的 commit，无法进行 amend。
+
+****
 用以下几个情况来举例说明使用方法。
-+
---
+
 * 修改历史填写有误
 .. 修正 ChangeHistory.txt 文件，并保存
 .. 执行命令 `ieicommit amend`
@@ -72,62 +101,83 @@ amend:: 使用命令 `ieicommit amend` 来改正上一个提交。对于已经 p
 .. 使用命令 `ieicommit amend`
 .. 确认无误后执行命令 `ieicommit push`
 * 错误地提交了本不应提交的文件
-.. 使用命令 `git restore -s HEAD~1 -S <文件路径>` （如果提示 restore 不是一个 git 命令，使用 `git checkout HEAD~1 <文件路径>` ）。
+.. 使用命令 `git restore -s HEAD~1 -S <file>` （如果提示 restore 不是一个 git 命令，使用 `git checkout HEAD~1 <file>` ）。
 .. 使用命令 `ieicommit amend`
 .. 确认无误后执行命令 `ieicommit push`
 * 错误地提交了新文件
-.. 使用命令 `git rm -r --cached <文件路径>`
+.. 使用命令 `git rm -r --cached <file>`
 .. 使用命令 `ieicommit amend`
 .. 确认无误后执行命令 `ieicommit push`
---
-+
+****
+
+NOTE: 如果待改正的提交包含模板的改动，应使用 <<cmd-amendtemplate, amendtemplate>> 操作。
+
 [TIP]
 ====
 如果要撤消一次错误的 amend，使用如下命令：
 
  git reset --soft @{1}
-
 ====
-+
-TIP: 如果待改正的提交包含模板的改动，应使用 `amendtemplate` 操作。
 
-[#op-amendtemplate]
-amendtemplate:: 如果待改正的提交包含模板的改动，需要使用此操作。除此之外与 `amend` 相同。
+[#cmd-amendtemplate]
+=== amendtemplate
 
-clean:: 清理代码中被 override 的文件。
+如果待改正的提交包含模板的改动，需要使用此操作。除此之外与 <<cmd-amend, amend>> 相同。
 
-[#op-commit]
-commit:: 当 ChangeHistory.txt 已存在时，此操作会以 _ChangeHistory.txt 的内容_ 和 _当前改动的文件列表_ 为 commit messages 提交当前改动。如有提供参数，将会传递给 https://git-scm.com/docs/git-commit[git-commit^]。
-+
+[#cmd-clean]
+=== clean
+
+清理代码中被 override 的文件。
+
+[#cmd-commit]
+=== commit
+
+当 ChangeHistory.txt 已存在时，此操作会以 _ChangeHistory.txt 的内容_ 和 _当前改动的文件列表_ 为 commit messages 提交当前改动。如有提供参数，将会传递给 https://git-scm.com/docs/git-commit[git-commit^]。
+
 [TIP]
 ====
-当文件 ChangeHistory.txt 不存在时，此操作与 <<op-purge, purge>> 操作等效——会生成一份新的 ChangeHistory.txt。
+当文件 ChangeHistory.txt 不存在时，此操作与 <<cmd-purge, purge>> 操作等效——会生成一份新的 ChangeHistory.txt。
 
 推荐的做法是使用 purge（而不是 commit）来生成 ChangeHistory.txt，以避免 ChangeHistory.txt 已存在时意外提交。
 ====
-+
-TIP: ChangeHistoryTemplate.txt 文件的改动是无法被提交的，如需修改模板，使用 <<op-template, template>> 操作。
 
-diff:: 使用 Beyond Compare 对比当前改动。如果提供了参数，它们会被传递给 https://git-scm.com/docs/git-difftool[git-difftool^]。如果要对比已添加（staged）的改动，使用如下命令：
-+
+NOTE: ChangeHistoryTemplate.txt 文件的改动是无法被提交的，如需修改模板，使用 <<cmd-template, template>> 操作。
+
+[#cmd-diff]
+=== diff
+
+使用 Beyond Compare 对比当前改动。如果提供了参数，它们会被传递给 https://git-scm.com/docs/git-difftool[git-difftool^]。如果要对比已添加（staged）的改动，使用如下命令：
+
  ieicommit diff --cached
 
-export::
-+
- ieicommit export [-a|--all] [{-x|--exclude} <filter>,...] [--] [<filename>]
-+
-导出一份 change history，不包含 _scope_ 字段（除非使用了 `--all` 参数）。
-+
-如果指定了 --exclude <filter> 参数，则包含 _scope_ 字段，但会排除所有指定的 <filter>。多个 <filter> 用英文逗号 (`,`) 分隔。如 `-x tag#,scope` 。
-+
-导出的文件将会生成在代码库根目录。如果没有指定 `<filename>` ，则使用缺省文件名 `ChangeHistory-<hash>.txt` ，`<hash>` 表示当前的 commit ID。
-+
-TIP: `--exclude` 隐含 `--all` 。
+[NOTE%unbreakable]
+====
+如果当前计算机中的 Beyond Compare 没有安装至默认位置，可以使用环境变量 `JG_BC_PATH` 来指定 BComp.exe 的路径。举例来说，如果它被安装到了 `C:\Beyond Compare` 目录，则 `JG_BC_PATH` 的值应该为 `C:\Beyond Compare\BComp.exe` 。
+====
 
-init:: 当一个代码仓库开始使用此脚本提交之前，需要用一次 `ieicommit init` 命令标示一个临界点，以使脚本可以正确地导出全部的改动历史。
-+
+[#cmd-export]
+=== export
+
+ ieicommit export [<options>] [--] [<filename>]
+
+导出一份 change history，不包含 _scope_ 字段（除非使用了 `--all` 参数）。
+
+==== 可选参数：
+
+-a, --all:: 默认情况下导出的文件中不包括 _scope_ 字段，使用此参数以使其包括所有字段。
+-x, --exclude <field>:: 指定需要排除的字段，使用英文逗号 `,` 分隔多个字段，如 `-xscope,tag#` 或 `--exclude scope,tag#` 。此参数隐含了 `--all` 。
+
+[NOTE%unbreakable]
+导出的文件将会生成在代码库根目录。如果没有指定 `<filename>` ，则使用文件名 `ChangeHistory-<hash>.txt` ，`<hash>` 表示当前的 commit ID 的前几位。
+
+[#cmd-init]
+=== init
+
+当一个代码仓库开始使用此脚本提交之前，需要用一次 `ieicommit init` 命令标示一个临界点，以使脚本可以正确地导出全部的改动历史。
+
 此操作支持以下参数：
-+
+
+[%unbreakable]
  -t, --tag <tag#>
  -l, --label <label#>
  -i, --issue <Issue#>
@@ -139,13 +189,13 @@ init:: 当一个代码仓库开始使用此脚本提交之前，需要用一次 
  -o, --solution <Solution>
  -d, --dependency <SolutionDependency>
  -f, --files <RelatedFiles>
-+
+
 例如，
-+
+
  ieicommit init -t "5.19_CedarIslandCrb_0ACMT_013" -d "None"
-+
+
 上述命令会将模板的 tag# 设为 5.19_CedarIslandCrb_0ACMT_013，将 SolutionDependency 设为 None。
-+
+
 [TIP]
 ====
 初始化会做以下操作：
@@ -157,24 +207,38 @@ init:: 当一个代码仓库开始使用此脚本提交之前，需要用一次 
 . 提交上述改动，生成一条标题为 _IEICOMMIT-INIT_ 的 commit
 ====
 
-load:: 从指定的 commit 载入 messages 内容到 ChangeHistory.txt，如果没有指定 `<commit-id>` ，则从当前的 commit （即 HEAD） 载入。
+[#cmd-load]
+=== load
 
-merge:: 使用 Beyond Compare 解决冲突。如果要解决指定文件的冲突，在后面加上文件名。
+从指定的 commit 载入 messages 内容到 ChangeHistory.txt，如果没有指定 `<commit-id>` ，则从当前的 commit （即 HEAD） 载入。
 
-[#op-purge]
-purge::
-+
+[#cmd-merge]
+=== merge
+
+使用 Beyond Compare 解决冲突。如果要解决指定文件的冲突，在后面加上文件名。
+
+[TIP]
+====
+如果当前计算机中的 Beyond Compare 没有安装至默认位置，可以使用环境变量 `JG_BC_PATH` 来指定 BComp.exe 的路径。举例来说，如果它被安装到了 `C:\Beyond Compare` 目录，则 `JG_BC_PATH` 的值应该为 `C:\Beyond Compare\BComp.exe` 。
+====
+
+[#cmd-purge]
+=== purge
+
  ieicommit purge [-H|--head]
-+
+
 移除并重新生成一份 ChangeHistory.txt。
-+
+
 如果指定了 `-H` 或 `--head` ，从 HEAD（而不是 index）生成。
 
-push::
-+
+[#cmd-push]
+=== push
+
  ieicommit push [<options> ...] [<branch>]
-+
+
 将本地提交推送至 Gerrit 的同名审查分支（ `refs/for/*` ）。如果提供了 <options>，它们将会被传递给 https://git-scm.com/docs/git-push[git-push^]。 如果指定了 <branch>，则推送到 Gerrit 的此审查分支。
 
-[#op-template]
-template:: 默认情况下，提交时如果包含了模板文件，脚本会将其 unstage（git add 的反向操作）并中止。如果要修改模板并提交，需要再次 git add 模板文件，并使用 template 操作进行提交。
+[#cmd-template]
+=== template
+
+默认情况下，提交时如果包含了模板文件，脚本会将其 unstage（git add 的反向操作）并中止。如果要修改模板并提交，需要再次 git add 模板文件，并使用 template 操作进行提交。
