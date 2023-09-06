@@ -301,7 +301,7 @@ work on the current change
     merge           Resolve merge conflicts with Beyond Compare
     purge           Regenerate a change history from template
     load            Read a specific commit message to change history
-    strip           Remove trailing whitespaces from staged files
+    strip           Remove trailing whitespace from staged files
 
 examine things
     diff            Show changes using beyond Compare
@@ -1214,7 +1214,7 @@ stripUsage () {
 cat <<EOF
 usage: ieicommit strip
 
-Remove trailing whitespaces from staged text files, excluding files in Original
+Remove trailing whitespace from staged text files, excluding files in Original
 or OVERRIDE directories.
 EOF
 }
