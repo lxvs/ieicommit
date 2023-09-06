@@ -174,6 +174,21 @@ NOTE: ChangeHistoryTemplate.txt 文件的改动是无法被提交的，如需修
 [NOTE%unbreakable]
 导出的文件将会生成在代码库根目录。如果没有指定 `<filename>` ，则使用文件名 `ChangeHistory-<hash>.txt` ，`<hash>` 表示当前的 commit ID 的前几位。
 
+[#cmd-fetch-change]
+=== fetch-change
+
+[%unbreakable]
+ ieicommit fetch-change [<options>] <change> <patchset>
+ ieicommit fetch-change [<options>] <change>/<patchset>
+
+从 Gerrit 获取指定的 patchset。
+
+==== 可选参数
+
+-o, --checkout:: 获取后检出获取到的 commit。
+-c, --create <branch>:: 为获取到的 commit 新建一个名为 `<branch>` 的分支，并切换至此分支。
+-r, --remote <remote>:: 指定从哪个 remote 获取，默认为 `origin`。
+
 [#cmd-init]
 === init
 
@@ -241,6 +256,11 @@ NOTE: ChangeHistoryTemplate.txt 文件的改动是无法被提交的，如需修
  ieicommit push [<options> ...] [<branch>]
 
 将本地提交推送至 Gerrit 的同名审查分支（ `refs/for/*` ）。如果提供了 <options>，它们将会被传递给 https://git-scm.com/docs/git-push[git-push^]。 如果指定了 <branch>，则推送到 Gerrit 的此审查分支。
+
+[#cmd-strip]
+=== strip
+
+移除 *已暂存* (staged) 文件中的所有末尾空白（空格与 Tab），不包含 Original 或 OVERRIDE 目录中的文件。
 
 [#cmd-template]
 === template
