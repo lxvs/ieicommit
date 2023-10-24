@@ -1253,10 +1253,15 @@ fetch_changeOp () {
     fetch_changeOp_validate_args
     change_prefix=$(printf "%s" "$change" | tail -c2)
     git fetch $remote refs/changes/$change_prefix/$change/$patchset || return
-    test "$checkout" &&
+    if test "$checkout"
+    then
         git checkout FETCH_HEAD
-    test "$create" &&
+    elif test "$create"
+    then
         git switch --create="$create" FETCH_HEAD
+    else
+        return 0
+    fi
 }
 
 fetch_changeOp_parse_args () {
