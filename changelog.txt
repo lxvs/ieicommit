@@ -1,3 +1,9 @@
+0.17.1 - 2023-10-24
+
+	* Fix that fetch-change returns error when succeeds
+	* Fix a typo in help texts
+	* Improve readme
+
 0.17.0 - 2023-08-24
 
 	* Add fetch-change command to fetch unreviewed changes from Gerrit

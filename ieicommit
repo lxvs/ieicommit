@@ -1331,7 +1331,7 @@ fetch_changeOp_validate_args () {
 }
 
 main () {
-    local version="0.17.0"
+    local version="0.17.1"
     local author="Liu, Zhao-hui <liuzhaohui@ieisystem.com>"
     local TEMPF=$template_file_name
     local TMPF=$change_history_name
