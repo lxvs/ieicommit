@@ -12,7 +12,7 @@ Issue#:
 # Scope examples: All, Standard
 Scope: 
 
-# Severity options: High, Medium, Low
+# Severity options: Critical, High, Medium, Low
 Severity: 
 
 # Category examples: Redfish/Improvement, SMBIOS/Bugfix, PCIe/NewFeature
