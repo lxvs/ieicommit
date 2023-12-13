@@ -1155,7 +1155,7 @@ initOp_Start () {
     if oldgi=$(git cat-file blob HEAD:.gitignore 2>/dev/null)
     then
         newgi=$(printf "%s\n" "$oldgi" "/$TMPF$EXT" "/$TMPF-*$EXT")
-        gimode=$(git ls-tree --full-tree --format="%(objectmode)" HEAD -- .gitignore)
+        gimode=$(git ls-tree --full-tree HEAD -- .gitignore | cut -d ' ' -f 1)
     else
         newgi=$(printf "%s\n" "/$TMPF$EXT" "/$TMPF-*$EXT")
         gimode="100644"
