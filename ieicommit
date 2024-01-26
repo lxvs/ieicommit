@@ -214,7 +214,7 @@ Commit () {
 
 Commit_CheckLastSummary () {
     local last_summary
-    test "$op" = "amend" && return
+    printf "%s" "$op" | grep -q "amend" && return
     last_summary=$(git diff-tree --no-patch --format=%s HEAD)
     test "$last_summary" != "$summary" && return
     die "error: Solution is same with last one."
